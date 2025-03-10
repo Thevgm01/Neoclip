@@ -32,23 +32,20 @@ Shader "Hidden/Edge Detection"
             float _OutlineThickness;
             float4 _OutlineColor;
 
+            // These NEED to be static??
+            static const int CENTER = 0;
+            static const int UPLEFT = 1;
+            static const int UPRIGHT = 2;
+            static const int DOWNLEFT = 3;
+            static const int DOWNRIGHT = 4;
+
             #pragma vertex Vert // vertex shader is provided by the Blit.hlsl include
             #pragma fragment frag
 
-            // Edge detection kernel that works by taking the sum of the squares of the differences between diagonally adjacent pixels (Roberts Cross).
-            float RobertsCross(float3 samples[4])
+            // Helper function to sample the depth texture and learnize the result 
+            float SampleLinearDepth(float2 uv)
             {
-                const float3 difference_1 = samples[1] - samples[2];
-                const float3 difference_2 = samples[0] - samples[3];
-                return sqrt(dot(difference_1, difference_1) + dot(difference_2, difference_2));
-            }
-
-            // The same kernel logic as above, but for a single-value instead of a vector3.
-            float RobertsCross(float samples[4])
-            {
-                const float difference_1 = samples[1] - samples[2];
-                const float difference_2 = samples[0] - samples[3];
-                return sqrt(difference_1 * difference_1 + difference_2 * difference_2);
+                return Linear01Depth(SampleSceneDepth(uv), _ZBufferParams);
             }
             
             // Helper function to sample scene normals remapped from [-1, 1] range to [0, 1].
@@ -64,51 +61,71 @@ Shader "Hidden/Edge Detection"
                 return color.r * 0.3 + color.g * 0.59 + color.b * 0.11;
             }
 
+            // Edge detection kernel that works by taking the sum of the squares of the differences between diagonally adjacent pixels (Roberts Cross).
+            float RobertsCross(float3 samples[5])
+            {
+                const float3 difference_1 = samples[UPRIGHT] - samples[DOWNLEFT];
+                const float3 difference_2 = samples[UPLEFT] - samples[DOWNRIGHT];
+                return sqrt(dot(difference_1, difference_1) + dot(difference_2, difference_2));
+            }
+
+            // The same kernel logic as above, but for a single-value instead of a vector3.
+            float RobertsCross(float samples[5])
+            {
+                const float difference_1 = samples[UPRIGHT] - samples[DOWNLEFT];
+                const float difference_2 = samples[UPLEFT] - samples[DOWNRIGHT];
+                return sqrt(difference_1 * difference_1 + difference_2 * difference_2);
+            }
+
             half4 frag(Varyings IN) : SV_TARGET
             {
                 // Screen-space coordinates which we will use to sample.
                 float2 uv = IN.texcoord;
-                float2 texel_size = float2(1.0 / _ScreenParams.x, 1.0 / _ScreenParams.y);
-                
+                float2 texel_size = float2(_ScreenParams.z - 1.0, _ScreenParams.w - 1.0);
+
                 // Generate 4 diagonally placed samples.
                 const float half_width_f = floor(_OutlineThickness * 0.5);
                 const float half_width_c = ceil(_OutlineThickness * 0.5);
-
-                float2 uvs[4];
-                uvs[0] = uv + texel_size * float2(half_width_f, half_width_c) * float2(-1, 1);  // top left
-                uvs[1] = uv + texel_size * float2(half_width_c, half_width_c) * float2(1, 1);   // top right
-                uvs[2] = uv + texel_size * float2(half_width_f, half_width_f) * float2(-1, -1); // bottom left
-                uvs[3] = uv + texel_size * float2(half_width_c, half_width_f) * float2(1, -1);  // bottom right
                 
-                float3 normal_samples[4];
-                float depth_samples[4], luminance_samples[4];
+                float2 uvs[5];
+                uvs[CENTER] = uv;
+                uvs[UPLEFT] = uv + texel_size * float2(-half_width_f, half_width_c);
+                uvs[UPRIGHT] = uv + texel_size * float2(half_width_c, half_width_c);
+                uvs[DOWNLEFT] = uv + texel_size * float2(-half_width_f, -half_width_f);
+                uvs[DOWNRIGHT] = uv + texel_size * float2(half_width_c, -half_width_f);
                 
-                for (int i = 0; i < 4; i++) {
-                    depth_samples[i] = SampleSceneDepth(uvs[i]);
+                float3 normal_samples[5];
+                float linear_depth_samples[5];
+                float luminance_samples[5];
+                
+                for (int i = 0; i < 5; i++) {
+                    linear_depth_samples[i] = SampleLinearDepth(uvs[i]);
                     normal_samples[i] = SampleSceneNormalsRemapped(uvs[i]);
                     luminance_samples[i] = SampleSceneLuminance(uvs[i]);
                 }
                 
                 // Apply edge detection kernel on the samples to compute edges.
-                float edge_depth = RobertsCross(depth_samples);
-                float edge_normal = RobertsCross(normal_samples);
-                float edge_luminance = RobertsCross(luminance_samples);
+                float depth_cross = RobertsCross(linear_depth_samples);
+                float normal_cross = RobertsCross(normal_samples);
+                float luminance_cross = RobertsCross(luminance_samples);
                 
                 // Threshold the edges (discontinuity must be above certain threshold to be counted as an edge). The sensitivities are hardcoded here.
-                float depth_threshold = 1 / 200.0f;
-                edge_depth = edge_depth > depth_threshold ? 1 : 0;
+                const float depth_threshold = 1.0f / 50.0f;
+                float edge_depth = depth_cross > depth_threshold ? 1 : 0;
                 
-                float normal_threshold = 1 / 4.0f;
-                edge_normal = edge_normal > normal_threshold ? 1 : 0;
+                const float normal_threshold = 1 / 4.0f;
+                float edge_normal = normal_cross > normal_threshold ? 1 : 0;
                 
-                float luminance_threshold = 1 / 0.5f;
-                edge_luminance = edge_luminance > luminance_threshold ? 1 : 0;
+                const float luminance_threshold = 1 / 2.0f;
+                float edge_luminance = luminance_cross > luminance_threshold ? 1 : 0;
                 
                 // Combine the edges from depth/normals/luminance using the max operator.
                 float edge = max(edge_depth, max(edge_normal, edge_luminance));
                 
                 // Color the edge with a custom color.
-                return edge * _OutlineColor;
+                //return half4(normal_samples[CENTER], 0.5f);
+                half3 one = half3(1, 1, 1);
+                return half4(one * edge, 1.0f);
             }
             ENDHLSL
         }
