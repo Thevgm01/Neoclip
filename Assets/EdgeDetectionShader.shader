@@ -115,15 +115,15 @@ Shader "Hidden/Edge Detection"
                 
                 // Threshold the edges (discontinuity must be above certain threshold to be counted as an edge). The sensitivities are hardcoded here.
                 const float depth_threshold = 1.0f / 50.0f;
-                float edge_depth = depth_cross > depth_threshold ? 1 : 0;
+                float thresholded_depth = depth_cross > depth_threshold ? 1 : 0;
                 
-                const float normal_threshold = 1 / 4.0f;
-                float edge_normal = normal_cross > normal_threshold ? 1 : 0;
+                const float normal_threshold = 1 / 3.0f;
+                float thresholded_normal = normal_cross > normal_threshold ? 1 : 0;
                 
                 const float color_threshold = 1 / 2.0f;
-                float edge_luminance = color_cross > color_threshold ? 1 : 0;
+                float thresholded_color = color_cross > color_threshold ? 1 : 0;
 
-                float edge = max(max(depth_cross * 50, normal_cross), color_cross) * linear_depth_samples[CENTER];
+                float edge = max(max(depth_cross * 50, thresholded_normal * 0.075), color_cross * (0.1 - linear_depth_samples[CENTER] * 2.5));
                 float3 combined_edges = float3(edge, edge, edge);
 
                 //float3 weird_normal_diff = max(normal_samples[UPLEFT] - normal_samples[DOWNRIGHT], normal_samples[UPRIGHT] - normal_samples[DOWNLEFT]);
