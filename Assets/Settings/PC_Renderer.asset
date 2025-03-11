@@ -67,5 +67,5 @@ MonoBehaviour:
   m_Active: 1
   settings:
     renderPassEvent: 500
-    outlineThickness: 3
+    outlineThickness: 2
     outlineColor: {r: 0, g: 0, b: 0, a: 1}

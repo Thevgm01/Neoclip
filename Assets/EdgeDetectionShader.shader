@@ -96,17 +96,21 @@ Shader "Hidden/Edge Detection"
                 
                 float3 normal_samples[5];
                 float linear_depth_samples[5];
+                float3 color_samples[5];
                 float luminance_samples[5];
                 
                 for (int i = 0; i < 5; i++) {
                     linear_depth_samples[i] = SampleLinearDepth(uvs[i]);
                     normal_samples[i] = SampleSceneNormalsRemapped(uvs[i]);
-                    luminance_samples[i] = SampleSceneLuminance(uvs[i]);
+                    color_samples[i] = SampleSceneColor(uvs[i]);
+                    luminance_samples[i] = color_samples[i] * float3(0.3, 0.59, 0.11);;
                 }
+
                 
                 // Apply edge detection kernel on the samples to compute edges.
                 float depth_cross = RobertsCross(linear_depth_samples);
                 float normal_cross = RobertsCross(normal_samples);
+                float color_cross = RobertsCross(color_samples);
                 float luminance_cross = RobertsCross(luminance_samples);
                 
                 // Threshold the edges (discontinuity must be above certain threshold to be counted as an edge). The sensitivities are hardcoded here.
@@ -116,16 +120,28 @@ Shader "Hidden/Edge Detection"
                 const float normal_threshold = 1 / 4.0f;
                 float edge_normal = normal_cross > normal_threshold ? 1 : 0;
                 
-                const float luminance_threshold = 1 / 2.0f;
-                float edge_luminance = luminance_cross > luminance_threshold ? 1 : 0;
+                const float color_threshold = 1 / 2.0f;
+                float edge_luminance = color_cross > color_threshold ? 1 : 0;
+
+                float edge = max(max(depth_cross * 50, normal_cross), color_cross) * linear_depth_samples[CENTER];
+                float3 combined_edges = float3(edge, edge, edge);
+
+                //float3 weird_normal_diff = max(normal_samples[UPLEFT] - normal_samples[DOWNRIGHT], normal_samples[UPRIGHT] - normal_samples[DOWNLEFT]);
+                //combined_edges *= weird_normal_diff != float3(0, 0, 0) ? weird_normal_diff : float3(1, 1, 1);
                 
+                return half4(combined_edges * 3, 1.0);
+
+
+                /*
                 // Combine the edges from depth/normals/luminance using the max operator.
                 float edge = max(edge_depth, max(edge_normal, edge_luminance));
                 
                 // Color the edge with a custom color.
                 //return half4(normal_samples[CENTER], 0.5f);
                 half3 one = half3(1, 1, 1);
-                return half4(one * edge, 1.0f);
+                //return half4(one * edge, 1.0f);
+                return half4(one * (cos(_Time.y + linear_depth_samples[CENTER] * 5) + 1.0) * 0.5, 1.0f);
+                */
             }
             ENDHLSL
         }
