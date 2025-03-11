@@ -106,6 +106,12 @@ Shader "Hidden/Edge Detection"
                     luminance_samples[i] = color_samples[i] * float3(0.3, 0.59, 0.11);;
                 }
 
+                // https://docs.unity3d.com/Packages/com.unity.render-pipelines.universal@11.0/manual/writing-shaders-urp-reconstruct-world-position.html
+                #if UNITY_REVERSED_Z
+                    float3 world_pos = ComputeWorldSpacePosition(uv, SampleSceneDepth(uv), UNITY_MATRIX_I_VP);
+                #else
+                    float3 world_pos = ComputeWorldSpacePosition(uv, lerp(UNITY_NEAR_CLIP_VALUE, 1, SampleSceneDepth(uv)), UNITY_MATRIX_I_VP);
+                #endif
                 
                 // Apply edge detection kernel on the samples to compute edges.
                 float depth_cross = RobertsCross(linear_depth_samples);
@@ -123,14 +129,17 @@ Shader "Hidden/Edge Detection"
                 const float color_threshold = 1 / 2.0f;
                 float thresholded_color = color_cross > color_threshold ? 1 : 0;
 
+                float scanlinesEffect = pow(sin(uvs[CENTER].y * 50 + _Time.y * 2), 2) + 2;
+                //float scanlinesEffect = pow(sin(_Time.y * 2 + dot(world_pos, world_pos) * 0.001), 2) + 2;
+                
                 if (linear_depth_samples[CENTER] >= 1.0)
                 {
                     half3 one = half3(1.0, 1.0, 1.0);
-                    return half4(one * color_cross * 10, 1.0);
+                    return half4(one * color_cross * 10 * scanlinesEffect, 1.0);
                 }
                 else
                 {
-                    float edge = max(max(depth_cross * 100, thresholded_normal * 0.15), color_cross * (0.1 - linear_depth_samples[CENTER] * 15.0));
+                    float edge = max(max(depth_cross * 100 * (depth_cross > 0.9 ? scanlinesEffect : 1), thresholded_normal * 0.15), color_cross * (0.1 - linear_depth_samples[CENTER] * 15.0));
                     float3 combined_edges = float3(edge, edge, edge);
 
                     //float3 weird_normal_diff = max(normal_samples[UPLEFT] - normal_samples[DOWNRIGHT], normal_samples[UPRIGHT] - normal_samples[DOWNLEFT]);
