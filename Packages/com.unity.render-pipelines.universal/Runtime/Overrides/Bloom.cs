@@ -7,6 +7,8 @@ namespace UnityEngine.Rendering.Universal
     /// </summary>
     public enum BloomDownscaleMode
     {
+        None,
+        
         /// <summary>
         /// Use this to select half size as the starting resolution.
         /// </summary>

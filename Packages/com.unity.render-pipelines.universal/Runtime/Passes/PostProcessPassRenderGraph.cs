@@ -359,6 +359,9 @@ namespace UnityEngine.Rendering.Universal
             int downres = 1;
             switch (m_Bloom.downscale.value)
             {
+                case BloomDownscaleMode.None:
+                    downres = 0;
+                    break;
                 case BloomDownscaleMode.Half:
                     downres = 1;
                     break;
