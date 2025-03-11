@@ -123,15 +123,22 @@ Shader "Hidden/Edge Detection"
                 const float color_threshold = 1 / 2.0f;
                 float thresholded_color = color_cross > color_threshold ? 1 : 0;
 
-                float edge = max(max(depth_cross * 50, thresholded_normal * 0.075), color_cross * (0.1 - linear_depth_samples[CENTER] * 2.5));
-                float3 combined_edges = float3(edge, edge, edge);
+                if (linear_depth_samples[CENTER] >= 1.0)
+                {
+                    half3 one = half3(1.0, 1.0, 1.0);
+                    return half4(one * color_cross * 10, 1.0);
+                }
+                else
+                {
+                    float edge = max(max(depth_cross * 100, thresholded_normal * 0.15), color_cross * (0.1 - linear_depth_samples[CENTER] * 15.0));
+                    float3 combined_edges = float3(edge, edge, edge);
 
-                //float3 weird_normal_diff = max(normal_samples[UPLEFT] - normal_samples[DOWNRIGHT], normal_samples[UPRIGHT] - normal_samples[DOWNLEFT]);
-                //combined_edges *= weird_normal_diff != float3(0, 0, 0) ? weird_normal_diff : float3(1, 1, 1);
+                    //float3 weird_normal_diff = max(normal_samples[UPLEFT] - normal_samples[DOWNRIGHT], normal_samples[UPRIGHT] - normal_samples[DOWNLEFT]);
+                    //combined_edges *= weird_normal_diff != float3(0, 0, 0) ? weird_normal_diff : float3(1, 1, 1);
+                    
+                    return half4(combined_edges, 1.0);
+                }
                 
-                return half4(combined_edges * 3, 1.0);
-
-
                 /*
                 // Combine the edges from depth/normals/luminance using the max operator.
                 float edge = max(edge_depth, max(edge_normal, edge_luminance));
