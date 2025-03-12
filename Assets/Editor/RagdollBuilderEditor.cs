@@ -7,14 +7,29 @@ using UnityEngine.UIElements;
 [CustomEditor(typeof(RagdollBuilder))]
 public class RagdollBuilderEditor : Editor
 {
+    private RagdollBuilder builder;
+    private Rigidbody head;
+    
     public override void OnInspectorGUI()
     {
-        RagdollBuilder builder = (RagdollBuilder)target;
-
-        if (DrawDefaultInspector())
+        if (!builder)
         {
-            
+            builder = (RagdollBuilder)serializedObject.targetObject;
         }
+
+        if (head == null && builder != null)
+        {
+            foreach (Rigidbody rigidbody in builder.GetComponentsInChildren<Rigidbody>())
+            {
+                if (rigidbody.name.ToLower().Contains("head"))
+                {
+                    head = rigidbody;
+                    break;
+                }
+            }
+        }
+
+        DrawDefaultInspector();
 
         if (GUILayout.Button("Create All Joints"))
         {
@@ -64,6 +79,12 @@ public class RagdollBuilderEditor : Editor
         if (GUILayout.Button("Select All Joints"))
         {
             Selection.objects = builder.GetComponentsInChildren<ConfigurableJoint>();
+        }
+        
+        if (GUILayout.Button(head.isKinematic ? "Free head" : "Lock head"))
+        {
+            Undo.RecordObject(head, $"Set head kinematic {!head.isKinematic}");
+            head.isKinematic = !head.isKinematic;
         }
     }
 }
