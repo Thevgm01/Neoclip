@@ -24181,9 +24181,10 @@ MonoBehaviour:
   followTarget: {fileID: 709733587}
   followSpeed: 10
   followDistance: 3
-  lookMode: 1
+  lookMode: 0
   mouseSensitivity: {x: 20, y: 20}
   rotationSpeed: 30
+  skewStrength: 0.5
 --- !u!64 &332295545
 MeshCollider:
   m_ObjectHideFlags: 0

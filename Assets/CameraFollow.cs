@@ -42,9 +42,11 @@ public class CameraFollow : MonoBehaviour
         switch (lookMode)
         {
             case LookMode.UP:
-                manualCameraAngles += new Vector3(-movement.y, movement.x, 0.0f);
+                manualCameraAngles = new Vector3(
+                    Mathf.Clamp(manualCameraAngles.x - movement.y, -89, 89), 
+                    Mathf.Repeat(manualCameraAngles.y + movement.x, 360), 
+                    Mathf.Repeat(manualCameraAngles.z, 360));
                 desiredRotation = Quaternion.Euler(manualCameraAngles);
-                manualCameraAngles = desiredRotation.eulerAngles; // Wrap the angles back if they go too far
                 break;
             case LookMode.FREE:
                 desiredRotation *= Quaternion.Euler(-movement.y, movement.x, 0);
