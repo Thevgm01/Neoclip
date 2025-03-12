@@ -16,7 +16,8 @@ public class RagdollBuilder : MonoBehaviour
     [SerializedDictionary("Collider Type", "Matching Bone Names")]
     [SerializeField] private SerializedDictionary<string, ColliderType> collidersForBoneName;
 
-    [SerializeField] private bool autoselectMirrorBone = true;
+    public bool autoselectMirrorBone = true;
+    public float initialMassMult = 1.0f;
     
     private UnityEngine.Object lastSelectedObject = null; // Double-clicking won't select the mirror
     private UnityEngine.Object mirrorBoneObject = null;

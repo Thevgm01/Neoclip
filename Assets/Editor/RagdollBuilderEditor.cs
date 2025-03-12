@@ -47,8 +47,17 @@ public class RagdollBuilderEditor : Editor
             Rigidbody[] rigidbodies = builder.GetComponentsInChildren<Rigidbody>();
             if (rigidbodies.Length > 0)
             {
+                float totalMass = 0.0f;
+
                 foreach (Rigidbody rigidbody in rigidbodies)
                 {
+                    Undo.RecordObject(rigidbody, $"Set mass by density");
+                    // rigidbody.SetDensity() does NOTHING!!!
+                    rigidbody.mass = Utils.CalculateVolume(rigidbody.GetComponent<Collider>()) * 
+                                     Utils.Density.WATER * 
+                                     builder.initialMassMult;
+                    totalMass += rigidbody.mass;
+
                     Rigidbody parentRigidbody = rigidbody.transform.parent.GetComponentInParent<Rigidbody>();
                     if (parentRigidbody)
                     {
@@ -62,7 +71,7 @@ public class RagdollBuilderEditor : Editor
                         
                         JointDrive defaultJointDrive = new JointDrive
                         {
-                            positionSpring = 15.0f,
+                            positionSpring = 35.0f,
                             positionDamper = 1.0f,
                             maximumForce = 3.402823e+38f // Copied from default
                         };
@@ -71,8 +80,10 @@ public class RagdollBuilderEditor : Editor
                     }
                 }
                 
+                Debug.Log($"RagdollBuilder: Set the mass of {rigidbodies.Length} rigidbodies. Total mass is {totalMass} kg.");
+
                 // -1 because the root rigidbody has no parent, so it won't get a joint
-                Debug.Log($"RagdollBuilder: Created {rigidbodies.Length - 1} ConfigurableJoints");
+                Debug.Log($"RagdollBuilder: Created {rigidbodies.Length - 1} ConfigurableJoints.");
             }
         }
 
