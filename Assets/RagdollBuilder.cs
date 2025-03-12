@@ -18,6 +18,7 @@ public class RagdollBuilder : MonoBehaviour
 
     [SerializeField] private bool autoselectMirrorBone = true;
     
+    private UnityEngine.Object lastSelectedObject = null; // Double-clicking won't select the mirror
     private UnityEngine.Object mirrorBoneObject = null;
     
     private void OnEnable()
@@ -34,7 +35,8 @@ public class RagdollBuilder : MonoBehaviour
     {
         if (autoselectMirrorBone &&
             Selection.count == 1 &&
-            Selection.activeGameObject &&
+            Selection.activeObject &&
+            Selection.activeObject != lastSelectedObject &&
             Selection.activeGameObject.GetComponentInParent<RagdollBuilder>() == this)
         {
             string path = "";
@@ -59,7 +61,7 @@ public class RagdollBuilder : MonoBehaviour
             }
             else
             {
-                return;
+                lastSelectedObject = Selection.activeObject;
             }
 
             Transform other = transform.Find(path);
@@ -75,6 +77,8 @@ public class RagdollBuilder : MonoBehaviour
                 Debug.Log($"Could not find mirror bone at {path}");
             }
         }
+        
+        lastSelectedObject = Selection.activeObject;
     }
 
     private void Update()
