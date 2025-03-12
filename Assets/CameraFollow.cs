@@ -1,3 +1,4 @@
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -14,6 +15,8 @@ public class CameraFollow : MonoBehaviour
     [SerializeField] private float rotationSpeed = 30.0f;
     [SerializeField] [Range(0, 1)] private float skewStrength = 0.5f;
 
+    private Vector3 manualCameraAngles = Vector3.zero;
+    
     private Vector3 currentPosition = Vector3.zero;
     private Vector3 desiredPosition = Vector3.zero;
     private Quaternion currentRotation = Quaternion.identity;
@@ -23,6 +26,8 @@ public class CameraFollow : MonoBehaviour
     {
         Cursor.visible = false;
         Cursor.lockState = CursorLockMode.Locked;
+
+        manualCameraAngles = transform.rotation.eulerAngles;
         
         currentPosition = transform.position;
         desiredPosition = currentPosition;
@@ -37,6 +42,9 @@ public class CameraFollow : MonoBehaviour
         switch (lookMode)
         {
             case LookMode.UP:
+                manualCameraAngles += new Vector3(-movement.y, movement.x, 0.0f);
+                desiredRotation = Quaternion.Euler(manualCameraAngles);
+                manualCameraAngles = desiredRotation.eulerAngles; // Wrap the angles back if they go too far
                 break;
             case LookMode.FREE:
                 desiredRotation *= Quaternion.Euler(-movement.y, movement.x, 0);
@@ -54,6 +62,8 @@ public class CameraFollow : MonoBehaviour
             dirToTarget, 
             Vector3.Cross(dirToTarget, currentRotation * Vector3.right));
         
+        // TODO probably don't use skew?
+        // Just change the desiredRotation as if the player was trying to look towards the ragdoll as it falls
         Quaternion skewedRotation = Quaternion.Slerp(currentRotation, skew, skewStrength);
 
         transform.SetPositionAndRotation(offsetPosition, skewedRotation);
