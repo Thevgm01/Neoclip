@@ -24116,7 +24116,7 @@ Transform:
   m_GameObject: {fileID: 330585543}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 1, z: -0, w: -0.00000035762784}
-  m_LocalPosition: {x: 0.29997987, y: 25.481937, z: 166.92339}
+  m_LocalPosition: {x: 17.109982, y: 121.601944, z: 1.3573931}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -24179,6 +24179,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   followTarget: {fileID: 709733587}
+  followSpeed: 10
+  followDistance: 3
+  lookMode: 1
+  mouseSensitivity: {x: 20, y: 20}
+  rotationSpeed: 30
 --- !u!64 &332295545
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -28227,15 +28232,15 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 2067653716b0db34abd2c2ca5aca1f8a, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0.3
+      value: 17.11
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 2067653716b0db34abd2c2ca5aca1f8a, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 24.5
+      value: 120.62
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 2067653716b0db34abd2c2ca5aca1f8a, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 163.92
+      value: -1.646
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 2067653716b0db34abd2c2ca5aca1f8a, type: 3}
       propertyPath: m_LocalRotation.w
