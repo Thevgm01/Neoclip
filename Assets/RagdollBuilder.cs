@@ -16,6 +16,10 @@ public class RagdollBuilder : MonoBehaviour
     [SerializedDictionary("Collider Type", "Matching Bone Names")]
     [SerializeField] private SerializedDictionary<string, ColliderType> collidersForBoneName;
 
+    [SerializeField] private bool autoselectMirrorBone = true;
+    
+    private UnityEngine.Object mirrorBoneObject = null;
+    
     private void OnEnable()
     {
         Selection.selectionChanged += SelectOtherBone;
@@ -28,7 +32,8 @@ public class RagdollBuilder : MonoBehaviour
 
     private void SelectOtherBone()
     {
-        if (Selection.count == 1 &&
+        if (autoselectMirrorBone &&
+            Selection.count == 1 &&
             Selection.activeGameObject &&
             Selection.activeGameObject.GetComponentInParent<RagdollBuilder>() == this)
         {
@@ -61,14 +66,23 @@ public class RagdollBuilder : MonoBehaviour
 
             if (other)
             {
-                Selection.objects = new[] { Selection.activeObject, other.gameObject };
-                EditorGUIUtility.PingObject(other.gameObject);
-                Debug.Log($"Selected mirror bone at {path}");
+                mirrorBoneObject = (UnityEngine.Object)other.gameObject;
+                //EditorGUIUtility.PingObject(other.gameObject);
+                Debug.Log($"Selecting mirror bone at {path}");
             }
             else
             {
                 Debug.Log($"Could not find mirror bone at {path}");
             }
+        }
+    }
+
+    private void Update()
+    {
+        if (mirrorBoneObject)
+        {
+            Selection.objects = new[] { Selection.activeObject, mirrorBoneObject };
+            mirrorBoneObject = null;
         }
     }
 }

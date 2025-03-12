@@ -1134,6 +1134,7 @@ MonoBehaviour:
       Value: 2
     - Key: foot
       Value: 1
+  autoselectMirrorBone: 1
 --- !u!64 &61922382
 MeshCollider:
   m_ObjectHideFlags: 0
