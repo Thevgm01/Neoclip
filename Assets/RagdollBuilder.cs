@@ -62,6 +62,7 @@ public class RagdollBuilder : MonoBehaviour
             else
             {
                 lastSelectedObject = Selection.activeObject;
+                return;
             }
 
             Transform other = transform.Find(path);
@@ -70,11 +71,11 @@ public class RagdollBuilder : MonoBehaviour
             {
                 mirrorBoneObject = (UnityEngine.Object)other.gameObject;
                 //EditorGUIUtility.PingObject(other.gameObject);
-                Debug.Log($"Selecting mirror bone at {path}");
+                Debug.Log($"RagdollBuilder: Selecting mirror bone at {path}");
             }
             else
             {
-                Debug.Log($"Could not find mirror bone at {path}");
+                Debug.Log($"RagdollBuilder: Could not find mirror bone at {path}");
             }
         }
         
