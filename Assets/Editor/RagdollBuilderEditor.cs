@@ -129,6 +129,11 @@ public class RagdollBuilderEditor : Editor
             Selection.objects = builder.GetComponentsInChildren<ConfigurableJoint>();
         }
         
+        if (GUILayout.Button("Select All Rigidbodies"))
+        {
+            Selection.objects = builder.GetComponentsInChildren<Rigidbody>();
+        }
+        
         if (GUILayout.Button(head.isKinematic ? "Free head" : "Lock head"))
         {
             Undo.RecordObject(head, $"Set head kinematic {!head.isKinematic}");
