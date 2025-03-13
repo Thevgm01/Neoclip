@@ -69,13 +69,17 @@ public class RagdollBuilderEditor : Editor
                     Collider collider = rigidbody.GetComponent<Collider>();
                     
                     // Set the mass
-                    Undo.RecordObject(rigidbody, $"Set mass by density");
+                    Undo.RecordObject(rigidbody, $"Set rigidbody values");
                     // rigidbody.SetDensity() does NOTHING!!!
                     rigidbody.mass = Utils.CalculateVolume(collider) * 
                                      Utils.Density.WATER * 
                                      builder.initialMassMult;
-                    totalMass += rigidbody.mass;
+                    rigidbody.interpolation = RigidbodyInterpolation.Interpolate;
+                    rigidbody.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
 
+                    // Keep track of the total mass
+                    totalMass += rigidbody.mass;
+                    
                     // Add a ConfigurableJoint
                     Rigidbody parentRigidbody = rigidbody.transform.parent.GetComponentInParent<Rigidbody>();
                     if (parentRigidbody)
