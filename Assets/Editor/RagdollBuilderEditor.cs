@@ -7,6 +7,8 @@ using UnityEngine.UIElements;
 [CustomEditor(typeof(RagdollBuilder))]
 public class RagdollBuilderEditor : Editor
 {
+    private const string DRAG_MESH_TAG = "DragMesh";
+    
     private RagdollBuilder builder;
     private Rigidbody head;
     
@@ -41,23 +43,39 @@ public class RagdollBuilderEditor : Editor
                     Undo.DestroyObjectImmediate(oldJoint);
                 }
 
-                Debug.Log($"RagdollBuilder: Destroyed {oldJoints.Length} Joints");
+                Debug.Log($"RagdollBuilder: Destroyed {oldJoints.Length} Joints.");
+            }
+
+            GameObject[] oldDragMeshes = GameObject.FindGameObjectsWithTag(DRAG_MESH_TAG);
+            if (oldDragMeshes.Length > 0)
+            {
+                foreach (GameObject oldDragMesh in oldDragMeshes)
+                {
+                    Undo.DestroyObjectImmediate(oldDragMesh);
+                }
+                
+                Debug.Log($"RagdollBuilder: Destroyed {oldDragMeshes.Length} drag meshes.");
             }
             
             Rigidbody[] rigidbodies = builder.GetComponentsInChildren<Rigidbody>();
             if (rigidbodies.Length > 0)
             {
                 float totalMass = 0.0f;
+                int dragMeshesCreated = 0;
 
                 foreach (Rigidbody rigidbody in rigidbodies)
                 {
+                    Collider collider = rigidbody.GetComponent<Collider>();
+                    
+                    // Set the mass
                     Undo.RecordObject(rigidbody, $"Set mass by density");
                     // rigidbody.SetDensity() does NOTHING!!!
-                    rigidbody.mass = Utils.CalculateVolume(rigidbody.GetComponent<Collider>()) * 
+                    rigidbody.mass = Utils.CalculateVolume(collider) * 
                                      Utils.Density.WATER * 
                                      builder.initialMassMult;
                     totalMass += rigidbody.mass;
 
+                    // Add a ConfigurableJoint
                     Rigidbody parentRigidbody = rigidbody.transform.parent.GetComponentInParent<Rigidbody>();
                     if (parentRigidbody)
                     {
@@ -78,12 +96,23 @@ public class RagdollBuilderEditor : Editor
                         newJoint.angularXDrive = defaultJointDrive;
                         newJoint.angularYZDrive = defaultJointDrive;
                     }
+                    
+                    // Add a drag mesh
+                    GameObject dragMesh = Utils.ColliderToMesh(collider);
+                    if (dragMesh)
+                    {
+                        dragMesh.transform.SetParent(rigidbody.transform, false);
+                        dragMesh.tag = DRAG_MESH_TAG;
+                        dragMeshesCreated++;
+                    }
                 }
                 
                 Debug.Log($"RagdollBuilder: Set the mass of {rigidbodies.Length} rigidbodies. Total mass is {totalMass} kg.");
 
                 // -1 because the root rigidbody has no parent, so it won't get a joint
                 Debug.Log($"RagdollBuilder: Created {rigidbodies.Length - 1} ConfigurableJoints.");
+                
+                Debug.Log($"RagdollBuilder: Created {dragMeshesCreated} drag meshes.");
             }
         }
 
