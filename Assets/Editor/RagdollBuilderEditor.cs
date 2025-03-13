@@ -139,15 +139,21 @@ public class RagdollBuilderEditor : Editor
             }
         }
 
-        if (GUILayout.Button("Select All Joints"))
-        {
-            Selection.objects = builder.GetComponentsInChildren<ConfigurableJoint>();
-        }
+        EditorGUILayout.Space();
         
-        if (GUILayout.Button("Select All Rigidbodies"))
-        {
-            Selection.objects = builder.GetComponentsInChildren<Rigidbody>();
-        }
+        EditorGUILayout.LabelField("Select all...");
+        EditorGUILayout.BeginHorizontal();
+            if (GUILayout.Button("Joints"))
+            {
+                Selection.objects = builder.GetComponentsInChildren<ConfigurableJoint>();
+            }
+            if (GUILayout.Button("Rigidbodies"))
+            {
+                Selection.objects = builder.GetComponentsInChildren<Rigidbody>();
+            }
+        EditorGUILayout.EndHorizontal();
+        
+        EditorGUILayout.Space();
         
         if (GUILayout.Button(head.isKinematic ? "Free head" : "Lock head"))
         {
