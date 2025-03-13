@@ -7,8 +7,6 @@ using UnityEngine.UIElements;
 [CustomEditor(typeof(RagdollBuilder))]
 public class RagdollBuilderEditor : Editor
 {
-    private const string DRAG_MESH_TAG = "DragMesh";
-    
     private RagdollBuilder builder;
     private Rigidbody head;
     
@@ -33,6 +31,8 @@ public class RagdollBuilderEditor : Editor
 
         DrawDefaultInspector();
 
+        builder.dragMeshLayer = EditorGUILayout.LayerField("Drag Mesh Layer", builder.dragMeshLayer);
+        
         if (GUILayout.Button("Create All Joints"))
         {
             Joint[] oldJoints = builder.GetComponentsInChildren<Joint>();
@@ -46,7 +46,8 @@ public class RagdollBuilderEditor : Editor
                 Debug.Log($"RagdollBuilder: Destroyed {oldJoints.Length} Joints.");
             }
 
-            GameObject[] oldDragMeshes = GameObject.FindGameObjectsWithTag(DRAG_MESH_TAG);
+            string layerName = LayerMask.LayerToName(builder.dragMeshLayer);
+            GameObject[] oldDragMeshes = GameObject.FindGameObjectsWithTag(layerName);
             if (oldDragMeshes.Length > 0)
             {
                 foreach (GameObject oldDragMesh in oldDragMeshes)
@@ -98,12 +99,14 @@ public class RagdollBuilderEditor : Editor
                     }
                     
                     // Add a drag mesh
+                    // TODO caching
                     Mesh dragMesh = Utils.ColliderToMesh(collider);
                     if (dragMesh)
                     {
                         GameObject dragObject = new GameObject();
-                        dragObject.name = $"{DRAG_MESH_TAG}_{dragMesh.name}";
-                        dragObject.tag = DRAG_MESH_TAG;
+                        dragObject.name = $"{layerName}_{dragMesh.name}";
+                        dragObject.tag = layerName;
+                        dragObject.layer = builder.dragMeshLayer;
                         dragObject.transform.SetParent(rigidbody.transform, false);
                         MeshFilter meshFilter = dragObject.AddComponent<MeshFilter>();
                         meshFilter.sharedMesh = dragMesh;
