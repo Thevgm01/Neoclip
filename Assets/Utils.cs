@@ -159,4 +159,33 @@ public class Utils
                 
         return newMesh;
     }
+    
+    public static int HashCollider(Collider collider)
+    {
+	    Hash128 hash = new Hash128();
+	    
+	    switch (collider)
+	    {
+            case BoxCollider boxCollider:
+	            hash.Append(boxCollider.center.x);
+	            hash.Append(boxCollider.center.y);
+	            hash.Append(boxCollider.center.z);
+	            break;
+            case CapsuleCollider capsuleCollider:
+	            hash.Append(capsuleCollider.center.x);
+	            hash.Append(capsuleCollider.center.y);
+	            hash.Append(capsuleCollider.center.z);
+	            hash.Append(capsuleCollider.radius);
+	            hash.Append(capsuleCollider.height);
+	            break;
+            case SphereCollider sphereCollider:
+	            hash.Append(sphereCollider.center.x);
+	            hash.Append(sphereCollider.center.y);
+	            hash.Append(sphereCollider.center.z);
+	            hash.Append(sphereCollider.radius);
+	            break;
+	    }
+
+	    return hash.GetHashCode();
+    }
 }

@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -9,7 +10,7 @@ public class RagdollBuilderEditor : Editor
 {
     private RagdollBuilder builder;
     private Rigidbody head;
-
+    
     private void TryDestroyObjectsImmediate(Object[] objs)
     {
         foreach (Object obj in objs)
@@ -44,6 +45,7 @@ public class RagdollBuilderEditor : Editor
                 }
             }
         }
+        
 
         DrawDefaultInspector();
 
@@ -59,13 +61,19 @@ public class RagdollBuilderEditor : Editor
             {
                 float totalMass = 0.0f;
                 int dragMeshesCreated = 0;
+                Dictionary<int, Mesh> hashedMeshes = new Dictionary<int, Mesh>();
 
                 foreach (Rigidbody rigidbody in rigidbodies)
                 {
                     GameObject gameObject = rigidbody.gameObject;
                     gameObject.layer = builder.dragMeshLayer;
                     
+                    TryDestroyObjectImmediate(gameObject.GetComponent<Joint>());
+                    TryDestroyObjectImmediate(gameObject.GetComponent<MeshFilter>());
+                    TryDestroyObjectImmediate(gameObject.GetComponent<MeshRenderer>());
+                    
                     Collider collider = rigidbody.GetComponent<Collider>();
+                    int colliderHash = Utils.HashCollider(collider);
                     
                     // Set the mass
                     Undo.RecordObject(rigidbody, $"Set rigidbody values");
@@ -83,7 +91,6 @@ public class RagdollBuilderEditor : Editor
                     Rigidbody parentRigidbody = rigidbody.transform.parent.GetComponentInParent<Rigidbody>();
                     if (parentRigidbody)
                     {
-                        TryDestroyObjectImmediate(gameObject.GetComponent<Joint>());
                         ConfigurableJoint newJoint = Undo.AddComponent<ConfigurableJoint>(gameObject);
                         
                         newJoint.connectedBody = parentRigidbody;
@@ -102,18 +109,22 @@ public class RagdollBuilderEditor : Editor
                         newJoint.angularYZDrive = defaultJointDrive;
                     }
                     
-                    // Add a drag mesh
-                    // TODO caching
-                    Mesh dragMesh = Utils.ColliderToMesh(collider);
+                    
+                    if (hashedMeshes.TryGetValue(colliderHash, out Mesh dragMesh))
+                    {
+                        Debug.Log($"RagdollBuilder: Reusing mesh for {gameObject.name}");
+                    }
+                    else
+                    {
+                        dragMesh = Utils.ColliderToMesh(collider);
+                    }
                     if (dragMesh)
                     {
-                        TryDestroyObjectImmediate(gameObject.GetComponent<MeshFilter>());
-                        TryDestroyObjectImmediate(gameObject.GetComponent<MeshRenderer>());
-
                         MeshFilter meshFilter = Undo.AddComponent<MeshFilter>(gameObject);
                         MeshRenderer meshRenderer = Undo.AddComponent<MeshRenderer>(gameObject);
                         
                         meshFilter.sharedMesh = dragMesh;
+                        hashedMeshes[colliderHash] = dragMesh;
                         
                         dragMeshesCreated++;
                     }
