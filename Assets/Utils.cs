@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 public class Utils
@@ -6,6 +7,14 @@ public class Utils
     {
         public const float WATER = 1000.0f;
     }
+ 
+    //https://discussions.unity.com/t/getting-a-primitive-mesh-without-creating-a-new-gameobject/78809/6
+    private static Mesh _unityCapsuleMesh = null;
+    private static Mesh _unityCubeMesh = null;
+    private static Mesh _unityCylinderMesh = null;
+    private static Mesh _unityPlaneMesh = null;
+    private static Mesh _unitySphereMesh = null;
+    private static Mesh _unityQuadMesh = null;
     
     public static float ExpT(float speed) => 1.0f - Mathf.Exp(-speed * Time.deltaTime);
 
@@ -25,17 +34,91 @@ public class Utils
         return 0.0f;
     }
 
-    public static GameObject ColliderToMesh(Collider collider)
+    //https://discussions.unity.com/t/getting-a-primitive-mesh-without-creating-a-new-gameobject/78809/6
+    private static string GetPrimitiveMeshPath(PrimitiveType primitiveType)
     {
+	    switch (primitiveType)
+	    {
+		    case PrimitiveType.Sphere:
+			    return "New-Sphere.fbx";
+		    case PrimitiveType.Capsule:
+			    return "New-Capsule.fbx";
+		    case PrimitiveType.Cylinder:
+			    return "New-Cylinder.fbx";
+		    case PrimitiveType.Cube:
+			    return "Cube.fbx";
+		    case PrimitiveType.Plane:
+			    return "New-Plane.fbx";
+		    case PrimitiveType.Quad:
+			    return "Quad.fbx";
+		    default:
+			    throw new ArgumentOutOfRangeException(nameof(primitiveType), primitiveType, null);
+	    }
+    }
+    
+    //https://discussions.unity.com/t/getting-a-primitive-mesh-without-creating-a-new-gameobject/78809/6
+	private static Mesh GetCachedPrimitiveMesh(ref Mesh primMesh, PrimitiveType primitiveType)
+	{
+		if (primMesh == null)
+		{
+			Debug.Log("Utils.GetCachedPrimitiveMesh: Getting Unity Primitive Mesh: " + primitiveType);
+			primMesh = Resources.GetBuiltinResource<Mesh>(GetPrimitiveMeshPath(primitiveType));
+
+			if (primMesh == null)
+			{
+				Debug.LogError("Utils.GetCachedPrimitiveMesh: Couldn't load Unity Primitive Mesh: " + primitiveType);
+			}
+		}
+
+		return primMesh;
+	}
+
+	//https://discussions.unity.com/t/getting-a-primitive-mesh-without-creating-a-new-gameobject/78809/6
+	public static Mesh GetUnityPrimitiveMesh(PrimitiveType primitiveType)
+	{
+		switch (primitiveType)
+		{
+			case PrimitiveType.Sphere:
+				return GetCachedPrimitiveMesh(ref _unitySphereMesh, primitiveType);
+			case PrimitiveType.Capsule:
+				return GetCachedPrimitiveMesh(ref _unityCapsuleMesh, primitiveType);
+			case PrimitiveType.Cylinder:
+				return GetCachedPrimitiveMesh(ref _unityCylinderMesh, primitiveType);
+			case PrimitiveType.Cube:
+				return GetCachedPrimitiveMesh(ref _unityCubeMesh, primitiveType);
+			case PrimitiveType.Plane:
+				return GetCachedPrimitiveMesh(ref _unityPlaneMesh, primitiveType);
+			case PrimitiveType.Quad:
+				return GetCachedPrimitiveMesh(ref _unityQuadMesh, primitiveType);
+			default:
+				throw new ArgumentOutOfRangeException(nameof(primitiveType), primitiveType, null);
+		}
+	}
+
+	public static PrimitiveType ColliderToPrimitiveType(Collider collider)
+	{
+		switch (collider)
+		{
+			case SphereCollider:
+				return PrimitiveType.Sphere;
+			case CapsuleCollider:
+				return PrimitiveType.Capsule;
+			case BoxCollider:
+				return PrimitiveType.Cube;
+			default:
+				throw new ArgumentOutOfRangeException(nameof(collider), collider, null);
+		}
+	}
+
+    public static Mesh ColliderToMesh(Collider collider)
+    {
+        Mesh oldMesh = GetUnityPrimitiveMesh(ColliderToPrimitiveType(collider));
+        Mesh newMesh = new Mesh();
+        Vector3[] vertices = new Vector3[oldMesh.vertices.Length];
+
         switch (collider)
         {
             case BoxCollider boxCollider:
-                GameObject boxGO = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                MeshFilter meshFilter = boxGO.GetComponent<MeshFilter>();
-                Mesh oldMesh = meshFilter.sharedMesh;
-                Mesh newMesh = new Mesh();
-                
-                Vector3[] vertices = new Vector3[oldMesh.vertices.Length];
                 for (int i = 0; i < vertices.Length; i++)
                 {
                     vertices[i] = new Vector3(
@@ -43,13 +126,7 @@ public class Utils
                         oldMesh.vertices[i].y * boxCollider.size.y + boxCollider.center.y,
                         oldMesh.vertices[i].z * boxCollider.size.z + boxCollider.center.z);
                 }
-                
-                newMesh.vertices = vertices;
-                newMesh.triangles = oldMesh.triangles;
-                newMesh.RecalculateBounds();
-                newMesh.RecalculateNormals();
-                meshFilter.sharedMesh = newMesh;
-                return boxGO;
+                break;
             case CapsuleCollider capsuleCollider:
                 //GameObject capsuleGO = GameObject.CreatePrimitive(PrimitiveType.Capsule);
                 break;
@@ -58,7 +135,12 @@ public class Utils
                 break;
         }
 
-        Debug.LogWarning($"Utils.ColliderToMesh: Unknown collider {collider}");
-        return null;
+        newMesh.name = oldMesh.name;
+        newMesh.vertices = vertices;
+        newMesh.triangles = oldMesh.triangles;
+        newMesh.RecalculateBounds();
+        newMesh.RecalculateNormals();
+                
+        return newMesh;
     }
 }

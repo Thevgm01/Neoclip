@@ -98,11 +98,16 @@ public class RagdollBuilderEditor : Editor
                     }
                     
                     // Add a drag mesh
-                    GameObject dragMesh = Utils.ColliderToMesh(collider);
+                    Mesh dragMesh = Utils.ColliderToMesh(collider);
                     if (dragMesh)
                     {
-                        dragMesh.transform.SetParent(rigidbody.transform, false);
-                        dragMesh.tag = DRAG_MESH_TAG;
+                        GameObject dragObject = new GameObject();
+                        dragObject.name = $"{DRAG_MESH_TAG}_{dragMesh.name}";
+                        dragObject.tag = DRAG_MESH_TAG;
+                        dragObject.transform.SetParent(rigidbody.transform, false);
+                        MeshFilter meshFilter = dragObject.AddComponent<MeshFilter>();
+                        meshFilter.sharedMesh = dragMesh;
+                        MeshRenderer meshRenderer = dragObject.AddComponent<MeshRenderer>();
                         dragMeshesCreated++;
                     }
                 }
