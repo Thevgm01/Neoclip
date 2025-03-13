@@ -6,7 +6,7 @@ public class CameraFollow : MonoBehaviour
 {
     public enum LookMode { UP, FREE }
     
-    [SerializeField] private Transform followTarget = null;
+    [SerializeField] private RagdollAverages ragdollAverages = null;
     [SerializeField] private float followSpeed = 5.0f;
     [SerializeField] private float followDistance = 3.0f;
     [Space]
@@ -53,7 +53,7 @@ public class CameraFollow : MonoBehaviour
                 break;
         }
 
-        desiredPosition = followTarget.position;
+        desiredPosition = ragdollAverages.AveragePosition;
         currentPosition = Vector3.Lerp(currentPosition, desiredPosition, Utils.ExpT(followSpeed));
 
         currentRotation = Quaternion.Slerp(currentRotation, desiredRotation, Utils.ExpT(rotationSpeed));

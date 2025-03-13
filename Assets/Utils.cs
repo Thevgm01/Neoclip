@@ -15,6 +15,8 @@ public class Utils
     private static Mesh _unityPlaneMesh = null;
     private static Mesh _unitySphereMesh = null;
     private static Mesh _unityQuadMesh = null;
+
+    public static int FixedUpdateCount => Mathf.RoundToInt(Time.fixedTime / Time.fixedDeltaTime);
     
     public static float ExpT(float speed) => 1.0f - Mathf.Exp(-speed * Time.deltaTime);
 

@@ -1131,6 +1131,18 @@ MonoBehaviour:
   autoselectMirrorBone: 1
   initialMassMult: 0.55
   dragMeshLayer: 6
+--- !u!114 &59713680
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 59713676}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 65f544e3a735e9c45a9782594a5bad24, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!64 &61922382
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -24628,7 +24640,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 791b516b6e73ec447b18e280851c65c1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  followTarget: {fileID: 709733587}
+  ragdollAverages: {fileID: 59713680}
   followSpeed: 10
   followDistance: 3
   lookMode: 0
@@ -29263,6 +29275,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 2067653716b0db34abd2c2ca5aca1f8a, type: 3}
       insertIndex: -1
       addedObject: {fileID: 59713678}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 2067653716b0db34abd2c2ca5aca1f8a, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 59713680}
     - targetCorrespondingSourceObject: {fileID: 729690222700195083, guid: 2067653716b0db34abd2c2ca5aca1f8a, type: 3}
       insertIndex: -1
       addedObject: {fileID: 709733586}
