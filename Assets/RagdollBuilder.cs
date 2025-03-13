@@ -36,7 +36,7 @@ public class RagdollBuilder : MonoBehaviour
     {
         if (autoselectMirrorBone &&
             Selection.count == 1 &&
-            Selection.activeObject &&
+            Selection.activeGameObject &&
             Selection.activeObject != lastSelectedObject &&
             Selection.activeGameObject.GetComponentInParent<RagdollBuilder>() == this)
         {
