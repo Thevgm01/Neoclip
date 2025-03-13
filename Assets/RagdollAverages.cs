@@ -9,8 +9,9 @@ public class RagdollAverages : MonoBehaviour
 
     private Vector3 averagePosition = Vector3.zero;
     private Vector3 averageVelocity = Vector3.zero;
-    
+
     private Rigidbody[] rigidbodies;
+    private Transform[] transforms;
     private float totalMass = 0;
     
     public Vector3 AveragePosition {
@@ -19,14 +20,16 @@ public class RagdollAverages : MonoBehaviour
             if (lastFrame < Time.frameCount)
             {
                 averagePosition = Vector3.zero;
-                foreach (Rigidbody rb in rigidbodies)
+                for (int i = 0; i < rigidbodies.Length; i++)
                 {
-                    averagePosition += rb.position * rb.mass;
+                    // rigidbody.position is NOT interpolated, it needs to be rigidbody.TRANSFORM.position
+                    averagePosition += transforms[i].position * rigidbodies[i].mass;
                 }
+
                 averagePosition /= totalMass;
                 lastFrame = Time.frameCount;
             }
-            Debug.Log(averagePosition);
+            
             return averagePosition;
         }
     }
@@ -37,13 +40,14 @@ public class RagdollAverages : MonoBehaviour
             if (lastPhysicsFrame < Utils.FixedUpdateCount)
             {
                 averageVelocity = Vector3.zero;
-                foreach (Rigidbody rb in rigidbodies)
+                for (int i = 0; i < rigidbodies.Length; i++)
                 {
-                    averageVelocity += rb.linearVelocity;
+                    averageVelocity += rigidbodies[i].linearVelocity;
                 }
                 averageVelocity /= rigidbodies.Length;
                 lastPhysicsFrame = Utils.FixedUpdateCount;
             }
+            
             return averagePosition;
         }
     }
@@ -51,10 +55,12 @@ public class RagdollAverages : MonoBehaviour
     private void Awake()
     {
         rigidbodies = GetComponentsInChildren<Rigidbody>();
-
-        foreach (Rigidbody rb in rigidbodies)
+        transforms = new Transform[rigidbodies.Length];
+        
+        for (int i = 0; i < rigidbodies.Length; i++)
         {
-            totalMass += rb.mass;
+            transforms[i] = rigidbodies[i].transform;
+            totalMass += rigidbodies[i].mass;
         }
     }
 }
