@@ -7,12 +7,12 @@ public class RagdollAverages : MonoBehaviour
     private int lastFrame = 0;
     private int lastPhysicsFrame = 0;
 
+    public float TotalMass { get; private set; }
     private Vector3 averagePosition = Vector3.zero;
     private Vector3 averageVelocity = Vector3.zero;
 
     private Rigidbody[] rigidbodies;
     private Transform[] transforms;
-    private float totalMass = 0;
     
     public Vector3 AveragePosition {
         get
@@ -26,7 +26,7 @@ public class RagdollAverages : MonoBehaviour
                     averagePosition += transforms[i].position * rigidbodies[i].mass;
                 }
 
-                averagePosition /= totalMass;
+                averagePosition /= TotalMass;
                 lastFrame = Time.frameCount;
             }
             
@@ -60,7 +60,7 @@ public class RagdollAverages : MonoBehaviour
         for (int i = 0; i < rigidbodies.Length; i++)
         {
             transforms[i] = rigidbodies[i].transform;
-            totalMass += rigidbodies[i].mass;
+            TotalMass += rigidbodies[i].mass;
         }
     }
 }
