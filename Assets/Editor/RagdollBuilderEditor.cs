@@ -9,6 +9,22 @@ public class RagdollBuilderEditor : Editor
 {
     private RagdollBuilder builder;
     private Rigidbody head;
+
+    private void TryDestroyObjectsImmediate(Object[] objs)
+    {
+        foreach (Object obj in objs)
+        {
+            TryDestroyObjectImmediate(obj);
+        }
+    }
+    
+    private void TryDestroyObjectImmediate(Object obj)
+    {
+        if (obj != null)
+        {
+            Undo.DestroyObjectImmediate(obj);
+        }
+    }
     
     public override void OnInspectorGUI()
     {
@@ -33,30 +49,10 @@ public class RagdollBuilderEditor : Editor
 
         builder.dragMeshLayer = EditorGUILayout.LayerField("Drag Mesh Layer", builder.dragMeshLayer);
         
-        if (GUILayout.Button("Create All Joints"))
+        if (GUILayout.Button("Build Ragdoll"))
         {
-            Joint[] oldJoints = builder.GetComponentsInChildren<Joint>();
-            if (oldJoints.Length > 0)
-            {
-                foreach (Joint oldJoint in oldJoints)
-                {
-                    Undo.DestroyObjectImmediate(oldJoint);
-                }
-
-                Debug.Log($"RagdollBuilder: Destroyed {oldJoints.Length} Joints.");
-            }
-
-            string layerName = LayerMask.LayerToName(builder.dragMeshLayer);
-            GameObject[] oldDragMeshes = GameObject.FindGameObjectsWithTag(layerName);
-            if (oldDragMeshes.Length > 0)
-            {
-                foreach (GameObject oldDragMesh in oldDragMeshes)
-                {
-                    Undo.DestroyObjectImmediate(oldDragMesh);
-                }
-                
-                Debug.Log($"RagdollBuilder: Destroyed {oldDragMeshes.Length} drag meshes.");
-            }
+            // Delete legacy objects
+            TryDestroyObjectsImmediate(GameObject.FindGameObjectsWithTag("DragMesh"));
             
             Rigidbody[] rigidbodies = builder.GetComponentsInChildren<Rigidbody>();
             if (rigidbodies.Length > 0)
@@ -66,6 +62,9 @@ public class RagdollBuilderEditor : Editor
 
                 foreach (Rigidbody rigidbody in rigidbodies)
                 {
+                    GameObject gameObject = rigidbody.gameObject;
+                    gameObject.layer = builder.dragMeshLayer;
+                    
                     Collider collider = rigidbody.GetComponent<Collider>();
                     
                     // Set the mass
@@ -84,7 +83,8 @@ public class RagdollBuilderEditor : Editor
                     Rigidbody parentRigidbody = rigidbody.transform.parent.GetComponentInParent<Rigidbody>();
                     if (parentRigidbody)
                     {
-                        ConfigurableJoint newJoint = Undo.AddComponent<ConfigurableJoint>(rigidbody.gameObject);
+                        TryDestroyObjectImmediate(gameObject.GetComponent<Joint>());
+                        ConfigurableJoint newJoint = Undo.AddComponent<ConfigurableJoint>(gameObject);
                         
                         newJoint.connectedBody = parentRigidbody;
                         newJoint.enablePreprocessing = false;
@@ -107,14 +107,14 @@ public class RagdollBuilderEditor : Editor
                     Mesh dragMesh = Utils.ColliderToMesh(collider);
                     if (dragMesh)
                     {
-                        GameObject dragObject = new GameObject();
-                        dragObject.name = $"{layerName}_{dragMesh.name}";
-                        dragObject.tag = layerName;
-                        dragObject.layer = builder.dragMeshLayer;
-                        dragObject.transform.SetParent(rigidbody.transform, false);
-                        MeshFilter meshFilter = dragObject.AddComponent<MeshFilter>();
+                        TryDestroyObjectImmediate(gameObject.GetComponent<MeshFilter>());
+                        TryDestroyObjectImmediate(gameObject.GetComponent<MeshRenderer>());
+
+                        MeshFilter meshFilter = Undo.AddComponent<MeshFilter>(gameObject);
+                        MeshRenderer meshRenderer = Undo.AddComponent<MeshRenderer>(gameObject);
+                        
                         meshFilter.sharedMesh = dragMesh;
-                        MeshRenderer meshRenderer = dragObject.AddComponent<MeshRenderer>();
+                        
                         dragMeshesCreated++;
                     }
                 }
