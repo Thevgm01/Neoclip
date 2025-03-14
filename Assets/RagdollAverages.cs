@@ -4,6 +4,12 @@ using UnityEngine;
 
 public class RagdollAverages : MonoBehaviour
 {
+    private Rigidbody[] rigidbodies;
+    private Transform[] transforms;
+
+    public Rigidbody[] Rigidbodies => (Rigidbody[])rigidbodies.Clone();
+    public Transform[] Transforms => (Transform[])transforms.Clone();
+    
     public float TotalMass { get; private set; }
     
     private Vector3 averagePositionInterpolated = Vector3.zero;
@@ -13,9 +19,6 @@ public class RagdollAverages : MonoBehaviour
     private int lastInterpolatedFrame = 0;
     private int lastPositionFrame = 0;
     private int lastVelocityFrame = 0;
-    
-    private Rigidbody[] rigidbodies;
-    private Transform[] transforms;
     
     public Vector3 AveragePositionInterpolated {
         get
@@ -73,16 +76,32 @@ public class RagdollAverages : MonoBehaviour
             return averageVelocity;
         }
     }
-    
+
+    private void Init()
+    {
+        if (rigidbodies == null)
+        {
+            rigidbodies = GetComponentsInChildren<Rigidbody>();
+            transforms = new Transform[rigidbodies.Length];
+        
+            for (int i = 0; i < rigidbodies.Length; i++)
+            {
+                transforms[i] = rigidbodies[i].transform;
+                TotalMass += rigidbodies[i].mass;
+            }
+        }
+    }
+
     private void Awake()
     {
-        rigidbodies = GetComponentsInChildren<Rigidbody>();
-        transforms = new Transform[rigidbodies.Length];
-        
+        Init();
+    }
+
+    public void AddForceToAll(Vector3 force, ForceMode forceMode = ForceMode.Force)
+    {
         for (int i = 0; i < rigidbodies.Length; i++)
         {
-            transforms[i] = rigidbodies[i].transform;
-            TotalMass += rigidbodies[i].mass;
+            rigidbodies[i].AddForce(force, forceMode);
         }
     }
 }
