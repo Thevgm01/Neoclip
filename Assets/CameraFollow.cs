@@ -1,3 +1,4 @@
+using System;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -34,8 +35,8 @@ public class CameraFollow : MonoBehaviour
         currentRotation = transform.rotation;
         desiredRotation = currentRotation;
     }
-    
-    private void LateUpdate()
+
+    private void Update()
     {
         Vector2 movement = mouseSensitivity * Mouse.current.delta.ReadValue() * Time.smoothDeltaTime;
 
@@ -52,7 +53,10 @@ public class CameraFollow : MonoBehaviour
                 desiredRotation *= Quaternion.Euler(-movement.y, movement.x, 0);
                 break;
         }
+    }
 
+    private void LateUpdate()
+    {
         desiredPosition = ragdollAverages.AveragePositionInterpolated;
         currentPosition = Vector3.Lerp(currentPosition, desiredPosition, Utils.ExpT(followSpeed));
 
