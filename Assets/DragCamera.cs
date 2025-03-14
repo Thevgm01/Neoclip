@@ -9,17 +9,20 @@ public class DragCamera : MonoBehaviour
     private void Awake()
     {
         camera = GetComponent<Camera>();
+        camera.enabled = false;
     }
     
-    private void Update()
+    private void FixedUpdate()
     {
         if (ragdollAverages.AverageVelocity.sqrMagnitude >= minSpeed * minSpeed)
         {
             Quaternion rotation = Quaternion.LookRotation(-ragdollAverages.AverageVelocity.normalized);
-        
+            
             transform.SetPositionAndRotation(
-                ragdollAverages.AveragePositionInterpolated + rotation * new Vector3(0, 0, -camera.orthographicSize), 
+                ragdollAverages.AveragePosition + rotation * new Vector3(0, 0, -camera.orthographicSize), 
                 rotation);
+            
+            camera.Render();
         }
     }
 }
