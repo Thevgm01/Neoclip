@@ -157,7 +157,7 @@ public class Utils
 	        colors32[i] = vertexColor;
         }
 		
-        newMesh.name = oldMesh.name;
+        newMesh.name = "Custom" + oldMesh.name;
         newMesh.vertices = vertices;
         newMesh.colors32 = colors32;
         newMesh.triangles = oldMesh.triangles;
