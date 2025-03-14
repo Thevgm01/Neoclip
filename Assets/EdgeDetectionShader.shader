@@ -47,6 +47,17 @@ Shader "Hidden/Edge Detection"
             {
                 return Linear01Depth(SampleSceneDepth(uv), _ZBufferParams);
             }
+
+            float3 SampleWorldPos(float2 uv)
+            {
+                return ComputeWorldSpacePosition(uv, SampleSceneDepth(uv), UNITY_MATRIX_I_VP);
+            }
+            
+            float SampleSphericalDepth(float2 uv)
+            {
+                // https://docs.unity3d.com/Packages/com.unity.render-pipelines.universal@11.0/manual/writing-shaders-urp-reconstruct-world-position.html
+                return min(distance(_WorldSpaceCameraPos, SampleWorldPos(uv)) * _ZBufferParams.w, 0.999999);
+            }
             
             // Helper function to sample scene normals remapped from [-1, 1] range to [0, 1].
             float3 SampleSceneNormalsRemapped(float2 uv)
@@ -98,20 +109,24 @@ Shader "Hidden/Edge Detection"
                 float linear_depth_samples[5];
                 float3 color_samples[5];
                 float luminance_samples[5];
+
+                float spherical_distance = SampleSphericalDepth(uvs[CENTER]);
+
+                float closest_vertical_normal = 0;
+                float most_vertical_normal = 0;
                 
                 for (int i = 0; i < 5; i++) {
-                    linear_depth_samples[i] = SampleLinearDepth(uvs[i]);
+                    linear_depth_samples[i] = SampleSphericalDepth(uvs[i]);
                     normal_samples[i] = SampleSceneNormalsRemapped(uvs[i]);
                     color_samples[i] = SampleSceneColor(uvs[i]);
-                    luminance_samples[i] = color_samples[i] * float3(0.3, 0.59, 0.11);;
-                }
+                    luminance_samples[i] = color_samples[i] * float3(0.3, 0.59, 0.11);
 
-                // https://docs.unity3d.com/Packages/com.unity.render-pipelines.universal@11.0/manual/writing-shaders-urp-reconstruct-world-position.html
-                #if UNITY_REVERSED_Z
-                    float3 world_pos = ComputeWorldSpacePosition(uv, SampleSceneDepth(uv), UNITY_MATRIX_I_VP);
-                #else
-                    float3 world_pos = ComputeWorldSpacePosition(uv, lerp(UNITY_NEAR_CLIP_VALUE, 1, SampleSceneDepth(uv)), UNITY_MATRIX_I_VP);
-                #endif
+                    if (linear_depth_samples[i] > closest_vertical_normal)
+                    {
+                        closest_vertical_normal = linear_depth_samples[i];
+                        most_vertical_normal = max(most_vertical_normal, normal_samples[i].y);
+                    }
+                }
                 
                 // Apply edge detection kernel on the samples to compute edges.
                 float depth_cross = RobertsCross(linear_depth_samples);
@@ -120,36 +135,45 @@ Shader "Hidden/Edge Detection"
                 float luminance_cross = RobertsCross(luminance_samples);
                 
                 // Threshold the edges (discontinuity must be above certain threshold to be counted as an edge). The sensitivities are hardcoded here.
-                const float depth_threshold = 1.0f / 50.0f;
-                float thresholded_depth = depth_cross > depth_threshold ? 1 : 0;
-                
-                const float normal_threshold = 1 / 3.0f;
-                float thresholded_normal = normal_cross > normal_threshold ? 1 : 0;
-                
-                const float color_threshold = 1 / 20.0f;
-                float thresholded_color = color_cross > color_threshold ? 1 : 0;
 
                 float scanlinesEffect = pow(sin(uvs[CENTER].y * 50 + _Time.y * 2), 2) + 2;
                 //float scanlinesEffect = pow(sin(_Time.y * 2 + dot(world_pos, world_pos) * 0.001), 2) + 2;
-                
-                if (linear_depth_samples[CENTER] >= 1.0)
+
+                float3 one = float3(1.0, 1.0, 1.0);
+                if (linear_depth_samples[CENTER] >= 0.999)
                 {
-                    half3 one = half3(1.0, 1.0, 1.0);
                     return half4(one * color_cross * 10 * scanlinesEffect, 1.0);
                 }
                 else
                 {
-                    float edge = max(max(
-                        depth_cross * 100 * (depth_cross > 0.9 ? scanlinesEffect : 1),
-                        thresholded_normal * 0.15),
-                        max(color_cross - color_threshold, 0) * (0.3 - linear_depth_samples[CENTER] * linear_depth_samples[CENTER] * 5.0));
-                    edge = clamp(edge, 0.0, 1.0);
-                    float3 combined_edges = float3(edge, edge, edge);
+                    float3 weird_normal_diff = max(normal_samples[UPLEFT] - normal_samples[DOWNRIGHT], normal_samples[UPRIGHT] - normal_samples[DOWNLEFT]);
+                    //float3 a = depth_cross * 50 * weird_normal_diff;
 
-                    //float3 weird_normal_diff = max(normal_samples[UPLEFT] - normal_samples[DOWNRIGHT], normal_samples[UPRIGHT] - normal_samples[DOWNLEFT]);
-                    //combined_edges *= weird_normal_diff != float3(0, 0, 0) ? weird_normal_diff : float3(1, 1, 1);
+                    const float depth_threshold = 1.0f / 50.0f;
+                    const float normal_threshold = 1 / 3.0f;
+                    const float color_threshold = 1 / 20.0f;
+
+                    float3 depth_vec = one * depth_cross * 20;
+                    float3 normal_vec = one * normal_cross > normal_threshold ? 0.4 : 0;
+                    float3 color_vec = one * max(color_cross - color_threshold, 0) * max(0.3 - spherical_distance * 5.0, 0);
+
+                    float3 max_vec = max(max(depth_vec, normal_vec), color_vec);
+                    if (max_vec.x > 0.3 || max_vec.y > 0.3 || max_vec.z > 0.3)
+                    {
+                        float3 world_pos = SampleWorldPos(uvs[CENTER]) / 20;
+                        float hue = cos(world_pos.x + _Time.x) + sin(world_pos.z + _Time.x) + world_pos.y + _Time.x * 5;
+                        //max_vec = max_vec * HsvToRgb(float3(hue, 1.0, 1.0));
+                        max_vec += max(50.0 - frac(hue) * 100.0, 0.0);
+                        //max_vec *= HsvToRgb(float3(world_pos.y * world_pos.y + _Time.x, 1.0, 1.0));
+                        if (most_vertical_normal > 0.9)
+                        {
+                            max_vec *= HsvToRgb(float3(world_pos.y + _Time.x, 1.0, 1.0));
+                        }
+                    }
                     
-                    return half4(combined_edges, 1.0);
+                    //float3 edge = clamp(max_vec, 0.0, 1.0);
+                    
+                    return half4(max_vec, 1.0);
                 }
                 
                 /*
