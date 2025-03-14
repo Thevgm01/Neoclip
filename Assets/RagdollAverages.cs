@@ -79,7 +79,7 @@ public class RagdollAverages : MonoBehaviour
 
     private void Init()
     {
-        if (rigidbodies == null)
+        if (rigidbodies == null || rigidbodies.Length == 0)
         {
             rigidbodies = GetComponentsInChildren<Rigidbody>();
             transforms = new Transform[rigidbodies.Length];
