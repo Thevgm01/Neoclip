@@ -26,6 +26,18 @@ public class RagdollBuilderEditor : Editor
             Undo.DestroyObjectImmediate(obj);
         }
     }
+
+    private void SetElbowParameters(ConfigurableJoint joint)
+    {
+        SoftJointLimit jointLimit = new SoftJointLimit();
+        jointLimit.limit = 150.0f;
+
+        joint.angularXMotion = ConfigurableJointMotion.Limited;
+        joint.angularYMotion = ConfigurableJointMotion.Locked;
+        joint.angularZMotion = ConfigurableJointMotion.Locked;
+
+        joint.highAngularXLimit = jointLimit;
+    }
     
     public override void OnInspectorGUI()
     {
@@ -108,6 +120,21 @@ public class RagdollBuilderEditor : Editor
                         };
                         newJoint.angularXDrive = defaultJointDrive;
                         newJoint.angularYZDrive = defaultJointDrive;
+
+                        if (gameObject.name.Contains("LeftLeg") || gameObject.name.Contains("RightLeg"))
+                        {
+                            SetElbowParameters(newJoint);
+                        }
+                        else if (gameObject.name.Contains("LeftForeArm"))
+                        {
+                            newJoint.axis = Vector3.forward;
+                            SetElbowParameters(newJoint);
+                        }
+                        else if (gameObject.name.Contains("RightForeArm"))
+                        {
+                            newJoint.axis = Vector3.back;
+                            SetElbowParameters(newJoint);
+                        }
                     }
 
                     Mesh dragMesh = Utils.ColliderToMesh(collider, new Color32((byte)(i * 8), 0, 0, 255));
