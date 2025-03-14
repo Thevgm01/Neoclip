@@ -61,10 +61,11 @@ public class RagdollBuilderEditor : Editor
             {
                 float totalMass = 0.0f;
                 int dragMeshesCreated = 0;
-                Dictionary<int, Mesh> hashedMeshes = new Dictionary<int, Mesh>();
 
-                foreach (Rigidbody rigidbody in rigidbodies)
+                for (int i = 0; i < rigidbodies.Length; i++)
                 {
+                    Rigidbody rigidbody = rigidbodies[i];
+                    
                     GameObject gameObject = rigidbody.gameObject;
                     gameObject.layer = builder.dragMeshLayer;
                     
@@ -108,16 +109,8 @@ public class RagdollBuilderEditor : Editor
                         newJoint.angularXDrive = defaultJointDrive;
                         newJoint.angularYZDrive = defaultJointDrive;
                     }
-                    
-                    
-                    if (hashedMeshes.TryGetValue(colliderHash, out Mesh dragMesh))
-                    {
-                        Debug.Log($"RagdollBuilder: Reusing mesh for {gameObject.name}");
-                    }
-                    else
-                    {
-                        dragMesh = Utils.ColliderToMesh(collider, Color.green);
-                    }
+
+                    Mesh dragMesh = Utils.ColliderToMesh(collider, new Color32((byte)(i * 8), 0, 0, 255));
                     if (dragMesh)
                     {
                         MeshFilter meshFilter = Undo.AddComponent<MeshFilter>(gameObject);
@@ -125,7 +118,6 @@ public class RagdollBuilderEditor : Editor
                         
                         meshFilter.sharedMesh = dragMesh;
                         meshRenderer.material = builder.dragMeshMaterial;
-                        hashedMeshes[colliderHash] = dragMesh;
                         
                         dragMeshesCreated++;
                     }
