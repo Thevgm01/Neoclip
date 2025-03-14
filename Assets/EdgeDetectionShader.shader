@@ -126,7 +126,7 @@ Shader "Hidden/Edge Detection"
                 const float normal_threshold = 1 / 3.0f;
                 float thresholded_normal = normal_cross > normal_threshold ? 1 : 0;
                 
-                const float color_threshold = 1 / 2.0f;
+                const float color_threshold = 1 / 20.0f;
                 float thresholded_color = color_cross > color_threshold ? 1 : 0;
 
                 float scanlinesEffect = pow(sin(uvs[CENTER].y * 50 + _Time.y * 2), 2) + 2;
@@ -139,7 +139,11 @@ Shader "Hidden/Edge Detection"
                 }
                 else
                 {
-                    float edge = max(max(depth_cross * 100 * (depth_cross > 0.9 ? scanlinesEffect : 1), thresholded_normal * 0.15), color_cross * (0.1 - linear_depth_samples[CENTER] * 15.0));
+                    float edge = max(max(
+                        depth_cross * 100 * (depth_cross > 0.9 ? scanlinesEffect : 1),
+                        thresholded_normal * 0.15),
+                        max(color_cross - color_threshold, 0) * (0.3 - linear_depth_samples[CENTER] * linear_depth_samples[CENTER] * 5.0));
+                    edge = clamp(edge, 0.0, 1.0);
                     float3 combined_edges = float3(edge, edge, edge);
 
                     //float3 weird_normal_diff = max(normal_samples[UPLEFT] - normal_samples[DOWNRIGHT], normal_samples[UPRIGHT] - normal_samples[DOWNLEFT]);

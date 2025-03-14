@@ -40,13 +40,13 @@ public class EdgeDetectionRendererFeature : ScriptableRendererFeature
             using var builder = renderGraph.AddRasterRenderPass<PassData>("Edge Detection", out _);
 
             builder.SetRenderAttachment(resourceData.activeColorTexture, 0);
-            builder.UseAllGlobalTextures(true);
+            builder.UseAllGlobalTextures(true); // TODO do what the docs say?
             builder.AllowPassCulling(true);
             builder.SetRenderFunc((PassData _, RasterGraphContext context) => { Blitter.BlitTexture(context.cmd, Vector2.one, material, 0); });
 
             if (resourceData.isActiveTargetBackBuffer)
             {
-                Debug.LogError($"Skipping render pass. ditherEffectRendererFeature requries an immediate ColorTexture, we can't use the BackBuffer as a texture input.");
+                Debug.LogError($"Skipping render pass. ditherEffectRendererFeature requires an immediate ColorTexture, we can't use the BackBuffer as a texture input.");
                 return;
             }
         }
@@ -109,7 +109,7 @@ public class EdgeDetectionRendererFeature : ScriptableRendererFeature
     /// <summary>
     /// Clean up resources allocated to the Scriptable Renderer Feature such as materials.
     /// </summary>
-    override protected void Dispose(bool disposing)
+    protected override void Dispose(bool disposing)
     {
         edgeDetectionPass = null;
         CoreUtils.Destroy(edgeDetectionMaterial);
