@@ -4,30 +4,52 @@ using UnityEngine;
 
 public class RagdollAverages : MonoBehaviour
 {
-    private int lastFrame = 0;
-    private int lastPhysicsFrame = 0;
-
     public float TotalMass { get; private set; }
+    
+    private Vector3 averagePositionInterpolated = Vector3.zero;
     private Vector3 averagePosition = Vector3.zero;
     private Vector3 averageVelocity = Vector3.zero;
 
+    private int lastInterpolatedFrame = 0;
+    private int lastPositionFrame = 0;
+    private int lastVelocityFrame = 0;
+    
     private Rigidbody[] rigidbodies;
     private Transform[] transforms;
+    
+    public Vector3 AveragePositionInterpolated {
+        get
+        {
+            if (lastInterpolatedFrame < Time.frameCount)
+            {
+                averagePositionInterpolated = Vector3.zero;
+                for (int i = 0; i < rigidbodies.Length; i++)
+                {
+                    // rigidbody.position is NOT interpolated, we need to use transform.position
+                    averagePositionInterpolated += transforms[i].position * rigidbodies[i].mass;
+                }
+
+                averagePositionInterpolated /= TotalMass;
+                lastInterpolatedFrame = Time.frameCount;
+            }
+            
+            return averagePositionInterpolated;
+        }
+    }
     
     public Vector3 AveragePosition {
         get
         {
-            if (lastFrame < Time.frameCount)
+            if (lastPositionFrame < Utils.FixedUpdateCount)
             {
                 averagePosition = Vector3.zero;
                 for (int i = 0; i < rigidbodies.Length; i++)
                 {
-                    // rigidbody.position is NOT interpolated, it needs to be rigidbody.TRANSFORM.position
-                    averagePosition += transforms[i].position * rigidbodies[i].mass;
+                    averagePosition += rigidbodies[i].position * rigidbodies[i].mass;
                 }
 
                 averagePosition /= TotalMass;
-                lastFrame = Time.frameCount;
+                lastPositionFrame = Utils.FixedUpdateCount;
             }
             
             return averagePosition;
@@ -37,7 +59,7 @@ public class RagdollAverages : MonoBehaviour
     public Vector3 AverageVelocity {
         get
         {
-            if (lastPhysicsFrame < Utils.FixedUpdateCount)
+            if (lastVelocityFrame < Utils.FixedUpdateCount)
             {
                 averageVelocity = Vector3.zero;
                 for (int i = 0; i < rigidbodies.Length; i++)
@@ -45,10 +67,10 @@ public class RagdollAverages : MonoBehaviour
                     averageVelocity += rigidbodies[i].linearVelocity;
                 }
                 averageVelocity /= rigidbodies.Length;
-                lastPhysicsFrame = Utils.FixedUpdateCount;
+                lastVelocityFrame = Utils.FixedUpdateCount;
             }
             
-            return averagePosition;
+            return averageVelocity;
         }
     }
     
