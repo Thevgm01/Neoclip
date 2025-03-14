@@ -18,6 +18,7 @@ public class RagdollBuilder : MonoBehaviour
 
     public bool autoselectMirrorBone = true;
     public float initialMassMult = 1.0f;
+    public Material dragMeshMaterial;
     [HideInInspector] public int dragMeshLayer;
     
     private UnityEngine.Object lastSelectedObject = null; // Double-clicking won't select the mirror

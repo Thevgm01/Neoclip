@@ -116,7 +116,7 @@ public class RagdollBuilderEditor : Editor
                     }
                     else
                     {
-                        dragMesh = Utils.ColliderToMesh(collider);
+                        dragMesh = Utils.ColliderToMesh(collider, Color.green);
                     }
                     if (dragMesh)
                     {
@@ -124,6 +124,7 @@ public class RagdollBuilderEditor : Editor
                         MeshRenderer meshRenderer = Undo.AddComponent<MeshRenderer>(gameObject);
                         
                         meshFilter.sharedMesh = dragMesh;
+                        meshRenderer.material = builder.dragMeshMaterial;
                         hashedMeshes[colliderHash] = dragMesh;
                         
                         dragMeshesCreated++;

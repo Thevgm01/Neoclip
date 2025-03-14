@@ -112,12 +112,13 @@ public class Utils
 		}
 	}
 
-    public static Mesh ColliderToMesh(Collider collider)
+    public static Mesh ColliderToMesh(Collider collider, Color32 vertexColor)
     {
         Mesh oldMesh = GetUnityPrimitiveMesh(ColliderToPrimitiveType(collider));
         Mesh newMesh = new Mesh();
         Vector3[] vertices = new Vector3[oldMesh.vertices.Length];
-
+        Color32[] colors32 = new Color32[vertices.Length]; // oldMesh.colors32.Length is 0!!!
+        
         switch (collider)
         {
             case BoxCollider boxCollider:
@@ -150,9 +151,15 @@ public class Utils
 	            }
 	            break;
         }
-
+        
+        for (int i = 0; i < vertices.Length; i++)
+        {
+	        colors32[i] = vertexColor;
+        }
+		
         newMesh.name = oldMesh.name;
         newMesh.vertices = vertices;
+        newMesh.colors32 = colors32;
         newMesh.triangles = oldMesh.triangles;
         newMesh.RecalculateBounds();
         newMesh.RecalculateNormals();
