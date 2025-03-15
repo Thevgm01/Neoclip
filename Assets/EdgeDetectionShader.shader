@@ -114,6 +114,8 @@ Shader "Hidden/Edge Detection"
 
                 float closest_vertical_normal = 0;
                 float most_vertical_normal = 0;
+
+                bool is_character = false;
                 
                 for (int i = 0; i < 5; i++) {
                     linear_depth_samples[i] = SampleSphericalDepth(uvs[i]);
@@ -126,6 +128,8 @@ Shader "Hidden/Edge Detection"
                         closest_vertical_normal = linear_depth_samples[i];
                         most_vertical_normal = max(most_vertical_normal, normal_samples[i].y);
                     }
+
+                    is_character = is_character || (color_samples[i].r == 1 && color_samples[i].g == 0 && color_samples[i].b == 0);
                 }
                 
                 // Apply edge detection kernel on the samples to compute edges.
@@ -140,9 +144,16 @@ Shader "Hidden/Edge Detection"
                 //float scanlinesEffect = pow(sin(_Time.y * 2 + dot(world_pos, world_pos) * 0.001), 2) + 2;
 
                 float3 one = float3(1.0, 1.0, 1.0);
+                
                 if (linear_depth_samples[CENTER] >= 0.999)
                 {
                     return half4(one * color_cross * 10 * scanlinesEffect, 1.0);
+                }
+                else if (is_character)
+                {
+                    float a = max(depth_cross * 600, color_cross);
+                    
+                    return half4(one * (a > 0.1 ? 1.0 : 0.0), 1.0);
                 }
                 else
                 {
@@ -152,7 +163,7 @@ Shader "Hidden/Edge Detection"
                     const float depth_threshold = 1.0f / 50.0f;
                     const float normal_threshold = 1 / 3.0f;
                     const float color_threshold = 1 / 20.0f;
-
+                    
                     float3 depth_vec = one * depth_cross * 20;
                     float3 normal_vec = one * normal_cross > normal_threshold ? 0.4 : 0;
                     float3 color_vec = one * max(color_cross - color_threshold, 0) * max(0.3 - spherical_distance * 5.0, 0);
