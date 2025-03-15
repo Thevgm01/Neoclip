@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!114 &-4225625562123550216
+--- !u!114 &-1204599495277307751
 MonoBehaviour:
   m_ObjectHideFlags: 11
   m_CorrespondingSourceObject: {fileID: 0}
@@ -20,8 +20,8 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: T_58000A_0_TransP
-  m_Shader: {fileID: -6465566751694194690, guid: 318ae9302029a3d4cb829251b365b63c, type: 3}
+  m_Name: s_FootBridgeSide_TransP2
+  m_Shader: {fileID: -6465566751694194690, guid: ba150e14e53907349833a61773a77ea0, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -38,7 +38,7 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _BaseMap:
-        m_Texture: {fileID: 2800000, guid: 254952ddcf3594dfea2116ef7ce1d895, type: 3}
+        m_Texture: {fileID: 2800000, guid: 05f2fa2af545e41bb8e1adebf31e9846, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _BumpMap:
@@ -50,7 +50,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MainTex:
-        m_Texture: {fileID: 2800000, guid: 254952ddcf3594dfea2116ef7ce1d895, type: 3}
+        m_Texture: {fileID: 2800000, guid: 05f2fa2af545e41bb8e1adebf31e9846, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _SpecGlossMap:
@@ -73,6 +73,8 @@ Material:
     m_Floats:
     - _AddPrecomputedVelocity: 0
     - _AlphaClip: 1
+    - _AlphaClipThreshold: 0
+    - _AlphaClipping: 0
     - _AlphaToMask: 1
     - _Blend: 0
     - _BlendModePreserveSpecular: 1
