@@ -6,12 +6,14 @@ public class DragCamera : MonoBehaviour
 {
     [SerializeField] private RagdollAverages ragdollAverages;
     [SerializeField] private float minSpeed = 1.0f;
-    private Camera camera;
+    private Camera dragCamera;
+    private RenderPipeline.StandardRequest request;
     
     private void Awake()
     {
-        camera = GetComponent<Camera>();
-        camera.enabled = false;
+        dragCamera = GetComponent<Camera>();
+        dragCamera.enabled = false;
+        request = new RenderPipeline.StandardRequest();
     }
     
     private void FixedUpdate()
@@ -21,13 +23,10 @@ public class DragCamera : MonoBehaviour
             Quaternion rotation = Quaternion.LookRotation(-ragdollAverages.AverageVelocity.normalized);
             
             transform.SetPositionAndRotation(
-                ragdollAverages.AveragePosition + rotation * new Vector3(0, 0, -camera.orthographicSize), 
+                ragdollAverages.AveragePosition + rotation * new Vector3(0, 0, -dragCamera.orthographicSize), 
                 rotation);
 
-            camera.Render(); 
-            //var request = new UniversalRenderPipeline.SingleCameraRequest();
-            //request.destination = rt;
-            //RenderPipeline.SubmitRenderRequest(camera, a);
+            RenderPipeline.SubmitRenderRequest(dragCamera, request);
         }
     }
 }
