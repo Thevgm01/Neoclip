@@ -164,7 +164,7 @@ Shader "Hidden/Edge Detection"
                     const float normal_threshold = 1 / 3.0f;
                     const float color_threshold = 1 / 20.0f;
                     
-                    float3 depth_vec = one * depth_cross * 20;
+                    float3 depth_vec = one * depth_cross > depth_threshold ? 1.0 : 0.0 + depth_cross * 20;
                     float3 normal_vec = one * normal_cross > normal_threshold ? 0.4 : 0;
                     float3 color_vec = one * max(color_cross - color_threshold, 0) * max(0.3 - spherical_distance * 5.0, 0);
 
@@ -174,12 +174,13 @@ Shader "Hidden/Edge Detection"
                         float3 world_pos = SampleWorldPos(uvs[CENTER]) / 20;
                         float hue = cos(world_pos.x + _Time.x) + sin(world_pos.z + _Time.x) + world_pos.y + _Time.x * 5;
                         //max_vec = max_vec * HsvToRgb(float3(hue, 1.0, 1.0));
-                        max_vec += max(50.0 - frac(hue) * 100.0, 0.0);
+                        max_vec += max(50.0 - frac(hue) * 100.0, 1.0);
                         //max_vec *= HsvToRgb(float3(world_pos.y * world_pos.y + _Time.x, 1.0, 1.0));
-                        if (most_vertical_normal > 0.9)
-                        {
-                            max_vec *= HsvToRgb(float3(world_pos.y + _Time.x, 1.0, 1.0));
-                        }
+                        //if (most_vertical_normal > 0.9)
+                        //{
+                        //    max_vec *= HsvToRgb(float3(world_pos.y + _Time.x, 1.0, 1.0));
+                        //}
+                        max_vec *= HsvToRgb(float3(world_pos.y + _Time.x, 1.0, 1.0));
                     }
                     
                     //float3 edge = clamp(max_vec, 0.0, 1.0);
