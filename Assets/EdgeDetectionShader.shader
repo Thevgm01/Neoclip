@@ -1,4 +1,4 @@
-Shader "Hidden/Edge Detection"
+Shader "Custom/Edge Detection"
 {
     Properties
     {
