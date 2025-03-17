@@ -86,6 +86,8 @@ public class RagdollBuilderEditor : Editor
                     TryDestroyObjectImmediate(gameObject.GetComponent<MeshRenderer>());
                     
                     Collider collider = rigidbody.GetComponent<Collider>();
+                    Undo.RecordObject(collider, $"Set collider physics material");
+                    collider.sharedMaterial = builder.physicsMaterial;
                     int colliderHash = Utils.HashCollider(collider);
                     
                     // Set the mass
@@ -114,7 +116,7 @@ public class RagdollBuilderEditor : Editor
                         
                         JointDrive defaultJointDrive = new JointDrive
                         {
-                            positionSpring = 35.0f,
+                            positionSpring = builder.jointSpringStrength,
                             positionDamper = 1.0f,
                             maximumForce = 3.402823e+38f // Copied from default
                         };
