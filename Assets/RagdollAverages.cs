@@ -2,14 +2,20 @@ using UnityEngine;
 
 public class RagdollAverages : NeoclipCharacterComponent
 {
-    private Rigidbody[] rigidbodies;
-    private Transform[] transforms;
-
-    public Rigidbody[] Rigidbodies => (Rigidbody[])rigidbodies.Clone();
-    public Transform[] Transforms => (Transform[])transforms.Clone();
-    
     public float TotalMass { get; private set; }
     public int NumRigidbodies { get; private set; }
+    
+    private Rigidbody[] rigidbodies;
+    private GameObject[] gameObjects;
+    private Transform[] transforms;
+
+    public Rigidbody GetRigidbody(int index) => rigidbodies[index];
+    public GameObject GetGameObject(int index) => gameObjects[index];
+    public Transform GetTransform(int index) => transforms[index];
+    
+    public Rigidbody[] RigidbodiesCopy => (Rigidbody[])rigidbodies.Clone();
+    public GameObject[] GameObjectsCopy => (GameObject[])gameObjects.Clone();
+    public Transform[] TransformsCopy => (Transform[])transforms.Clone();
     
     private TimeUpdatedProperty<Vector3> averagePosition;
     public Vector3 AveragePosition => averagePosition.GetValue();
@@ -25,11 +31,13 @@ public class RagdollAverages : NeoclipCharacterComponent
         }
         
         rigidbodies = GetComponentsInChildren<Rigidbody>();
-        transforms = new Transform[rigidbodies.Length];
         NumRigidbodies = rigidbodies.Length;
+        gameObjects = new GameObject[NumRigidbodies];
+        transforms = new Transform[NumRigidbodies];
     
         for (int i = 0; i < NumRigidbodies; i++)
         {
+            gameObjects[i] = rigidbodies[i].gameObject;
             transforms[i] = rigidbodies[i].transform;
             TotalMass += rigidbodies[i].mass;
         }
