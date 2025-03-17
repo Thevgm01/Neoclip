@@ -21,7 +21,7 @@ public static class Utils
     private static Mesh _unitySphereMesh = null;
     private static Mesh _unityQuadMesh = null;
 
-    public static int FixedUpdateCount => Mathf.RoundToInt(Time.fixedTime / Time.fixedDeltaTime);
+    public static int FixedUpdateCount => Mathf.CeilToInt(Time.fixedTime / Time.fixedDeltaTime);
     
     public static float ExpT(float speed) => 1.0f - Mathf.Exp(-speed * Time.deltaTime);
 
@@ -41,7 +41,7 @@ public static class Utils
 	    }
     }
 	
-    public static float CalculateVolume(Collider collider)
+    public static float CalculateVolume(this Collider collider)
     {
         switch (collider)
         {
@@ -53,7 +53,7 @@ public static class Utils
                 return Mathf.PI * sphereCollider.radius * sphereCollider.radius * sphereCollider.radius * 4.0f / 3.0f;
         }
 
-        Debug.LogWarning($"Utils.CalculateVolume: Unknown collider {collider}");
+        Debug.LogWarning($"Utils.CalculateVolume: Unsupported collider {collider}");
         return 0.0f;
     }
 
@@ -133,7 +133,7 @@ public static class Utils
 		}
 	}
 
-    public static Mesh ColliderToMesh(Collider collider, Color32 vertexColor)
+    public static Mesh ToMeshWithVertexColor(this Collider collider, Color32 vertexColor)
     {
         Mesh oldMesh = GetUnityPrimitiveMesh(ColliderToPrimitiveType(collider));
         Mesh newMesh = new Mesh();

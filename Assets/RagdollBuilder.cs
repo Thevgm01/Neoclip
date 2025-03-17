@@ -135,7 +135,7 @@ public class RagdollBuilder : MonoBehaviour
                 // Set the mass
                 Undo.RecordObject(rigidbody, $"Set rigidbody values");
                 // rigidbody.SetDensity() does NOTHING!!!
-                rigidbody.mass = Utils.CalculateVolume(collider) * 
+                rigidbody.mass = collider.CalculateVolume() * 
                                  Utils.Density.MEAT * 
                                  initialMassMult;
                 rigidbody.interpolation = RigidbodyInterpolation.Interpolate;
@@ -181,7 +181,7 @@ public class RagdollBuilder : MonoBehaviour
                     }
                 }
 
-                Mesh dragMesh = Utils.ColliderToMesh(collider, new Color32((byte)(i * 8), 0, 0, 255));
+                Mesh dragMesh = collider.ToMeshWithVertexColor(new Color32((byte)(i * 8), 0, 0, 255));
                 if (dragMesh)
                 {
                     MeshFilter meshFilter = Undo.AddComponent<MeshFilter>(gameObject);
