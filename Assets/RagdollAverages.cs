@@ -11,10 +11,10 @@ public class RagdollAverages : NeoclipCharacterComponent
     public float TotalMass { get; private set; }
     public int NumRigidbodies { get; private set; }
     
-    private FrameCountUpdatedProperty<Vector3> averagePosition;
+    private TimeUpdatedProperty<Vector3> averagePosition;
     public Vector3 AveragePosition => averagePosition.GetValue();
 
-    private FixedFrameCountUpdatedProperty<Vector3> averageVelocity;
+    private FixedTimeUpdatedProperty<Vector3> averageVelocity;
     public Vector3 AverageVelocity => averageVelocity.GetValue();
 
     public override void Init()
@@ -34,7 +34,7 @@ public class RagdollAverages : NeoclipCharacterComponent
             TotalMass += rigidbodies[i].mass;
         }
         
-        averagePosition = new FrameCountUpdatedProperty<Vector3>(() =>
+        averagePosition = new TimeUpdatedProperty<Vector3>(() =>
         {
             Vector3 temp = Vector3.zero;
             for (int i = 0; i < NumRigidbodies; i++)
@@ -44,7 +44,7 @@ public class RagdollAverages : NeoclipCharacterComponent
             return temp / TotalMass;
         });
         
-        averageVelocity = new FixedFrameCountUpdatedProperty<Vector3>(() =>
+        averageVelocity = new FixedTimeUpdatedProperty<Vector3>(() =>
         {
             Vector3 temp = Vector3.zero;
             for (int i = 0; i < NumRigidbodies; i++)

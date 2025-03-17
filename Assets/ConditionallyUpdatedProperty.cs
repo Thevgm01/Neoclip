@@ -27,22 +27,22 @@ public abstract class ConditionallyUpdatedProperty<T>
     }
 }
 
-public class FrameCountUpdatedProperty<T> : ConditionallyUpdatedProperty<T>
+public class TimeUpdatedProperty<T> : ConditionallyUpdatedProperty<T>
 {
     protected override float CurrentUpdate()
     {
         return Time.time;
     }
 
-    public FrameCountUpdatedProperty(Func<T> propertyFunction) : base(propertyFunction) {}
+    public TimeUpdatedProperty(Func<T> propertyFunction) : base(propertyFunction) {}
 }
 
-public class FixedFrameCountUpdatedProperty<T> : ConditionallyUpdatedProperty<T>
+public class FixedTimeUpdatedProperty<T> : ConditionallyUpdatedProperty<T>
 {
     protected override float CurrentUpdate()
     {
         return Time.fixedTime;
     }
     
-    public FixedFrameCountUpdatedProperty(Func<T> propertyFunction) : base(propertyFunction) {}
+    public FixedTimeUpdatedProperty(Func<T> propertyFunction) : base(propertyFunction) {}
 }
