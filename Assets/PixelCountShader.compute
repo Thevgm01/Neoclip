@@ -1,0 +1,24 @@
+#pragma kernel CSMain
+
+Texture2D InputTexture; // Input RenderTexture
+RWStructuredBuffer<int> ColorCounts; // Output buffer storing counts
+
+[numthreads(8, 8, 1)] // Adjust thread count as needed
+void CSMain(uint3 id : SV_DispatchThreadID)
+{
+    uint width, height;
+    InputTexture.GetDimensions(width, height);
+
+    //if (id.x >= width || id.y >= height) return;
+
+    float4 color = InputTexture[id.xy];
+
+    if (color.a > 0.0)
+    {
+        // Convert color to an index (for simplicity, assuming 8-bit color channels)
+        uint r = (uint)(color.r * 255) >> 3; // Divide by 8
+
+        // Increment count for this color (assuming a large enough buffer)
+        InterlockedAdd(ColorCounts[r], 1);
+    }
+}

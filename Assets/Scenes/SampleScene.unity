@@ -38897,6 +38897,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ragdollAverages: {fileID: 59713680}
   minSpeed: 1
+  computeShader: {fileID: 7200000, guid: 20da02deff2f1f440953010633ca1594, type: 3}
 --- !u!64 &1362300230
 MeshCollider:
   m_ObjectHideFlags: 0
