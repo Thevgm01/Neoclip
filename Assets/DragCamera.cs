@@ -67,6 +67,13 @@ public class DragCamera : MonoBehaviour
         
         Debug.Log(string.Join(", ", hitsPerColor));
 
+        for(int i = 0; i < ragdollAverages.Rigidbodies.Length; i++)
+        {
+            Rigidbody rigidbody = ragdollAverages.Rigidbodies[i];
+            float drag_magnitude = 0.5f * 0.001f * rigidbody.linearVelocity.sqrMagnitude * 0.7f * hitsPerColor[i] / 100.0f;
+            ragdollAverages.Rigidbodies[i].AddForce(drag_magnitude * dragCamera.transform.forward, ForceMode.Impulse);
+        }
+
         // Clean up
         hitBuffer.Release();
     }
