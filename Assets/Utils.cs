@@ -135,19 +135,19 @@ public class Utils
 	            {
 		            if (oldMesh.vertices[i].y > 0)
 		            {
-			            vertices[i] = (oldMesh.vertices[i] + Vector3.down) * capsuleCollider.radius * 2.0f + 
+			            vertices[i] = capsuleCollider.radius * 2.0f * (oldMesh.vertices[i] + Vector3.down) + 
 			                          Vector3.up * capsuleCollider.height / 2.0f + capsuleCollider.center;
 		            }
 		            else
 		            {
-			            vertices[i] = (oldMesh.vertices[i] + Vector3.up) * capsuleCollider.radius * 2.0f + 
+			            vertices[i] = capsuleCollider.radius * 2.0f * (oldMesh.vertices[i] + Vector3.up) +
 			                          Vector3.down * capsuleCollider.height / 2.0f + capsuleCollider.center;		            }
 	            }
 	            break;
             case SphereCollider sphereCollider:
 	            for (int i = 0; i < vertices.Length; i++)
 	            {
-		            vertices[i] = oldMesh.vertices[i] * sphereCollider.radius * 2.0f + sphereCollider.center;
+		            vertices[i] = sphereCollider.radius * 2.0f * oldMesh.vertices[i] + sphereCollider.center;
 	            }
 	            break;
         }
