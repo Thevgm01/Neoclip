@@ -3,9 +3,11 @@ using UnityEngine.InputSystem;
 
 public class NeoclipCameraController : NeoclipCharacterComponent
 {
-    public enum LookMode { UP, FREE }
+    private enum LookMode { UP, FREE }
     
     [SerializeField] private RagdollAverages ragdollAverages = null;
+    
+    [Space]
     [SerializeField] private float followSpeed = 5.0f;
     [SerializeField] private float followDistance = 3.0f;
     [Space]
@@ -20,6 +22,20 @@ public class NeoclipCameraController : NeoclipCharacterComponent
     private Vector3 desiredPosition = Vector3.zero;
     private Quaternion currentRotation = Quaternion.identity;
     private Quaternion desiredRotation = Quaternion.identity;
+
+    public Vector3 CameraRelativeMoveVector(Vector2 moveInput)
+    {
+        switch (lookMode)
+        {
+            case LookMode.UP:
+                Vector2 rotated = moveInput.Rotate(Mathf.Deg2Rad * -manualCameraAngles.y);
+                return new Vector3(rotated.x, 0.0f, rotated.y);
+            case LookMode.FREE:
+                return desiredRotation * new Vector3(moveInput.x, 0, moveInput.y);
+            default:
+                return Vector3.zero;
+        }
+    }
     
     public override void Init()
     {
@@ -55,15 +71,15 @@ public class NeoclipCameraController : NeoclipCharacterComponent
         currentRotation = Quaternion.Slerp(currentRotation, desiredRotation, Utils.ExpT(rotationSpeed));
 
         Vector3 offsetPosition = currentPosition + currentRotation * new Vector3(0, 0, -followDistance);
-        Vector3 dirToTarget = (desiredPosition - offsetPosition).normalized;
-        Quaternion skew = Quaternion.LookRotation(
-            dirToTarget, 
-            Vector3.Cross(dirToTarget, currentRotation * Vector3.right));
+        //Vector3 dirToTarget = (desiredPosition - offsetPosition).normalized;
+        //Quaternion skew = Quaternion.LookRotation(
+        //    dirToTarget, 
+        //    Vector3.Cross(dirToTarget, currentRotation * Vector3.right));
         
         // TODO probably don't use skew?
         // Just change the desiredRotation as if the player was trying to look towards the ragdoll as it falls
-        Quaternion skewedRotation = Quaternion.Slerp(currentRotation, skew, skewStrength);
+        //Quaternion skewedRotation = Quaternion.Slerp(currentRotation, skew, skewStrength);
 
-        transform.SetPositionAndRotation(offsetPosition, skewedRotation);
+        transform.SetPositionAndRotation(offsetPosition, currentRotation);
     }
 }

@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class NeoclipCharacterController : MonoBehaviour
 {
@@ -6,8 +7,15 @@ public class NeoclipCharacterController : MonoBehaviour
     [SerializeField] private DragCamera dragCamera;
     [SerializeField] private NeoclipCameraController cameraController;
 
+    [Space] [SerializeField] private InputActionReference moveAction;
+    
     [Space]
     [SerializeField] private float minSpeedForDrag = 1.0f;
+    [SerializeField] private float maxMoveSpeed = 5.0f;
+    [SerializeField] private float moveAcceleration = 1.0f;
+
+    private Vector2 moveInput;
+    private void SetMoveInput(InputAction.CallbackContext context) => moveInput = context.ReadValue<Vector2>();
     
     private void Awake()
     {
@@ -18,10 +26,24 @@ public class NeoclipCharacterController : MonoBehaviour
         Cursor.visible = false;
         Cursor.lockState = CursorLockMode.Locked;
     }
+    
+    private void OnEnable()
+    {
+        moveAction.action.performed += SetMoveInput;
+        moveAction.action.canceled += SetMoveInput;
+    }
 
+    private void OnDisable()
+    {
+        moveAction.action.performed -= SetMoveInput;
+        moveAction.action.canceled -= SetMoveInput;
+    }
+    
     private void FixedUpdate()
     {
         bool applyDrag = ragdollAverages.AverageVelocity.sqrMagnitude >= minSpeedForDrag * minSpeedForDrag;
+
+        Vector3 movement = cameraController.CameraRelativeMoveVector(moveInput) * moveAcceleration;
         
         for (int i = 0; i < ragdollAverages.NumRigidbodies; i++)
         {
@@ -39,6 +61,8 @@ public class NeoclipCharacterController : MonoBehaviour
                          dragCamera.RigidbodySurfaceAreas[i] * 
                          dragCamera.transform.forward;
             }
+
+            acceleration += movement;
             
             rigidbody.AddForce(force, ForceMode.Force);
             rigidbody.AddForce(acceleration, ForceMode.Acceleration);

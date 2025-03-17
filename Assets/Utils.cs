@@ -25,6 +25,12 @@ public static class Utils
     
     public static float ExpT(float speed) => 1.0f - Mathf.Exp(-speed * Time.deltaTime);
 
+    public static Vector2 Rotate(this Vector2 v, float radians)
+    {
+	    float cos = Mathf.Cos(radians), sin = Mathf.Sin(radians);
+	    return new Vector2(v.x * cos - v.y * sin, v.x * sin + v.y * cos);
+    }
+    
     public static void TryDestroyObjectsImmediate(Object[] objs)
     {
 	    foreach (Object obj in objs)
