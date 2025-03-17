@@ -37,6 +37,7 @@ public class DragCamera : MonoBehaviour
 
             RenderPipeline.SubmitRenderRequest(dragCamera, request);
             CountColors();
+            Debug.Log(ragdollAverages.AverageVelocity.magnitude * 60 * 60 / 1000);
         }
     }
 
@@ -61,17 +62,16 @@ public class DragCamera : MonoBehaviour
         computeShader.Dispatch(kernel, threadGroupsX, threadGroupsY, 1);
 
         // Retrieve results
-        float time = Time.time;
-        hitBuffer.GetData(hitsPerColor);
-        Debug.Log(Time.time - time);
-        
-        Debug.Log(string.Join(", ", hitsPerColor));
+        hitBuffer.GetData(hitsPerColor); // Use async method?
 
+        float totalSurfaceArea = dragCamera.orthographicSize * dragCamera.orthographicSize * 4.0f;
+        float areaPerPixel = totalSurfaceArea / (width * height);
+        
         for(int i = 0; i < ragdollAverages.Rigidbodies.Length; i++)
         {
             Rigidbody rigidbody = ragdollAverages.Rigidbodies[i];
-            float drag_magnitude = 0.5f * 0.001f * rigidbody.linearVelocity.sqrMagnitude * 0.7f * hitsPerColor[i] / 100.0f;
-            ragdollAverages.Rigidbodies[i].AddForce(drag_magnitude * dragCamera.transform.forward, ForceMode.Impulse);
+            float drag_magnitude = 0.5f * Utils.Density.AIR * rigidbody.linearVelocity.sqrMagnitude * 0.7f * hitsPerColor[i] * areaPerPixel;
+            ragdollAverages.Rigidbodies[i].AddForce(drag_magnitude * dragCamera.transform.forward, ForceMode.Force);
         }
 
         // Clean up

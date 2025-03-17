@@ -94,7 +94,7 @@ public class RagdollBuilderEditor : Editor
                     Undo.RecordObject(rigidbody, $"Set rigidbody values");
                     // rigidbody.SetDensity() does NOTHING!!!
                     rigidbody.mass = Utils.CalculateVolume(collider) * 
-                                     Utils.Density.WATER * 
+                                     Utils.Density.MEAT * 
                                      builder.initialMassMult;
                     rigidbody.interpolation = RigidbodyInterpolation.Interpolate;
                     rigidbody.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
