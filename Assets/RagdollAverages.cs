@@ -11,71 +11,56 @@ public class RagdollAverages : MonoBehaviour
     public Transform[] Transforms => (Transform[])transforms.Clone();
     
     public float TotalMass { get; private set; }
-    
-    private Vector3 averagePositionInterpolated = Vector3.zero;
-    private Vector3 averagePosition = Vector3.zero;
-    private Vector3 averageVelocity = Vector3.zero;
 
-    private int lastInterpolatedFrame = 0;
-    private int lastPositionFrame = 0;
-    private int lastVelocityFrame = 0;
-    
-    public Vector3 AveragePositionInterpolated {
-        get
+    private class AveragePositionProperty : FrameCountUpdatedProperty<Vector3>
+    {
+        private readonly RagdollAverages parent;
+        
+        protected override Vector3 PropertyFunction()
         {
-            if (lastInterpolatedFrame < Time.frameCount)
-            {
-                averagePositionInterpolated = Vector3.zero;
-                for (int i = 0; i < rigidbodies.Length; i++)
-                {
-                    // rigidbody.position is NOT interpolated, we need to use transform.position
-                    averagePositionInterpolated += transforms[i].position * rigidbodies[i].mass;
-                }
-
-                averagePositionInterpolated /= TotalMass;
-                lastInterpolatedFrame = Time.frameCount;
-            }
+            Vector3 averagePosition = Vector3.zero;
             
-            return averagePositionInterpolated;
+            for (int i = 0; i < parent.transforms.Length; i++)
+            {
+                averagePosition += parent.transforms[i].position * parent.rigidbodies[i].mass;
+            }
+
+            return averagePosition / parent.TotalMass;
+        }
+
+        public AveragePositionProperty(RagdollAverages parent)
+        {
+            this.parent = parent;
         }
     }
     
-    public Vector3 AveragePosition {
-        get
+    private class AverageVelocityProperty : FixedFrameCountUpdatedProperty<Vector3>
+    {
+        private readonly RagdollAverages parent;
+        
+        protected override Vector3 PropertyFunction()
         {
-            if (lastPositionFrame < Utils.FixedUpdateCount)
+            Vector3 averageVelocity = Vector3.zero;
+            
+            for (int i = 0; i < parent.rigidbodies.Length; i++)
             {
-                averagePosition = Vector3.zero;
-                for (int i = 0; i < rigidbodies.Length; i++)
-                {
-                    averagePosition += rigidbodies[i].position * rigidbodies[i].mass;
-                }
-
-                averagePosition /= TotalMass;
-                lastPositionFrame = Utils.FixedUpdateCount;
+                averageVelocity += parent.rigidbodies[i].linearVelocity;
             }
             
-            return averagePosition;
+            return averageVelocity / parent.rigidbodies.Length;
+        }
+
+        public AverageVelocityProperty(RagdollAverages parent)
+        {
+            this.parent = parent;
         }
     }
     
-    public Vector3 AverageVelocity {
-        get
-        {
-            if (lastVelocityFrame < Utils.FixedUpdateCount)
-            {
-                averageVelocity = Vector3.zero;
-                for (int i = 0; i < rigidbodies.Length; i++)
-                {
-                    averageVelocity += rigidbodies[i].linearVelocity;
-                }
-                averageVelocity /= rigidbodies.Length;
-                lastVelocityFrame = Utils.FixedUpdateCount;
-            }
-            
-            return averageVelocity;
-        }
-    }
+    private AveragePositionProperty averagePosition;
+    private AverageVelocityProperty averageVelocity;
+    
+    public Vector3 AveragePosition => averagePosition.Get();
+    public Vector3 AverageVelocity => averageVelocity.Get();
 
     private void Init()
     {
@@ -90,6 +75,9 @@ public class RagdollAverages : MonoBehaviour
                 TotalMass += rigidbodies[i].mass;
             }
         }
+
+        averagePosition = new AveragePositionProperty(this);
+        averageVelocity = new AverageVelocityProperty(this);
     }
 
     private void Awake()

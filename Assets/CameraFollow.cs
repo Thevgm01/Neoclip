@@ -57,7 +57,7 @@ public class CameraFollow : MonoBehaviour
 
     private void LateUpdate()
     {
-        desiredPosition = ragdollAverages.AveragePositionInterpolated;
+        desiredPosition = ragdollAverages.AveragePosition;
         currentPosition = Vector3.Lerp(currentPosition, desiredPosition, Utils.ExpT(followSpeed));
 
         currentRotation = Quaternion.Slerp(currentRotation, desiredRotation, Utils.ExpT(rotationSpeed));
