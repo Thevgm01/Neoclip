@@ -1,9 +1,7 @@
-using System;
-using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public class CameraFollow : MonoBehaviour
+public class NeoclipCameraController : NeoclipCharacterComponent
 {
     public enum LookMode { UP, FREE }
     
@@ -23,11 +21,8 @@ public class CameraFollow : MonoBehaviour
     private Quaternion currentRotation = Quaternion.identity;
     private Quaternion desiredRotation = Quaternion.identity;
     
-    private void Awake()
+    public override void Init()
     {
-        Cursor.visible = false;
-        Cursor.lockState = CursorLockMode.Locked;
-
         manualCameraAngles = transform.rotation.eulerAngles;
         
         currentPosition = transform.position;
@@ -36,7 +31,7 @@ public class CameraFollow : MonoBehaviour
         desiredRotation = currentRotation;
     }
 
-    private void Update()
+    public override void Tick()
     {
         Vector2 movement = mouseSensitivity * Mouse.current.delta.ReadValue() * Time.smoothDeltaTime;
 
@@ -53,10 +48,7 @@ public class CameraFollow : MonoBehaviour
                 desiredRotation *= Quaternion.Euler(-movement.y, movement.x, 0);
                 break;
         }
-    }
-
-    private void LateUpdate()
-    {
+        
         desiredPosition = ragdollAverages.AveragePosition;
         currentPosition = Vector3.Lerp(currentPosition, desiredPosition, Utils.ExpT(followSpeed));
 

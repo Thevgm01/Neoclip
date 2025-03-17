@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
-public class DragCamera : MonoBehaviour
+public class DragCamera : NeoclipCharacterComponent
 {
     [SerializeField] private RagdollAverages ragdollAverages;
     [SerializeField] private float minSpeed = 1.0f;
@@ -16,16 +16,16 @@ public class DragCamera : MonoBehaviour
     private int[] hitsPerColor;
     private ComputeBuffer hitBuffer;
     
-    private void Awake()
+    public override void Init()
     {
         dragCamera = GetComponent<Camera>();
         dragCamera.enabled = false;
         renderTexture = dragCamera.targetTexture;
         request = new RenderPipeline.StandardRequest();
-        hitsPerColor = new int[20];
+        hitsPerColor = new int[ragdollAverages.NumRigidbodies];
     }
     
-    private void FixedUpdate()
+    public override void Tick()
     {
         if (ragdollAverages.AverageVelocity.sqrMagnitude >= minSpeed * minSpeed)
         {
