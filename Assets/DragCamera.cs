@@ -1,81 +1,95 @@
 using UnityEngine;
 using UnityEngine.Rendering;
-using UnityEngine.Rendering.Universal;
 
 public class DragCamera : NeoclipCharacterComponent
 {
     [SerializeField] private RagdollAverages ragdollAverages;
-    [SerializeField] private float minSpeed = 1.0f;
     [SerializeField] ComputeShader computeShader;
     
     private Camera dragCamera;
-    private RenderTexture renderTexture;
-    private RenderPipeline.StandardRequest request;
+    
+    private Vector2Int renderTextureDimensions;
+    
+    private float areaPerPixel;
 
-    private int MaxColors = 20;
-    private int[] hitsPerColor;
+    private RenderPipeline.StandardRequest renderRequest;
+    
+    private int computeKernel;
     private ComputeBuffer hitBuffer;
+
+    private FixedTimeUpdatedProperty<float[]> rigidbodySurfaceAreas;
+    public float[] RigidbodySurfaceAreas => rigidbodySurfaceAreas.GetValue();
     
     public override void Init()
     {
         dragCamera = GetComponent<Camera>();
         dragCamera.enabled = false;
-        renderTexture = dragCamera.targetTexture;
-        request = new RenderPipeline.StandardRequest();
-        hitsPerColor = new int[ragdollAverages.NumRigidbodies];
+        
+        renderTextureDimensions = new(dragCamera.targetTexture.width, dragCamera.targetTexture.height);
+        
+        float dragCameraSurfaceArea = dragCamera.orthographicSize * dragCamera.orthographicSize * 4.0f;
+        float numRenderTexturePixels = renderTextureDimensions.x * renderTextureDimensions.y;
+        areaPerPixel = dragCameraSurfaceArea / numRenderTexturePixels;
+
+        renderRequest = new RenderPipeline.StandardRequest();
+        
+        // Set shader parameters
+        computeKernel = computeShader.FindKernel("CSMain");
+        hitBuffer = new ComputeBuffer(ragdollAverages.NumRigidbodies, sizeof(int));
+        computeShader.SetTexture(computeKernel, Shader.PropertyToID("InputTexture"), dragCamera.targetTexture);
+        computeShader.SetBuffer(computeKernel, Shader.PropertyToID("ColorCounts"), hitBuffer);
+        
+        rigidbodySurfaceAreas = new FixedTimeUpdatedProperty<float[]>(CalculateSurfaceAreas);
     }
-    
-    public override void Tick()
+
+    private void MoveCamera()
     {
-        if (ragdollAverages.AverageVelocity.sqrMagnitude >= minSpeed * minSpeed)
-        {
-            Quaternion rotation = Quaternion.LookRotation(-ragdollAverages.AverageVelocity.normalized);
+        Quaternion rotation = Quaternion.LookRotation(-ragdollAverages.AverageVelocity.normalized);
             
-            transform.SetPositionAndRotation(
-                ragdollAverages.AveragePosition + rotation * new Vector3(0, 0, -dragCamera.orthographicSize), 
-                rotation);
-
-            RenderPipeline.SubmitRenderRequest(dragCamera, request);
-            CountColors();
-            //Debug.Log(ragdollAverages.AverageVelocity.magnitude * 60 * 60 / 1000);
-        }
+        transform.SetPositionAndRotation(
+            ragdollAverages.AveragePosition + rotation * new Vector3(0, 0, -dragCamera.orthographicSize), 
+            rotation);
     }
 
-    private void CountColors()
+    private int[] CalculateHitsPerColor()
     {
-        int width = renderTexture.width;
-        int height = renderTexture.height;
-
         // Create a buffer for color counts
-        hitsPerColor = new int[20];
-        hitBuffer = new ComputeBuffer(MaxColors, sizeof(int));
+        int[] hitsPerColor = new int[ragdollAverages.NumRigidbodies];
         hitBuffer.SetData(hitsPerColor);
 
-        // Set shader parameters
-        int kernel = computeShader.FindKernel("CSMain");
-        computeShader.SetTexture(kernel, "InputTexture", renderTexture);
-        computeShader.SetBuffer(kernel, "ColorCounts", hitBuffer);
-
         // Dispatch the compute shader
-        int threadGroupsX = Mathf.CeilToInt(width / 8.0f);
-        int threadGroupsY = Mathf.CeilToInt(height / 8.0f);
-        computeShader.Dispatch(kernel, threadGroupsX, threadGroupsY, 1);
+        int threadGroupsX = Mathf.CeilToInt(renderTextureDimensions.x / 8.0f);
+        int threadGroupsY = Mathf.CeilToInt(renderTextureDimensions.y / 8.0f);
+        computeShader.Dispatch(computeKernel, threadGroupsX, threadGroupsY, 1);
 
         // Retrieve results
-        float time = Time.realtimeSinceStartup;
+        //float time = Time.realtimeSinceStartup;
         hitBuffer.GetData(hitsPerColor); // Use async method?
-        Debug.Log(Time.realtimeSinceStartup - time);
+        //Debug.Log(Time.realtimeSinceStartup - time);
         
-        float totalSurfaceArea = dragCamera.orthographicSize * dragCamera.orthographicSize * 4.0f;
-        float areaPerPixel = totalSurfaceArea / (width * height);
+        return hitsPerColor;
+    }
+    
+    private float[] CalculateSurfaceAreas()
+    {
+        MoveCamera();
         
-        for(int i = 0; i < ragdollAverages.Rigidbodies.Length; i++)
+        RenderPipeline.SubmitRenderRequest(dragCamera, renderRequest);
+        
+        int[] hits = CalculateHitsPerColor();
+
+        float[] result = new float[ragdollAverages.NumRigidbodies];
+
+        for (int i = 0; i < ragdollAverages.NumRigidbodies; i++)
         {
-            Rigidbody rigidbody = ragdollAverages.Rigidbodies[i];
-            float drag_magnitude = 0.5f * Utils.Density.AIR * rigidbody.linearVelocity.sqrMagnitude * 0.7f * hitsPerColor[i] * areaPerPixel;
-            ragdollAverages.Rigidbodies[i].AddForce(drag_magnitude * dragCamera.transform.forward, ForceMode.Force);
+            result[i] = hits[i] * areaPerPixel;
         }
 
+        return result;
+    }
+
+    private void OnDestroy()
+    {
         // Clean up
         hitBuffer.Release();
     }
