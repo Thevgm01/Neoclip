@@ -1,39 +1,48 @@
+using System;
 using UnityEngine;
 
 public abstract class ConditionallyUpdatedProperty<T>
 {
     private T value;
-    private int lastUpdate = 0;
+    private float lastUpdate = -1.0f;
+    private readonly Func<T> propertyFunction;
     
-    protected abstract int CurrentUpdate();
+    protected abstract float CurrentUpdate();
 
-    protected abstract T PropertyFunction();
-    
-    public T Get()
+    public T GetValue()
     {
-        int currentUpdate = CurrentUpdate();
+        float currentUpdate = CurrentUpdate();
         if (lastUpdate < currentUpdate)
         {
             lastUpdate = currentUpdate;
-            value = PropertyFunction();
+            value = propertyFunction();
         }
 
         return value;
     }
-}
 
-public abstract class FrameCountUpdatedProperty<T> : ConditionallyUpdatedProperty<T>
-{
-    protected override int CurrentUpdate()
+    protected ConditionallyUpdatedProperty(Func<T> propertyFunction)
     {
-        return Time.frameCount;
+        this.propertyFunction = propertyFunction;
     }
 }
 
-public abstract class FixedFrameCountUpdatedProperty<T> : ConditionallyUpdatedProperty<T>
+public class FrameCountUpdatedProperty<T> : ConditionallyUpdatedProperty<T>
 {
-    protected override int CurrentUpdate()
+    protected override float CurrentUpdate()
     {
-        return Utils.FixedUpdateCount;
+        return Time.time;
     }
+
+    public FrameCountUpdatedProperty(Func<T> propertyFunction) : base(propertyFunction) {}
+}
+
+public class FixedFrameCountUpdatedProperty<T> : ConditionallyUpdatedProperty<T>
+{
+    protected override float CurrentUpdate()
+    {
+        return Time.fixedTime;
+    }
+    
+    public FixedFrameCountUpdatedProperty(Func<T> propertyFunction) : base(propertyFunction) {}
 }

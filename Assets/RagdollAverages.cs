@@ -11,73 +11,48 @@ public class RagdollAverages : MonoBehaviour
     public Transform[] Transforms => (Transform[])transforms.Clone();
     
     public float TotalMass { get; private set; }
-
-    private class AveragePositionProperty : FrameCountUpdatedProperty<Vector3>
-    {
-        private readonly RagdollAverages parent;
-        
-        protected override Vector3 PropertyFunction()
-        {
-            Vector3 averagePosition = Vector3.zero;
-            
-            for (int i = 0; i < parent.transforms.Length; i++)
-            {
-                averagePosition += parent.transforms[i].position * parent.rigidbodies[i].mass;
-            }
-
-            return averagePosition / parent.TotalMass;
-        }
-
-        public AveragePositionProperty(RagdollAverages parent)
-        {
-            this.parent = parent;
-        }
-    }
     
-    private class AverageVelocityProperty : FixedFrameCountUpdatedProperty<Vector3>
-    {
-        private readonly RagdollAverages parent;
-        
-        protected override Vector3 PropertyFunction()
-        {
-            Vector3 averageVelocity = Vector3.zero;
-            
-            for (int i = 0; i < parent.rigidbodies.Length; i++)
-            {
-                averageVelocity += parent.rigidbodies[i].linearVelocity;
-            }
-            
-            return averageVelocity / parent.rigidbodies.Length;
-        }
+    private FrameCountUpdatedProperty<Vector3> averagePosition;
+    public Vector3 AveragePosition => averagePosition.GetValue();
 
-        public AverageVelocityProperty(RagdollAverages parent)
-        {
-            this.parent = parent;
-        }
-    }
-    
-    private AveragePositionProperty averagePosition;
-    private AverageVelocityProperty averageVelocity;
-    
-    public Vector3 AveragePosition => averagePosition.Get();
-    public Vector3 AverageVelocity => averageVelocity.Get();
+    private FixedFrameCountUpdatedProperty<Vector3> averageVelocity;
+    public Vector3 AverageVelocity => averageVelocity.GetValue();
 
     private void Init()
     {
-        if (rigidbodies == null || rigidbodies.Length == 0)
+        if (rigidbodies != null && rigidbodies.Length > 0)
         {
-            rigidbodies = GetComponentsInChildren<Rigidbody>();
-            transforms = new Transform[rigidbodies.Length];
+            return;
+        }
         
+        rigidbodies = GetComponentsInChildren<Rigidbody>();
+        transforms = new Transform[rigidbodies.Length];
+    
+        for (int i = 0; i < rigidbodies.Length; i++)
+        {
+            transforms[i] = rigidbodies[i].transform;
+            TotalMass += rigidbodies[i].mass;
+        }
+        
+        averagePosition = new FrameCountUpdatedProperty<Vector3>(() =>
+        {
+            Vector3 temp = Vector3.zero;
+            for (int i = 0; i < transforms.Length; i++)
+            {
+                temp += transforms[i].position * rigidbodies[i].mass;
+            }
+            return temp / TotalMass;
+        });
+        
+        averageVelocity = new FixedFrameCountUpdatedProperty<Vector3>(() =>
+        {
+            Vector3 temp = Vector3.zero;
             for (int i = 0; i < rigidbodies.Length; i++)
             {
-                transforms[i] = rigidbodies[i].transform;
-                TotalMass += rigidbodies[i].mass;
+                temp += rigidbodies[i].linearVelocity;
             }
-        }
-
-        averagePosition = new AveragePositionProperty(this);
-        averageVelocity = new AverageVelocityProperty(this);
+            return temp / rigidbodies.Length;
+        });
     }
 
     private void Awake()
