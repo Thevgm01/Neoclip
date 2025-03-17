@@ -1,9 +1,9 @@
 using System;
 using UnityEngine;
 
-public class Utils
+public static class Utils
 {
-    public class Density
+    public static class Density
     {
         public const float WATER = 1000.0f;
         public const float AIR = 1.204f;
