@@ -1,5 +1,7 @@
 using System;
+using UnityEditor;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 public static class Utils
 {
@@ -23,6 +25,22 @@ public static class Utils
     
     public static float ExpT(float speed) => 1.0f - Mathf.Exp(-speed * Time.deltaTime);
 
+    public static void TryDestroyObjectsImmediate(Object[] objs)
+    {
+	    foreach (Object obj in objs)
+	    {
+		    TryDestroyObjectImmediate(obj);
+	    }
+    }
+    
+    public static void TryDestroyObjectImmediate(Object obj)
+    {
+	    if (obj != null)
+	    {
+		    Undo.DestroyObjectImmediate(obj);
+	    }
+    }
+	
     public static float CalculateVolume(Collider collider)
     {
         switch (collider)
