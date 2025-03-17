@@ -37,7 +37,7 @@ public class DragCamera : NeoclipCharacterComponent
 
             RenderPipeline.SubmitRenderRequest(dragCamera, request);
             CountColors();
-            Debug.Log(ragdollAverages.AverageVelocity.magnitude * 60 * 60 / 1000);
+            //Debug.Log(ragdollAverages.AverageVelocity.magnitude * 60 * 60 / 1000);
         }
     }
 
@@ -62,8 +62,10 @@ public class DragCamera : NeoclipCharacterComponent
         computeShader.Dispatch(kernel, threadGroupsX, threadGroupsY, 1);
 
         // Retrieve results
+        float time = Time.realtimeSinceStartup;
         hitBuffer.GetData(hitsPerColor); // Use async method?
-
+        Debug.Log(Time.realtimeSinceStartup - time);
+        
         float totalSurfaceArea = dragCamera.orthographicSize * dragCamera.orthographicSize * 4.0f;
         float areaPerPixel = totalSurfaceArea / (width * height);
         
