@@ -1,0 +1,22 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+// Create a StructuredBuffer/ComputeBuffer with read only flag.
+Texture2D<float4> inputTexture;
+// Create a StructuredBuffer/ComputeBuffer with read & write flag.
+RWStructuredBuffer<int> outputData;
+
+// We allocate 20 threads one for each number given to the shader.
+// CSMain is the entry point we use we have to define the entry points as kernel.
+[numthreads(16,16,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    int2 texSize;
+    inputTexture.GetDimensions(texSize.x, texSize.y);
+    float4 color = inputTexture[id.xy / texSize];
+    if (color.a > 0.0f)
+    {
+        uint index = (uint)(color.r * 255.0f) >> 3; // Divide by 8
+        InterlockedAdd(outputData[index], 1);
+    }
+}

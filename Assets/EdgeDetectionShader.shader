@@ -39,6 +39,8 @@ Shader "Custom/Edge Detection"
             static const int DOWNLEFT = 3;
             static const int DOWNRIGHT = 4;
 
+            static const float PHI = 1.61803398874989484820459;  // Φ = Golden Ratio
+            
             #pragma vertex Vert // vertex shader is provided by the Blit.hlsl include
             #pragma fragment frag
 
@@ -88,6 +90,15 @@ Shader "Custom/Edge Detection"
                 return sqrt(difference_1 * difference_1 + difference_2 * difference_2);
             }
 
+            bool IsCharacter(float3 color)
+            {
+                return color.r == 1.0 && color.g == 0.0 && color.b == 0.0;
+            }
+            
+            float gold_noise(in float2 xy, in float seed){
+                   return frac(tan(distance(xy * PHI, xy) * seed) * xy.x);
+            }
+            
             half4 frag(Varyings IN) : SV_TARGET
             {
                 // Screen-space coordinates which we will use to sample.
@@ -97,6 +108,18 @@ Shader "Custom/Edge Detection"
                 // Generate 4 diagonally placed samples.
                 const float half_width_f = floor(_OutlineThickness * 0.5);
                 const float half_width_c = ceil(_OutlineThickness * 0.5);
+
+                /*
+                float2 character_glitch_cell = float2(
+                    GenerateHashedRandomFloat(floor(uv.xy * 16) + _Time.w) - 0.5,
+                    GenerateHashedRandomFloat(floor(uv.yx * 16) + _Time.w) - 0.5) * 2.0;
+                float2 character_glitch_uv = uv + texel_size * 32 * character_glitch_cell;
+                bool any = IsCharacter(SampleSceneColor(character_glitch_uv));
+                if (any)
+                {
+                    uv = character_glitch_uv;
+                }
+                */
                 
                 float2 uvs[5];
                 uvs[CENTER] = uv;
@@ -129,7 +152,7 @@ Shader "Custom/Edge Detection"
                         most_vertical_normal = max(most_vertical_normal, normal_samples[i].y);
                     }
 
-                    is_character = is_character || (color_samples[i].r == 1 && color_samples[i].g == 0 && color_samples[i].b == 0);
+                    is_character = is_character || IsCharacter(color_samples[i]);
                 }
                 
                 // Apply edge detection kernel on the samples to compute edges.
@@ -151,12 +174,15 @@ Shader "Custom/Edge Detection"
                 }
                 else if (is_character)
                 {
+                    //return half4(0.0, 0.0, 0.0, 1.0);
+                    
                     float a = max(depth_cross * 600, color_cross);
                     
                     return half4(one * (a > 0.1 ? 1.0 : 0.0), 1.0);
                 }
                 else
                 {
+                    
                     float3 weird_normal_diff = max(normal_samples[UPLEFT] - normal_samples[DOWNRIGHT], normal_samples[UPRIGHT] - normal_samples[DOWNLEFT]);
                     //float3 a = depth_cross * 50 * weird_normal_diff;
 
@@ -184,6 +210,9 @@ Shader "Custom/Edge Detection"
                     }
                     
                     //float3 edge = clamp(max_vec, 0.0, 1.0);
+                    
+
+                    //float3 max_vec = one * max(max(depth_cross * 50, normal_cross / 3), color_cross / 5);
                     
                     return half4(max_vec, 1.0);
                 }
