@@ -15,9 +15,27 @@ public class RagdollAverages : NeoclipCharacterComponent
     public Collider GetTrigger(int index) => (Collider)objects[index * STRIDE + 4];
     public NoclipDetector GetNoclipDetector(int index) => (NoclipDetector)objects[index * STRIDE + 5];
 
+    private Vector3 CalculateAveragePosition()
+    {
+        Vector3 temp = Vector3.zero;
+        for (int i = 0; i < NumBones; i++)
+        {
+            temp += GetTransform(i).position * GetRigidbody(i).mass;
+        }
+        return temp / TotalMass;
+    }
     private TimeUpdatedProperty<Vector3> averagePosition;
     public Vector3 AveragePosition => averagePosition.GetValue();
 
+    private Vector3 CalculateAverageVelocity()
+    {
+        Vector3 temp = Vector3.zero;
+        for (int i = 0; i < NumBones; i++)
+        {
+            temp += GetRigidbody(i).linearVelocity;
+        }
+        return temp / NumBones;
+    }
     private FixedTimeUpdatedProperty<Vector3> averageVelocity;
     public Vector3 AverageVelocity => averageVelocity.GetValue();
 
@@ -46,25 +64,7 @@ public class RagdollAverages : NeoclipCharacterComponent
     public override void Init()
     {
         FillObjectArray();
-        
-        averagePosition = new TimeUpdatedProperty<Vector3>(() =>
-        {
-            Vector3 temp = Vector3.zero;
-            for (int i = 0; i < NumBones; i++)
-            {
-                temp += GetTransform(i).position * GetRigidbody(i).mass;
-            }
-            return temp / TotalMass;
-        });
-        
-        averageVelocity = new FixedTimeUpdatedProperty<Vector3>(() =>
-        {
-            Vector3 temp = Vector3.zero;
-            for (int i = 0; i < NumBones; i++)
-            {
-                temp += GetRigidbody(i).linearVelocity;
-            }
-            return temp / NumBones;
-        });
+        averagePosition = new TimeUpdatedProperty<Vector3>(CalculateAveragePosition);
+        averageVelocity = new FixedTimeUpdatedProperty<Vector3>(CalculateAverageVelocity);
     }
 }
