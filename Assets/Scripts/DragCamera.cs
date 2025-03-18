@@ -35,7 +35,7 @@ public class DragCamera : NeoclipCharacterComponent
         
         // Set shader parameters
         computeKernel = computeShader.FindKernel("CSMain");
-        hitBuffer = new ComputeBuffer(ragdollAverages.NumRigidbodies, sizeof(int));
+        hitBuffer = new ComputeBuffer(ragdollAverages.NumBones, sizeof(int));
         computeShader.SetTexture(computeKernel, Shader.PropertyToID("InputTexture"), dragCamera.targetTexture);
         computeShader.SetBuffer(computeKernel, Shader.PropertyToID("ColorCounts"), hitBuffer);
         
@@ -54,7 +54,7 @@ public class DragCamera : NeoclipCharacterComponent
     private int[] CalculateHitsPerColor()
     {
         // Create a buffer for color counts
-        int[] hitsPerColor = new int[ragdollAverages.NumRigidbodies];
+        int[] hitsPerColor = new int[ragdollAverages.NumBones];
         hitBuffer.SetData(hitsPerColor);
 
         // Dispatch the compute shader
@@ -78,9 +78,9 @@ public class DragCamera : NeoclipCharacterComponent
         
         int[] hits = CalculateHitsPerColor();
 
-        float[] result = new float[ragdollAverages.NumRigidbodies];
+        float[] result = new float[ragdollAverages.NumBones];
 
-        for (int i = 0; i < ragdollAverages.NumRigidbodies; i++)
+        for (int i = 0; i < ragdollAverages.NumBones; i++)
         {
             result[i] = hits[i] * areaPerPixel;
         }

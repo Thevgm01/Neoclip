@@ -45,7 +45,7 @@ public class NeoclipCharacterController : MonoBehaviour
 
         Vector3 movement = cameraController.CameraRelativeMoveVector(moveInput) * moveAcceleration;
         
-        for (int i = 0; i < ragdollAverages.NumRigidbodies; i++)
+        for (int i = 0; i < ragdollAverages.NumBones; i++)
         {
             Rigidbody rigidbody = ragdollAverages.GetRigidbody(i);
 
