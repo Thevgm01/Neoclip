@@ -21,8 +21,8 @@ public class RagdollBuilder : MonoBehaviour
     public float jointSpringStrength = 20.0f;
     public Material dragMeshMaterial;
     public PhysicsMaterial physicsMaterial;
-    public LayerMask defaultLayer;
-    public LayerMask triggerLayer;
+    public LayerNumber defaultLayer;
+    public LayerNumber triggerLayer;
     
     private UnityEngine.Object lastSelectedObject = null; // Double-clicking won't select the mirror
     private UnityEngine.Object mirrorBoneObject = null;
@@ -117,9 +117,7 @@ public class RagdollBuilder : MonoBehaviour
             float totalMass = 0.0f;
             int dragMeshesCreated = 0;
 
-            int defaultLayerNumber = defaultLayer.ToLayerNumber();
-            int triggerLayerNumber = triggerLayer.ToLayerNumber();
-            string triggerLayerName = LayerMask.LayerToName(triggerLayerNumber);
+            string triggerLayerName = LayerMask.LayerToName(triggerLayer.value);
             
             Utils.TryDestroyObjectsImmediate(GameObject.FindGameObjectsWithTag(triggerLayerName));
 
@@ -128,7 +126,7 @@ public class RagdollBuilder : MonoBehaviour
                 Rigidbody rigidbody = rigidbodies[i];
                 
                 GameObject gameObject = rigidbody.gameObject;
-                gameObject.layer = defaultLayerNumber;
+                gameObject.layer = defaultLayer.value;
                 
                 Utils.TryDestroyObjectImmediate(gameObject.GetComponent<Joint>());
                 Utils.TryDestroyObjectImmediate(gameObject.GetComponent<MeshFilter>());
@@ -142,7 +140,7 @@ public class RagdollBuilder : MonoBehaviour
                 GameObject triggerObject = new GameObject();
                 triggerObject.name = gameObject.name + "_trigger";
                 triggerObject.tag = triggerLayerName;
-                triggerObject.layer = triggerLayerNumber;
+                triggerObject.layer = triggerLayer.value;
                 triggerObject.transform.SetParent(gameObject.transform, false);
                 Collider triggerCollider = collider.CopyTo(triggerObject);
                 triggerCollider.sharedMaterial = null;

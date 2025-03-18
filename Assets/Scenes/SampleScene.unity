@@ -1378,11 +1378,9 @@ MonoBehaviour:
   dragMeshMaterial: {fileID: 2100000, guid: 1defe5b4c21d1e54faddc9ea97fa6e84, type: 2}
   physicsMaterial: {fileID: 13400000, guid: 570f5f0554d7321418a92bc5fb951d78, type: 2}
   defaultLayer:
-    serializedVersion: 2
-    m_Bits: 64
+    value: 6
   triggerLayer:
-    serializedVersion: 2
-    m_Bits: 256
+    value: 8
 --- !u!114 &59713680
 MonoBehaviour:
   m_ObjectHideFlags: 0
