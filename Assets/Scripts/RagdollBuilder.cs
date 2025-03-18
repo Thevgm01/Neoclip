@@ -143,6 +143,7 @@ public class RagdollBuilder : MonoBehaviour
                 {
                     collider = colliders[0];
                     Undo.RecordObject(collider, $"Set colliders");
+                    collider.enabled = true;
                     collider.sharedMaterial = physicsMaterial;
                     collider.excludeLayers = defaultExcludeLayers;
                     collider.isTrigger = false;
@@ -153,9 +154,10 @@ public class RagdollBuilder : MonoBehaviour
                     }
                     
                     Collider triggerCollider = collider.CopyTo(gameObject);
+                    triggerCollider.enabled = false;
+                    triggerCollider.isTrigger = true;
                     triggerCollider.sharedMaterial = null;
                     triggerCollider.excludeLayers = triggerExcludeLayers;
-                    triggerCollider.isTrigger = true;
                 }
 
                 // Set the mass

@@ -161,31 +161,43 @@ public static class ColliderUtils
 
     public static Collider CopyTo(this Collider collider, GameObject gameObject)
     {
+	    Collider newCollider;
+	    
 	    switch (collider)
 	    {
 		    case BoxCollider boxCollider:
 			    BoxCollider newBoxCollider = gameObject.AddComponent<BoxCollider>();
-			    newBoxCollider.sharedMaterial = boxCollider.sharedMaterial;
 			    newBoxCollider.center = boxCollider.center;
 			    newBoxCollider.size = boxCollider.size;
-			    return newBoxCollider;
+			    newCollider = newBoxCollider;
+			    break;
 		    case CapsuleCollider capsuleCollider:
 			    CapsuleCollider newCapsuleCollider = gameObject.AddComponent<CapsuleCollider>();
-			    newCapsuleCollider.sharedMaterial = capsuleCollider.sharedMaterial;
 			    newCapsuleCollider.center = capsuleCollider.center;
 			    newCapsuleCollider.direction = capsuleCollider.direction;
 			    newCapsuleCollider.height = capsuleCollider.height;
 			    newCapsuleCollider.radius = capsuleCollider.radius;
-			    return newCapsuleCollider;
+			    newCollider = newCapsuleCollider;
+			    break;
 		    case SphereCollider sphereCollider:
 			    SphereCollider newSphereCollider = gameObject.AddComponent<SphereCollider>();
-			    newSphereCollider.sharedMaterial = sphereCollider.sharedMaterial;
 			    newSphereCollider.center = sphereCollider.center;
 			    newSphereCollider.radius = sphereCollider.radius;
-			    return newSphereCollider;
+			    newCollider = newSphereCollider;
+			    break;
 		    default:
 			    throw new ArgumentOutOfRangeException(nameof(collider), collider, null);
 	    }
+
+	    newCollider.enabled = collider.enabled;
+	    newCollider.isTrigger = collider.isTrigger;
+	    newCollider.providesContacts = collider.providesContacts;
+	    newCollider.sharedMaterial = collider.sharedMaterial;
+	    newCollider.layerOverridePriority = collider.layerOverridePriority;
+	    newCollider.includeLayers = collider.includeLayers;
+	    newCollider.excludeLayers = collider.excludeLayers;
+		
+	    return newCollider;
     }
 
     public static int HashCollider(Collider collider)
