@@ -131,7 +131,9 @@ public class RagdollBuilder : MonoBehaviour
                 EditorUtils.TryDestroyObjectImmediate(gameObject.GetComponent<Joint>());
                 EditorUtils.TryDestroyObjectImmediate(gameObject.GetComponent<MeshFilter>());
                 EditorUtils.TryDestroyObjectImmediate(gameObject.GetComponent<MeshRenderer>());
-
+                EditorUtils.TryDestroyObjectImmediate(gameObject.GetComponent<RagdollTrigger>());
+                
+                // Modify the primary collider, add a second trigger collider if necessary
                 Collider collider;
                 Collider[] colliders = rigidbody.GetComponents<Collider>();
                 if (colliders.Length == 0)
@@ -159,7 +161,7 @@ public class RagdollBuilder : MonoBehaviour
                     triggerCollider.sharedMaterial = null;
                     triggerCollider.excludeLayers = triggerExcludeLayers;
                 }
-
+                
                 // Set the mass
                 Undo.RecordObject(rigidbody, $"Set rigidbody values");
                 // rigidbody.SetDensity() does NOTHING!!!
@@ -168,9 +170,12 @@ public class RagdollBuilder : MonoBehaviour
                                  initialMassMult;
                 rigidbody.interpolation = RigidbodyInterpolation.Interpolate;
                 rigidbody.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
-
+                
                 // Keep track of the total mass
                 totalMass += rigidbody.mass;
+                
+                // Add trigger script
+                Undo.AddComponent<RagdollTrigger>(gameObject);
                 
                 // Add a ConfigurableJoint
                 Rigidbody parentRigidbody = rigidbody.transform.parent.GetComponentInParent<Rigidbody>();
@@ -209,6 +214,7 @@ public class RagdollBuilder : MonoBehaviour
                     }
                 }
 
+                // Create and add the DragMesh
                 Mesh dragMesh = collider.ToMeshWithVertexColor(new Color32((byte)(i * 8), 0, 0, 255));
                 if (dragMesh)
                 {
