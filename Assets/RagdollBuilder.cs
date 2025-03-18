@@ -21,7 +21,8 @@ public class RagdollBuilder : MonoBehaviour
     public float jointSpringStrength = 20.0f;
     public Material dragMeshMaterial;
     public PhysicsMaterial physicsMaterial;
-    [HideInInspector] public int dragMeshLayer;
+    public LayerMask defaultLayer;
+    public LayerMask triggerLayer;
     
     private UnityEngine.Object lastSelectedObject = null; // Double-clicking won't select the mirror
     private UnityEngine.Object mirrorBoneObject = null;
@@ -116,12 +117,18 @@ public class RagdollBuilder : MonoBehaviour
             float totalMass = 0.0f;
             int dragMeshesCreated = 0;
 
+            int defaultLayerNumber = defaultLayer.ToLayerNumber();
+            int triggerLayerNumber = triggerLayer.ToLayerNumber();
+            string triggerLayerName = LayerMask.LayerToName(triggerLayerNumber);
+            
+            Utils.TryDestroyObjectsImmediate(GameObject.FindGameObjectsWithTag(triggerLayerName));
+
             for (int i = 0; i < rigidbodies.Length; i++)
             {
                 Rigidbody rigidbody = rigidbodies[i];
                 
                 GameObject gameObject = rigidbody.gameObject;
-                gameObject.layer = dragMeshLayer;
+                gameObject.layer = defaultLayerNumber;
                 
                 Utils.TryDestroyObjectImmediate(gameObject.GetComponent<Joint>());
                 Utils.TryDestroyObjectImmediate(gameObject.GetComponent<MeshFilter>());
@@ -131,6 +138,16 @@ public class RagdollBuilder : MonoBehaviour
                 Undo.RecordObject(collider, $"Set collider physics material");
                 collider.sharedMaterial = physicsMaterial;
                 int colliderHash = Utils.HashCollider(collider);
+
+                GameObject triggerObject = new GameObject();
+                triggerObject.name = gameObject.name + "_trigger";
+                triggerObject.tag = triggerLayerName;
+                triggerObject.layer = triggerLayerNumber;
+                triggerObject.transform.SetParent(gameObject.transform, false);
+                Collider triggerCollider = collider.CopyTo(triggerObject);
+                triggerCollider.sharedMaterial = null;
+                triggerCollider.isTrigger = true;
+                Undo.RegisterCreatedObjectUndo(triggerObject, $"Create trigger object");
                 
                 // Set the mass
                 Undo.RecordObject(rigidbody, $"Set rigidbody values");

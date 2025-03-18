@@ -25,6 +25,8 @@ public static class Utils
     
     public static float ExpT(float speed) => 1.0f - Mathf.Exp(-speed * Time.deltaTime);
 
+    public static int ToLayerNumber(this LayerMask mask) => Mathf.RoundToInt(Mathf.Log(mask.value, 2.0f));
+    
     public static Vector2 Rotate(this Vector2 v, float radians)
     {
 	    float cos = Mathf.Cos(radians), sin = Mathf.Sin(radians);
@@ -193,7 +195,37 @@ public static class Utils
                 
         return newMesh;
     }
-    
+
+    public static Collider CopyTo(this Collider collider, GameObject gameObject)
+    {
+	    switch (collider)
+	    {
+		    case BoxCollider boxCollider:
+			    BoxCollider newBoxCollider = gameObject.AddComponent<BoxCollider>();
+			    newBoxCollider.sharedMaterial = boxCollider.sharedMaterial;
+			    newBoxCollider.center = boxCollider.center;
+			    newBoxCollider.size = boxCollider.size;
+			    return newBoxCollider;
+		    case CapsuleCollider capsuleCollider:
+			    CapsuleCollider newCapsuleCollider = gameObject.AddComponent<CapsuleCollider>();
+			    newCapsuleCollider.sharedMaterial = capsuleCollider.sharedMaterial;
+			    newCapsuleCollider.center = capsuleCollider.center;
+			    newCapsuleCollider.direction = capsuleCollider.direction;
+			    newCapsuleCollider.height = capsuleCollider.height;
+			    newCapsuleCollider.radius = capsuleCollider.radius;
+			    return newCapsuleCollider;
+		    case SphereCollider sphereCollider:
+			    SphereCollider newSphereCollider = gameObject.AddComponent<SphereCollider>();
+			    newSphereCollider.sharedMaterial = sphereCollider.sharedMaterial;
+			    newSphereCollider.center = sphereCollider.center;
+			    newSphereCollider.radius = sphereCollider.radius;
+			    return newSphereCollider;
+	    }
+	    
+	    Debug.LogWarning($"Utils.CopyTo: Unsupported collider {collider}");
+	    return null;
+    }
+
     public static int HashCollider(Collider collider)
     {
 	    Hash128 hash = new Hash128();

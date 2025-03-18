@@ -32,8 +32,6 @@ public class RagdollBuilderEditor : Editor
         
 
         DrawDefaultInspector();
-
-        builder.dragMeshLayer = EditorGUILayout.LayerField("Drag Mesh Layer", builder.dragMeshLayer);
         
         if (GUILayout.Button("Build Ragdoll"))
         {
