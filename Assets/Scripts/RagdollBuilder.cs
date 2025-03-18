@@ -175,7 +175,8 @@ public class RagdollBuilder : MonoBehaviour
                 totalMass += rigidbody.mass;
                 
                 // Add trigger script
-                Undo.AddComponent<RagdollTrigger>(gameObject);
+                RagdollTrigger triggerScript = Undo.AddComponent<RagdollTrigger>(gameObject);
+                triggerScript.enabled = false;
                 
                 // Add a ConfigurableJoint
                 Rigidbody parentRigidbody = rigidbody.transform.parent.GetComponentInParent<Rigidbody>();
