@@ -119,7 +119,7 @@ public class RagdollBuilder : MonoBehaviour
             float totalMass = 0.0f;
             int dragMeshesCreated = 0;
 
-            Utils.TryDestroyObjectsImmediate(GameObject.FindGameObjectsWithTag(LayerMask.LayerToName(triggerLayer.value)));
+            EditorUtils.TryDestroyObjectsImmediate(GameObject.FindGameObjectsWithTag(LayerMask.LayerToName(triggerLayer.value)));
 
             for (int i = 0; i < rigidbodies.Length; i++)
             {
@@ -128,9 +128,9 @@ public class RagdollBuilder : MonoBehaviour
                 GameObject gameObject = rigidbody.gameObject;
                 gameObject.layer = defaultLayer.value;
                 
-                Utils.TryDestroyObjectImmediate(gameObject.GetComponent<Joint>());
-                Utils.TryDestroyObjectImmediate(gameObject.GetComponent<MeshFilter>());
-                Utils.TryDestroyObjectImmediate(gameObject.GetComponent<MeshRenderer>());
+                EditorUtils.TryDestroyObjectImmediate(gameObject.GetComponent<Joint>());
+                EditorUtils.TryDestroyObjectImmediate(gameObject.GetComponent<MeshFilter>());
+                EditorUtils.TryDestroyObjectImmediate(gameObject.GetComponent<MeshRenderer>());
 
                 Collider collider;
                 Collider[] colliders = rigidbody.GetComponents<Collider>();
@@ -162,7 +162,7 @@ public class RagdollBuilder : MonoBehaviour
                 Undo.RecordObject(rigidbody, $"Set rigidbody values");
                 // rigidbody.SetDensity() does NOTHING!!!
                 rigidbody.mass = collider.CalculateVolume() * 
-                                 Utils.Density.MEAT * 
+                                 Constants.Density.MEAT * 
                                  initialMassMult;
                 rigidbody.interpolation = RigidbodyInterpolation.Interpolate;
                 rigidbody.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;

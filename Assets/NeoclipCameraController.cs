@@ -66,9 +66,9 @@ public class NeoclipCameraController : NeoclipCharacterComponent
         }
         
         desiredPosition = ragdollAverages.AveragePosition;
-        currentPosition = Vector3.Lerp(currentPosition, desiredPosition, Utils.ExpT(followSpeed));
+        currentPosition = Vector3.Lerp(currentPosition, desiredPosition, GenericUtils.ExpT(followSpeed));
 
-        currentRotation = Quaternion.Slerp(currentRotation, desiredRotation, Utils.ExpT(rotationSpeed));
+        currentRotation = Quaternion.Slerp(currentRotation, desiredRotation, GenericUtils.ExpT(rotationSpeed));
 
         Vector3 offsetPosition = currentPosition + currentRotation * new Vector3(0, 0, -followDistance);
         //Vector3 dirToTarget = (desiredPosition - offsetPosition).normalized;

@@ -1,18 +1,8 @@
 using System;
-using UnityEditor;
 using UnityEngine;
-using Object = UnityEngine.Object;
 
-public static class Utils
+public static class ColliderUtils
 {
-    public static class Density
-    {
-        public const float WATER = 1000.0f;
-        public const float AIR = 1.204f;
-        public const float CLIPSPACE = 20.0f;
-        public const float MEAT = 1010.0f;
-    }
- 
     //https://discussions.unity.com/t/getting-a-primitive-mesh-without-creating-a-new-gameobject/78809/6
     private static Mesh _unityCapsuleMesh = null;
     private static Mesh _unityCubeMesh = null;
@@ -20,35 +10,7 @@ public static class Utils
     private static Mesh _unityPlaneMesh = null;
     private static Mesh _unitySphereMesh = null;
     private static Mesh _unityQuadMesh = null;
-
-    public static int FixedUpdateCount => Mathf.CeilToInt(Time.fixedTime / Time.fixedDeltaTime);
     
-    public static float ExpT(float speed) => 1.0f - Mathf.Exp(-speed * Time.deltaTime);
-
-    public static int ToLayerNumber(this LayerMask mask) => Mathf.RoundToInt(Mathf.Log(mask.value, 2.0f));
-    
-    public static Vector2 Rotate(this Vector2 v, float radians)
-    {
-	    float cos = Mathf.Cos(radians), sin = Mathf.Sin(radians);
-	    return new Vector2(v.x * cos - v.y * sin, v.x * sin + v.y * cos);
-    }
-    
-    public static void TryDestroyObjectsImmediate(Object[] objs)
-    {
-	    foreach (Object obj in objs)
-	    {
-		    TryDestroyObjectImmediate(obj);
-	    }
-    }
-    
-    public static void TryDestroyObjectImmediate(Object obj)
-    {
-	    if (obj != null)
-	    {
-		    Undo.DestroyObjectImmediate(obj);
-	    }
-    }
-	
     public static float CalculateVolume(this Collider collider)
     {
         switch (collider)

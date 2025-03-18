@@ -47,15 +47,15 @@ public class NeoclipCharacterController : MonoBehaviour
         
         for (int i = 0; i < ragdollAverages.NumRigidbodies; i++)
         {
-
             Rigidbody rigidbody = ragdollAverages.GetRigidbody(i);
+
             Vector3 force = Vector3.zero;
             Vector3 acceleration = Vector3.zero;
 
             if (applyDrag)
             {
                 force += 0.5f * 
-                         Utils.Density.AIR * 
+                         Constants.Density.AIR * 
                          rigidbody.linearVelocity.sqrMagnitude * 
                          0.7f *
                          dragCamera.RigidbodySurfaceAreas[i] * 
