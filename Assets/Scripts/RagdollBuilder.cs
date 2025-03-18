@@ -131,7 +131,7 @@ public class RagdollBuilder : MonoBehaviour
                 EditorUtils.TryDestroyObjectImmediate(gameObject.GetComponent<Joint>());
                 EditorUtils.TryDestroyObjectImmediate(gameObject.GetComponent<MeshFilter>());
                 EditorUtils.TryDestroyObjectImmediate(gameObject.GetComponent<MeshRenderer>());
-                EditorUtils.TryDestroyObjectImmediate(gameObject.GetComponent<RagdollTrigger>());
+                EditorUtils.TryDestroyObjectImmediate(gameObject.GetComponent<NoclipDetector>());
                 
                 // Modify the primary collider, add a second trigger collider if necessary
                 Collider collider;
@@ -168,6 +168,7 @@ public class RagdollBuilder : MonoBehaviour
                 rigidbody.mass = collider.CalculateVolume() * 
                                  Constants.Density.MEAT * 
                                  initialMassMult;
+                rigidbody.useGravity = false; // We're doing gravity manually
                 rigidbody.interpolation = RigidbodyInterpolation.Interpolate;
                 rigidbody.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
                 
@@ -175,8 +176,8 @@ public class RagdollBuilder : MonoBehaviour
                 totalMass += rigidbody.mass;
                 
                 // Add trigger script
-                RagdollTrigger triggerScript = Undo.AddComponent<RagdollTrigger>(gameObject);
-                triggerScript.enabled = false;
+                NoclipDetector noclipDetector = Undo.AddComponent<NoclipDetector>(gameObject);
+                noclipDetector.enabled = false;
                 
                 // Add a ConfigurableJoint
                 Rigidbody parentRigidbody = rigidbody.transform.parent.GetComponentInParent<Rigidbody>();

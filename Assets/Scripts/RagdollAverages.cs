@@ -13,7 +13,7 @@ public class RagdollAverages : NeoclipCharacterComponent
     public Transform GetTransform(int index) => (Transform)objects[index * STRIDE + 2];
     public Collider GetCollider(int index) => (Collider)objects[index * STRIDE + 3];
     public Collider GetTrigger(int index) => (Collider)objects[index * STRIDE + 4];
-    public RagdollTrigger GetTriggerScript(int index) => (RagdollTrigger)objects[index * STRIDE + 5];
+    public NoclipDetector GetTriggerScript(int index) => (NoclipDetector)objects[index * STRIDE + 5];
 
     private TimeUpdatedProperty<Vector3> averagePosition;
     public Vector3 AveragePosition => averagePosition.GetValue();
@@ -37,7 +37,7 @@ public class RagdollAverages : NeoclipCharacterComponent
             objects[i * STRIDE + 2] = rigidbody.transform;
             objects[i * STRIDE + 3] = colliders[0];
             objects[i * STRIDE + 4] = colliders[1];
-            objects[i * STRIDE + 5] = rigidbody.GetComponent<RagdollTrigger>();
+            objects[i * STRIDE + 5] = rigidbody.GetComponent<NoclipDetector>();
             
             TotalMass += rigidbody.mass;
         }
