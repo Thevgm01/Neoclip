@@ -220,6 +220,8 @@ public class RagdollBuilder : MonoBehaviour
                 Mesh dragMesh = collider.ToMeshWithVertexColor(new Color32((byte)(i * 8), 0, 0, 255));
                 if (dragMesh)
                 {
+                    dragMesh.normals = Array.Empty<Vector3>();
+                    
                     MeshFilter meshFilter = Undo.AddComponent<MeshFilter>(gameObject);
                     MeshRenderer meshRenderer = Undo.AddComponent<MeshRenderer>(gameObject);
                     

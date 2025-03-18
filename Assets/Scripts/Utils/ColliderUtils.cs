@@ -154,7 +154,7 @@ public static class ColliderUtils
         newMesh.colors32 = colors32;
         newMesh.triangles = oldMesh.triangles;
         newMesh.RecalculateBounds();
-        newMesh.RecalculateNormals();
+        //newMesh.RecalculateNormals(); // Normals should stay the same I think
                 
         return newMesh;
     }
