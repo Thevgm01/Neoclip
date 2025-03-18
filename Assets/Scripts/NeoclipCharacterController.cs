@@ -60,7 +60,7 @@ public class NeoclipCharacterController : MonoBehaviour
         for (int i = 0; i < ragdollAverages.NumBones; i++)
         {
             Rigidbody rigidbody = ragdollAverages.GetRigidbody(i);
-            NoclipDetector noclipDetector = ragdollAverages.GetTriggerScript(i);
+            NoclipDetector noclipDetector = ragdollAverages.GetNoclipDetector(i);
             
             if (noclipInput && !noclipDetector.enabled)
             {

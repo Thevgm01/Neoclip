@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class NoclipDetector : MonoBehaviour
 {
-    private Collider collider;
+    private Collider trigger;
     
     private int numEnters = 0;
     public bool IsInsideAnything => enabled && numEnters > 0;
@@ -11,19 +11,19 @@ public class NoclipDetector : MonoBehaviour
 
     private void Awake()
     {
-        collider = GetComponents<Collider>()[1]; // We're just hard-coding it to be the second one
+        trigger = GetComponents<Collider>()[1]; // We're just hard-coding it to be the second one
     }
 
     private void OnEnable()
     {
         numEnters = 0;
-        collider.enabled = true;
+        trigger.enabled = true;
     }
 
     private void OnDisable()
     {
         numEnters = 0;
-        collider.enabled = false;
+        trigger.enabled = false;
     }
 
     private void OnTriggerEnter(Collider other)
