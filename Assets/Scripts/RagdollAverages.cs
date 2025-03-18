@@ -5,7 +5,7 @@ public class RagdollAverages : NeoclipCharacterComponent
     public float TotalMass { get; private set; }
     public int NumBones { get; private set; }
 
-    private const int STRIDE = 5;
+    private const int STRIDE = 6;
     private Object[] objects;
     
     public Rigidbody GetRigidbody(int index) => (Rigidbody)objects[index * STRIDE + 0];
@@ -13,6 +13,7 @@ public class RagdollAverages : NeoclipCharacterComponent
     public Transform GetTransform(int index) => (Transform)objects[index * STRIDE + 2];
     public Collider GetCollider(int index) => (Collider)objects[index * STRIDE + 3];
     public Collider GetTrigger(int index) => (Collider)objects[index * STRIDE + 4];
+    public RagdollTrigger GetTriggerScript(int index) => (RagdollTrigger)objects[index * STRIDE + 5];
 
     private TimeUpdatedProperty<Vector3> averagePosition;
     public Vector3 AveragePosition => averagePosition.GetValue();
@@ -20,7 +21,7 @@ public class RagdollAverages : NeoclipCharacterComponent
     private FixedTimeUpdatedProperty<Vector3> averageVelocity;
     public Vector3 AverageVelocity => averageVelocity.GetValue();
 
-    public override void Init()
+    private void FillObjectArray()
     {
         Rigidbody[] rigidbodies = GetComponentsInChildren<Rigidbody>();
         NumBones = rigidbodies.Length;
@@ -36,16 +37,22 @@ public class RagdollAverages : NeoclipCharacterComponent
             objects[i * STRIDE + 2] = rigidbody.transform;
             objects[i * STRIDE + 3] = colliders[0];
             objects[i * STRIDE + 4] = colliders[1];
+            objects[i * STRIDE + 5] = rigidbody.GetComponent<RagdollTrigger>();
             
             TotalMass += rigidbody.mass;
         }
+    }
+    
+    public override void Init()
+    {
+        FillObjectArray();
         
         averagePosition = new TimeUpdatedProperty<Vector3>(() =>
         {
             Vector3 temp = Vector3.zero;
             for (int i = 0; i < NumBones; i++)
             {
-                temp += GetTransform(i).position * rigidbodies[i].mass;
+                temp += GetTransform(i).position * GetRigidbody(i).mass;
             }
             return temp / TotalMass;
         });
