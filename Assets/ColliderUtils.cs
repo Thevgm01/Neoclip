@@ -21,10 +21,9 @@ public static class ColliderUtils
                 return Mathf.PI * capsuleCollider.radius * capsuleCollider.radius * (capsuleCollider.radius * 4.0f / 3.0f + capsuleCollider.height);
             case SphereCollider sphereCollider:
                 return Mathf.PI * sphereCollider.radius * sphereCollider.radius * sphereCollider.radius * 4.0f / 3.0f;
+            default:
+	            throw new ArgumentOutOfRangeException(nameof(collider), collider, null);
         }
-
-        Debug.LogWarning($"Utils.CalculateVolume: Unsupported collider {collider}");
-        return 0.0f;
     }
 
     //https://discussions.unity.com/t/getting-a-primitive-mesh-without-creating-a-new-gameobject/78809/6
@@ -141,6 +140,8 @@ public static class ColliderUtils
 		            vertices[i] = sphereCollider.radius * 2.0f * oldMesh.vertices[i] + sphereCollider.center;
 	            }
 	            break;
+            default:
+	            throw new ArgumentOutOfRangeException(nameof(collider), collider, null);
         }
         
         for (int i = 0; i < vertices.Length; i++)
@@ -182,10 +183,9 @@ public static class ColliderUtils
 			    newSphereCollider.center = sphereCollider.center;
 			    newSphereCollider.radius = sphereCollider.radius;
 			    return newSphereCollider;
+		    default:
+			    throw new ArgumentOutOfRangeException(nameof(collider), collider, null);
 	    }
-	    
-	    Debug.LogWarning($"Utils.CopyTo: Unsupported collider {collider}");
-	    return null;
     }
 
     public static int HashCollider(Collider collider)
@@ -212,6 +212,8 @@ public static class ColliderUtils
 	            hash.Append(sphereCollider.center.z);
 	            hash.Append(sphereCollider.radius);
 	            break;
+            default:
+	            throw new ArgumentOutOfRangeException(nameof(collider), collider, null);
 	    }
 
 	    return hash.GetHashCode();
