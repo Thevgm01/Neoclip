@@ -22,7 +22,9 @@ public class RagdollBuilder : MonoBehaviour
     public Material dragMeshMaterial;
     public PhysicsMaterial physicsMaterial;
     public LayerNumber defaultLayer;
+    public LayerMask defaultExcludeLayers;
     public LayerNumber triggerLayer;
+    public LayerMask triggerExcludeLayers;
     
     private UnityEngine.Object lastSelectedObject = null; // Double-clicking won't select the mirror
     private UnityEngine.Object mirrorBoneObject = null;
@@ -117,9 +119,7 @@ public class RagdollBuilder : MonoBehaviour
             float totalMass = 0.0f;
             int dragMeshesCreated = 0;
 
-            string triggerLayerName = LayerMask.LayerToName(triggerLayer.value);
-            
-            Utils.TryDestroyObjectsImmediate(GameObject.FindGameObjectsWithTag(triggerLayerName));
+            Utils.TryDestroyObjectsImmediate(GameObject.FindGameObjectsWithTag(LayerMask.LayerToName(triggerLayer.value)));
 
             for (int i = 0; i < rigidbodies.Length; i++)
             {
@@ -131,22 +131,33 @@ public class RagdollBuilder : MonoBehaviour
                 Utils.TryDestroyObjectImmediate(gameObject.GetComponent<Joint>());
                 Utils.TryDestroyObjectImmediate(gameObject.GetComponent<MeshFilter>());
                 Utils.TryDestroyObjectImmediate(gameObject.GetComponent<MeshRenderer>());
-                
-                Collider collider = rigidbody.GetComponent<Collider>();
-                Undo.RecordObject(collider, $"Set collider physics material");
-                collider.sharedMaterial = physicsMaterial;
-                int colliderHash = Utils.HashCollider(collider);
 
-                GameObject triggerObject = new GameObject();
-                triggerObject.name = gameObject.name + "_trigger";
-                triggerObject.tag = triggerLayerName;
-                triggerObject.layer = triggerLayer.value;
-                triggerObject.transform.SetParent(gameObject.transform, false);
-                Collider triggerCollider = collider.CopyTo(triggerObject);
-                triggerCollider.sharedMaterial = null;
-                triggerCollider.isTrigger = true;
-                Undo.RegisterCreatedObjectUndo(triggerObject, $"Create trigger object");
-                
+                Collider collider;
+                Collider[] colliders = rigidbody.GetComponents<Collider>();
+                if (colliders.Length == 0)
+                {
+                    Debug.LogError($"RagdollBuilder: No collider for rigidbody on {gameObject.name}");
+                    return;
+                }
+                else
+                {
+                    collider = colliders[0];
+                    Undo.RecordObject(collider, $"Set colliders");
+                    collider.sharedMaterial = physicsMaterial;
+                    collider.excludeLayers = defaultExcludeLayers;
+                    collider.isTrigger = false;
+
+                    for (int j = 1; j < colliders.Length; j++)
+                    {
+                        Undo.DestroyObjectImmediate(colliders[j]);
+                    }
+                    
+                    Collider triggerCollider = collider.CopyTo(gameObject);
+                    triggerCollider.sharedMaterial = null;
+                    triggerCollider.excludeLayers = triggerExcludeLayers;
+                    triggerCollider.isTrigger = true;
+                }
+
                 // Set the mass
                 Undo.RecordObject(rigidbody, $"Set rigidbody values");
                 // rigidbody.SetDensity() does NOTHING!!!
