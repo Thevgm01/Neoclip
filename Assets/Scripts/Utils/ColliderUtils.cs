@@ -3,6 +3,8 @@ using UnityEngine;
 
 public static class ColliderUtils
 {
+	public enum ColliderType { Box, Capsule, Sphere }
+	
 	public static Vector3 GetAxis(this CapsuleCollider capsuleCollider)
 	{
 		switch (capsuleCollider.direction)
@@ -13,6 +15,62 @@ public static class ColliderUtils
 			default: return Vector3.zero;
 		}
 	}
+
+	public static Vector3 GetCenter(this Collider collider)
+	{
+		switch (collider)
+		{
+			case BoxCollider boxCollider: return boxCollider.center;
+			case CapsuleCollider capsuleCollider: return capsuleCollider.center;
+			case SphereCollider sphereCollider: return sphereCollider.center;
+			default: throw new ArgumentOutOfRangeException(nameof(collider), collider, null);
+		}
+	}
+	
+	public static float CalculateVolume(this Collider collider)
+	{
+		switch (collider)
+		{
+			case BoxCollider boxCollider:
+				return boxCollider.size.x * boxCollider.size.y * boxCollider.size.z;
+			case CapsuleCollider capsuleCollider:
+				return Mathf.PI * capsuleCollider.radius * capsuleCollider.radius * (capsuleCollider.radius * 4.0f / 3.0f + capsuleCollider.height);
+			case SphereCollider sphereCollider:
+				return Mathf.PI * sphereCollider.radius * sphereCollider.radius * sphereCollider.radius * 4.0f / 3.0f;
+			default:
+				throw new ArgumentOutOfRangeException(nameof(collider), collider, null);
+		}
+	}
+
+	public static ColliderType ToColliderType(this Collider collider)
+	{
+		switch (collider)
+		{
+			case BoxCollider:
+				return ColliderType.Box;
+			case CapsuleCollider:
+				return ColliderType.Capsule;
+			case SphereCollider:
+				return ColliderType.Sphere;
+			default:
+				throw new ArgumentOutOfRangeException(nameof(collider), collider, null);
+		}
+	}
+	
+	public static PrimitiveType ToPrimitiveType(this Collider collider)
+	{
+		switch (collider)
+		{
+			case SphereCollider:
+				return PrimitiveType.Sphere;
+			case CapsuleCollider:
+				return PrimitiveType.Capsule;
+			case BoxCollider:
+				return PrimitiveType.Cube;
+			default:
+				throw new ArgumentOutOfRangeException(nameof(collider), collider, null);
+		}
+	}
 	
     //https://discussions.unity.com/t/getting-a-primitive-mesh-without-creating-a-new-gameobject/78809/6
     private static Mesh _unityCapsuleMesh = null;
@@ -21,21 +79,6 @@ public static class ColliderUtils
     private static Mesh _unityPlaneMesh = null;
     private static Mesh _unitySphereMesh = null;
     private static Mesh _unityQuadMesh = null;
-    
-    public static float CalculateVolume(this Collider collider)
-    {
-        switch (collider)
-        {
-            case BoxCollider boxCollider:
-                return boxCollider.size.x * boxCollider.size.y * boxCollider.size.z;
-            case CapsuleCollider capsuleCollider:
-                return Mathf.PI * capsuleCollider.radius * capsuleCollider.radius * (capsuleCollider.radius * 4.0f / 3.0f + capsuleCollider.height);
-            case SphereCollider sphereCollider:
-                return Mathf.PI * sphereCollider.radius * sphereCollider.radius * sphereCollider.radius * 4.0f / 3.0f;
-            default:
-	            throw new ArgumentOutOfRangeException(nameof(collider), collider, null);
-        }
-    }
 
     //https://discussions.unity.com/t/getting-a-primitive-mesh-without-creating-a-new-gameobject/78809/6
     private static string GetPrimitiveMeshPath(PrimitiveType primitiveType)
@@ -98,24 +141,9 @@ public static class ColliderUtils
 		}
 	}
 
-	public static PrimitiveType ColliderToPrimitiveType(Collider collider)
-	{
-		switch (collider)
-		{
-			case SphereCollider:
-				return PrimitiveType.Sphere;
-			case CapsuleCollider:
-				return PrimitiveType.Capsule;
-			case BoxCollider:
-				return PrimitiveType.Cube;
-			default:
-				throw new ArgumentOutOfRangeException(nameof(collider), collider, null);
-		}
-	}
-
     public static Mesh ToMeshWithVertexColor(this Collider collider, Color32 vertexColor)
     {
-        Mesh oldMesh = GetUnityPrimitiveMesh(ColliderToPrimitiveType(collider));
+        Mesh oldMesh = GetUnityPrimitiveMesh(collider.ToPrimitiveType());
         Mesh newMesh = new Mesh();
         Vector3[] vertices = new Vector3[oldMesh.vertices.Length];
         Color32[] colors32 = new Color32[vertices.Length]; // oldMesh.colors32.Length is 0!!!

@@ -59,20 +59,18 @@ public class NeoclipCharacterController : MonoBehaviour
 
         Vector3 movement = cameraController.CameraRelativeMoveVector(moveInput) * moveAcceleration;
 
-        bool IsInsideAnything = concaveClipHelper.IsInsideSomething();
-        bool IsOutsideEverything = !IsInsideAnything;
+        bool[] bonesInsideThings = new bool[ragdollAverages.NumBones];
         
         for (int i = 0; i < ragdollAverages.NumBones; i++)
         {
             Rigidbody rigidbody = ragdollAverages.GetRigidbody(i);
-            //NoclipDetector noclipDetector = ragdollAverages.GetNoclipDetector(i);
             
             if (noclipInput && ragdollAverages.GetCollider(i).excludeLayers == defaultExcludeLayers)
             {
                 //noclipDetector.enabled = true;
                 ragdollAverages.GetCollider(i).excludeLayers = defaultExcludeLayers ^ layersToExcludeWhileNoclipping.value;
             }
-            else if (!noclipInput && IsOutsideEverything)
+            else if (!noclipInput && !bonesInsideThings[i])
             {
                 //noclipDetector.enabled = false;
                 ragdollAverages.GetCollider(i).excludeLayers = defaultExcludeLayers;
@@ -81,7 +79,7 @@ public class NeoclipCharacterController : MonoBehaviour
             Vector3 force = Vector3.zero;
             Vector3 acceleration = Vector3.zero;
 
-            if (IsOutsideEverything)
+            if (!bonesInsideThings[i])
             {
                 acceleration += Physics.gravity;
             }
@@ -92,7 +90,7 @@ public class NeoclipCharacterController : MonoBehaviour
             
             if (applyDrag)
             {
-                float density = IsInsideAnything
+                float density = bonesInsideThings[i]
                     ? Constants.Density.CLIPSPACE
                     : Constants.Density.AIR;
                 

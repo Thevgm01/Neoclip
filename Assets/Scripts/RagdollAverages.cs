@@ -1,31 +1,43 @@
+using System;
+using System.Collections.Generic;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 public class RagdollAverages : NeoclipCharacterComponent
 {
     public float TotalMass { get; private set; }
     public int NumBones { get; private set; }
     
-    private const int STRIDE = 6;
+    private const int STRIDE = 4;
     private Object[] objects;
     
-    public Rigidbody GetRigidbody(int index) => (Rigidbody)objects[index * STRIDE + 0];
-    public GameObject GetGameObject(int index) => (GameObject)objects[index * STRIDE + 1];
-    public Transform GetTransform(int index) => (Transform)objects[index * STRIDE + 2];
-    public Collider GetCollider(int index) => (Collider)objects[index * STRIDE + 3];
-    public Collider GetTrigger(int index) => (Collider)objects[index * STRIDE + 4];
-    public NoclipDetector GetNoclipDetector(int index) => (NoclipDetector)objects[index * STRIDE + 5];
+    private ColliderUtils.ColliderType[] colliderTypes;
+    private Vector3[] colliderCenters;
     
-    private BoxCollider[] boxColliders;
-    private CapsuleCollider[] capsuleColliders;
-    private SphereCollider[] sphereColliders;
+    private List<int> boxColliderIndexes;
+    private List<int> capsuleColliderIndexes;
+    private List<int> sphereColliderIndexes;
+
+    public int NumBoxColliders => boxColliderIndexes.Count;
+    public int NumCapsuleColliders => capsuleColliderIndexes.Count;
+    public int NumSphereColliders => sphereColliderIndexes.Count;
     
-    public int NumBoxColliders => boxColliders.Length;
-    public int NumCapsuleColliders => capsuleColliders.Length;
-    public int NumSphereColliders => sphereColliders.Length;
+    public Rigidbody GetRigidbody(int boneIndex) => (Rigidbody)objects[boneIndex * STRIDE + 0];
+    public GameObject GetGameObject(int boneIndex) => (GameObject)objects[boneIndex * STRIDE + 1];
+    public Transform GetTransform(int boneIndex) => (Transform)objects[boneIndex * STRIDE + 2];
+    public Collider GetCollider(int boneIndex) => (Collider)objects[boneIndex * STRIDE + 3];
     
-    public BoxCollider GetBoxCollider(int index) => boxColliders[index];
-    public CapsuleCollider GetCapsuleCollider(int index) => capsuleColliders[index];
-    public SphereCollider GetSphereCollider(int index) => sphereColliders[index];
+    public ColliderUtils.ColliderType GetColliderType(int boneIndex) => colliderTypes[boneIndex];
+    public Vector3 GetColliderCenter(int boneIndex) => colliderCenters[boneIndex];
+    public Vector3 TransformColliderCenter(int index) => GetTransform(index).TransformPoint(GetColliderCenter(index));
+    
+    public BoxCollider GetBoxCollider(int boxIndex) => (BoxCollider)objects[boxColliderIndexes[boxIndex] * STRIDE + 3];
+    public CapsuleCollider GetCapsuleCollider(int capsuleIndex) => (CapsuleCollider)objects[capsuleColliderIndexes[capsuleIndex] * STRIDE + 3];
+    public SphereCollider GetSphereCollider(int sphereIndex) => (SphereCollider)objects[sphereColliderIndexes[sphereIndex] * STRIDE + 3];
+    
+    public int BoneIndexOfBoxCollider(int boxIndex) => boxColliderIndexes[boxIndex];
+    public int BoneIndexOfCapsuleCollider(int capIndex) => capsuleColliderIndexes[capIndex];
+    public int BoneIndexOfSphereCollider(int sphereIndex) => sphereColliderIndexes[sphereIndex];
     
     private Vector3 CalculateAveragePosition()
     {
@@ -56,25 +68,42 @@ public class RagdollAverages : NeoclipCharacterComponent
         Rigidbody[] rigidbodies = GetComponentsInChildren<Rigidbody>();
         NumBones = rigidbodies.Length;
         objects = new Object[NumBones * STRIDE];
+        colliderTypes = new ColliderUtils.ColliderType[NumBones];
+        colliderCenters = new Vector3[NumBones];
     
         for (int i = 0; i < NumBones; i++)
         {
             Rigidbody rigidbody = rigidbodies[i];
-            Collider[] colliders = rigidbody.GetComponents<Collider>();
+            TotalMass += rigidbody.mass;
+
+            Collider collider = rigidbody.GetComponent<Collider>();
 
             objects[i * STRIDE + 0] = rigidbody;
             objects[i * STRIDE + 1] = rigidbody.gameObject;
             objects[i * STRIDE + 2] = rigidbody.transform;
-            objects[i * STRIDE + 3] = colliders[0];
-            //objects[i * STRIDE + 4] = colliders[1];
-            objects[i * STRIDE + 5] = rigidbody.GetComponent<NoclipDetector>();
-            
-            TotalMass += rigidbody.mass;
-        }
+            objects[i * STRIDE + 3] = collider;
 
-        boxColliders = GetComponentsInChildren<BoxCollider>();
-        capsuleColliders = GetComponentsInChildren<CapsuleCollider>();
-        sphereColliders = GetComponentsInChildren<SphereCollider>();
+            switch (collider)
+            {
+                case BoxCollider boxCollider:
+                    colliderTypes[i] = ColliderUtils.ColliderType.Box;
+                    colliderCenters[i] = boxCollider.center;
+                    boxColliderIndexes.Add(i);
+                    break;
+                case CapsuleCollider capsuleCollider:
+                    colliderTypes[i] = ColliderUtils.ColliderType.Capsule;
+                    colliderCenters[i] = capsuleCollider.center;
+                    capsuleColliderIndexes.Add(i);
+                    break;
+                case SphereCollider sphereCollider:
+                    colliderTypes[i] = ColliderUtils.ColliderType.Sphere;
+                    colliderCenters[i] = sphereCollider.center;
+                    sphereColliderIndexes.Add(i);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
     }
     
     public override void Init()
