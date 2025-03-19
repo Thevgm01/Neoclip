@@ -23,15 +23,17 @@ public class NeoclipCharacterController : MonoBehaviour
     private void SetNoclipInput(InputAction.CallbackContext context) => noclipInput = context.ReadValueAsButton();
 
     private int defaultExcludeLayers;
+
+    private bool[] boneClipStates;
     
     private void Awake()
     {
         ragdollAverages.Init();
         dragCamera.Init();
         cameraController.Init();
-        concaveClipHelper.Init();
 
         defaultExcludeLayers = ragdollAverages.GetCollider(0).excludeLayers.value;
+        boneClipStates = new bool[ragdollAverages.NumBones];
         
         Cursor.visible = false;
         Cursor.lockState = CursorLockMode.Locked;
@@ -59,7 +61,8 @@ public class NeoclipCharacterController : MonoBehaviour
 
         Vector3 movement = cameraController.CameraRelativeMoveVector(moveInput) * moveAcceleration;
 
-        bool[] bonesInsideThings = new bool[ragdollAverages.NumBones];
+        bool anyBoneClipping = concaveClipHelper.CheckAllBones(boneClipStates);
+        Debug.Log(string.Join(", ", boneClipStates));
         
         for (int i = 0; i < ragdollAverages.NumBones; i++)
         {
@@ -70,7 +73,7 @@ public class NeoclipCharacterController : MonoBehaviour
                 //noclipDetector.enabled = true;
                 ragdollAverages.GetCollider(i).excludeLayers = defaultExcludeLayers ^ layersToExcludeWhileNoclipping.value;
             }
-            else if (!noclipInput && !bonesInsideThings[i])
+            else if (!noclipInput && !boneClipStates[i])
             {
                 //noclipDetector.enabled = false;
                 ragdollAverages.GetCollider(i).excludeLayers = defaultExcludeLayers;
@@ -79,7 +82,7 @@ public class NeoclipCharacterController : MonoBehaviour
             Vector3 force = Vector3.zero;
             Vector3 acceleration = Vector3.zero;
 
-            if (!bonesInsideThings[i])
+            if (!boneClipStates[i])
             {
                 acceleration += Physics.gravity;
             }
@@ -90,7 +93,7 @@ public class NeoclipCharacterController : MonoBehaviour
             
             if (applyDrag)
             {
-                float density = bonesInsideThings[i]
+                float density = boneClipStates[i]
                     ? Constants.Density.CLIPSPACE
                     : Constants.Density.AIR;
                 

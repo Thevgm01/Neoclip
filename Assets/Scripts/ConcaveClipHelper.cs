@@ -2,11 +2,15 @@ using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Jobs;
 using UnityEngine;
+using UnityEngine.Serialization;
 
-public class ConcaveClipHelper : NeoclipCharacterComponent
+public class ConcaveClipHelper : MonoBehaviour
 {
     [SerializeField] private RagdollAverages ragdollAverages;
-    [SerializeField] private LayerMask layerMask;
+    [FormerlySerializedAs("layerMask")] [SerializeField] private LayerMask ignoreLayerMask;
+
+    private const float MAX_DISTANCE = 100.0f;
+    private const float DOT_THRESHOLD = 0.0f;
     
     private readonly Vector3[] directions =
     {
@@ -15,114 +19,72 @@ public class ConcaveClipHelper : NeoclipCharacterComponent
         Vector3.down
     };
 
-    private QueryParameters standardQuery;
-    private QueryParameters backfaceQuery;
-    
-    public override void Init()
-    {
-        standardQuery.layerMask = layerMask.value;
-        standardQuery.hitBackfaces = false;
-        
-        backfaceQuery.layerMask = layerMask.value;
-        backfaceQuery.hitBackfaces = true;
-    }
-
-    private bool CheckBoxOrAddCommands(BoxCollider boxCollider, List<BoxcastCommand> boxcastCommands)
+    private bool CheckOrCastBox(BoxCollider boxCollider)
     {
         Transform boxTransform = boxCollider.transform;
+        Vector3 origin = boxTransform.TransformPoint(boxCollider.center);
+        Vector3 halfExtents = boxCollider.size / 2.0f;
+        Quaternion orientation = boxTransform.rotation;
 
-        BoxcastCommand boxcastCommand = new BoxcastCommand(
-            boxTransform.TransformPoint(boxCollider.center),
-            boxCollider.size / 2.0f,
-            boxTransform.rotation,
-            directions[0],
-            standardQuery);
-            
-        if (Physics.CheckBox(
-                boxcastCommand.center,
-                boxcastCommand.halfExtents,
-                boxcastCommand.orientation,
-                layerMask.value))
+        if (Physics.CheckBox(origin, halfExtents, orientation, ignoreLayerMask.value))
         {
             return true;
         }
 
-        for (int j = 0; j < directions.Length - 1; j++)
+        for (int i = 0; i < directions.Length; i++)
         {
-            boxcastCommands.Add(boxcastCommand);
-
-            boxcastCommand.queryParameters = backfaceQuery;
-            boxcastCommands.Add(boxcastCommand);
-                
-            boxcastCommand.queryParameters = standardQuery;
-            boxcastCommand.direction = directions[j + 1];
+            if (Physics.BoxCast(origin, halfExtents, directions[i], out RaycastHit hit, orientation, MAX_DISTANCE, ignoreLayerMask.value) &&
+                Vector3.Dot(hit.normal, directions[i]) > DOT_THRESHOLD)
+            {
+                return true;
+            }
         }
         
         return false;
     }
 
-    private bool CheckCapsuleOrAddCommands(CapsuleCollider capsuleCollider, List<CapsulecastCommand> capsulecastCommands)
+    private bool CheckOrCastCapsule(CapsuleCollider capsuleCollider)
     {
         Transform capsuleTransform = capsuleCollider.transform;
             
         Vector3 origin = capsuleTransform.TransformPoint(capsuleCollider.center);
         Vector3 axis = capsuleTransform.TransformDirection(capsuleCollider.GetAxis() * capsuleCollider.height / 2.0f);
+        Vector3 point1 = origin + axis;
+        Vector3 point2 = origin - axis;
         
-        CapsulecastCommand capsuleCommand = new CapsulecastCommand(
-            origin + axis,
-            origin - axis,
-            capsuleCollider.radius,
-            directions[0],
-            standardQuery);
-            
-        if (Physics.CheckCapsule(
-                capsuleCommand.point1,
-                capsuleCommand.point1,
-                capsuleCommand.radius,
-                layerMask.value))
+        if (Physics.CheckCapsule(point1, point2, capsuleCollider.radius, ignoreLayerMask.value))
         {
             return true;
         }
 
-        for (int j = 0; j < directions.Length - 1; j++)
+        for (int i = 0; i < directions.Length; i++)
         {
-            capsulecastCommands.Add(capsuleCommand);
-
-            capsuleCommand.queryParameters = backfaceQuery;
-            capsulecastCommands.Add(capsuleCommand);
-                
-            capsuleCommand.queryParameters = standardQuery;
-            capsuleCommand.direction = directions[j + 1];
+            if (Physics.CapsuleCast(point1, point2, capsuleCollider.radius, directions[i], out RaycastHit hit, MAX_DISTANCE, ignoreLayerMask.value) &&
+                Vector3.Dot(hit.normal, directions[i]) > DOT_THRESHOLD)
+            {
+                return true;
+            }
         }
         
         return false;
     }
     
-    private bool CheckSphereOrAddCommands(SphereCollider sphereCollider, List<SpherecastCommand> spherecastCommands)
+    private bool CheckOrCastSphere(SphereCollider sphereCollider)
     {
-        SpherecastCommand sphereCommand = new SpherecastCommand(
-            sphereCollider.transform.TransformPoint(sphereCollider.center),
-            sphereCollider.radius,
-            directions[0],
-            standardQuery);
-            
-        if (Physics.CheckSphere(
-                sphereCommand.origin,
-                sphereCommand.radius,
-                layerMask.value))
+        Vector3 origin = sphereCollider.transform.TransformPoint(sphereCollider.center);
+
+        if (Physics.CheckSphere(origin, sphereCollider.radius, ignoreLayerMask.value))
         {
             return true;
         }
 
-        for (int j = 0; j < directions.Length - 1; j++)
+        for (int i = 0; i < directions.Length; i++)
         {
-            spherecastCommands.Add(sphereCommand);
-
-            sphereCommand.queryParameters = backfaceQuery;
-            spherecastCommands.Add(sphereCommand);
-                
-            sphereCommand.queryParameters = standardQuery;
-            sphereCommand.direction = directions[j + 1];
+            if (Physics.SphereCast(origin, sphereCollider.radius, directions[i], out RaycastHit hit, MAX_DISTANCE, ignoreLayerMask.value) &&
+                Vector3.Dot(hit.normal, directions[i]) > DOT_THRESHOLD)
+            {
+                return true;
+            }
         }
         
         return false;
@@ -131,129 +93,24 @@ public class ConcaveClipHelper : NeoclipCharacterComponent
     public bool CheckAllBones(bool[] results)
     {
         bool anythingInside = false;
-        
-        List<BoxcastCommand> boxcastCommandList = new List<BoxcastCommand>();
-        NativeArray<BoxcastCommand> boxcastCommands = new NativeArray<BoxcastCommand>();
-        NativeArray<RaycastHit> boxcastHits = new NativeArray<RaycastHit>();
-        List<int> boxcastHitToBoneIndex = new List<int>();
-        JobHandle boxJob = new JobHandle();
 
-        List<CapsulecastCommand> capsulecastCommandList = new List<CapsulecastCommand>();
-        NativeArray<CapsulecastCommand> capsulecastCommands = new NativeArray<CapsulecastCommand>();
-        NativeArray<RaycastHit> capsulecastHits = new NativeArray<RaycastHit>();
-        List<int> capsulecastHitToBoneIndex = new List<int>();
-        JobHandle capsuleJob = new JobHandle();
-
-        List<SpherecastCommand> spherecastCommandList = new List<SpherecastCommand>();
-        NativeArray<SpherecastCommand> spherecastCommands = new NativeArray<SpherecastCommand>();
-        NativeArray<RaycastHit> spherecastHits = new NativeArray<RaycastHit>();
-        List<int> spherecastHitToBoneIndex = new List<int>();
-        JobHandle sphereJob = new JobHandle();
-        
-        // Check all box colliders
-        for (int i = 0; i < ragdollAverages.NumBoxColliders; i++)
+        for (int i = 0; i < ragdollAverages.NumBones; i++)
         {
-            if (CheckBoxOrAddCommands(ragdollAverages.GetBoxCollider(i), boxcastCommandList))
+            switch (ragdollAverages.GetCollider(i))
             {
-                anythingInside = true;
-                results[ragdollAverages.BoneIndexOfBoxCollider(i)] = true;
+                case BoxCollider boxCollider:
+                    results[i] = CheckOrCastBox(boxCollider);
+                    break;
+                case CapsuleCollider capsuleCollider:
+                    results[i] = CheckOrCastCapsule(capsuleCollider);
+                    break;
+                case SphereCollider sphereCollider:
+                    results[i] = CheckOrCastSphere(sphereCollider);
+                    break;
             }
-            else
-            {
-                boxcastHitToBoneIndex.Add(i);
-            }
+            
+            anythingInside = anythingInside || results[i];
         }
-
-        // Schedule the box collider batch
-        if (boxcastCommandList.Count > 0)
-        {
-            boxcastCommands = boxcastCommandList.ToNativeArray(Allocator.Temp);
-            boxcastHits = new NativeArray<RaycastHit>(boxcastCommandList.Count, Allocator.Temp);
-            boxJob = BoxcastCommand.ScheduleBatch(
-                boxcastCommands, 
-                boxcastHits,  
-                1, 1);
-        }
-        
-        // Check all capsule colliders
-        for (int i = 0; i < ragdollAverages.NumCapsuleColliders; i++)
-        {
-            if (CheckCapsuleOrAddCommands(ragdollAverages.GetCapsuleCollider(i), capsulecastCommandList))
-            {
-                anythingInside = true;
-                results[ragdollAverages.BoneIndexOfCapsuleCollider(i)] = true;
-            }
-            else
-            {
-                capsulecastHitToBoneIndex.Add(i);
-            }
-        }
-
-        // Schedule the capsule collider batch
-        if (capsulecastCommandList.Count > 0)
-        {
-            capsulecastCommands = capsulecastCommandList.ToNativeArray(Allocator.Temp);
-            capsulecastHits = new NativeArray<RaycastHit>(capsulecastCommandList.Count, Allocator.Temp);
-            capsuleJob = CapsulecastCommand.ScheduleBatch(
-                capsulecastCommands,
-                capsulecastHits,
-                1, 1);
-        }
-        
-        // Check all sphere colliders
-        for (int i = 0; i < ragdollAverages.NumSphereColliders; i++)
-        {
-            if (CheckSphereOrAddCommands(ragdollAverages.GetSphereCollider(i), spherecastCommandList))
-            {
-                anythingInside = true;
-                results[ragdollAverages.BoneIndexOfSphereCollider(i)] = true;
-            }
-            else
-            {
-                spherecastHitToBoneIndex.Add(i);
-            }
-        }
-        
-        // Schedule the sphere collider batch
-        if (spherecastCommandList.Count > 0)
-        {
-            spherecastCommands = spherecastCommandList.ToNativeArray(Allocator.Temp);
-            spherecastHits = new NativeArray<RaycastHit>(spherecastCommandList.Count, Allocator.Temp);
-            sphereJob = SpherecastCommand.ScheduleBatch(
-                spherecastCommands,
-                spherecastHits,
-                1, 1);
-        }
-
-        boxJob.Complete();
-        for (int i = 0; i < boxcastHits.Length; i += 2)
-        {
-            bool isInside = (boxcastHits[i].point - boxcastHits[i + 1].point).sqrMagnitude >= 0.01f;
-            results[boxcastHitToBoneIndex[i / (directions.Length * 2)]] = isInside;
-            anythingInside = anythingInside || isInside;
-        }
-        boxcastCommands.Dispose();
-        boxcastHits.Dispose();
-
-        capsuleJob.Complete();
-        for (int i = 0; i < capsulecastHits.Length; i += 2)
-        {
-            bool isInside = (capsulecastHits[i].point - capsulecastHits[i + 1].point).sqrMagnitude >= 0.01f;
-            results[capsulecastHitToBoneIndex[i / (directions.Length * 2)]] = isInside;
-            anythingInside = anythingInside || isInside;
-        }
-        capsulecastCommands.Dispose();
-        capsulecastHits.Dispose();
-
-        sphereJob.Complete();
-        for (int i = 0; i < spherecastHits.Length; i += 2)
-        {
-            bool isInside = (spherecastHits[i].point - spherecastHits[i + 1].point).sqrMagnitude >= 0.01f;
-            results[spherecastHitToBoneIndex[i / (directions.Length * 2)]] = isInside;
-            anythingInside = anythingInside || isInside;
-        }
-        spherecastCommands.Dispose();
-        spherecastHits.Dispose();
 
         return anythingInside;
     }
