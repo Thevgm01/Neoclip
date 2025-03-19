@@ -4,7 +4,8 @@ using UnityEngine.Rendering;
 public class DragCamera : NeoclipCharacterComponent
 {
     [SerializeField] private RagdollAverages ragdollAverages;
-    [SerializeField] ComputeShader computeShader;
+    [SerializeField] private ComputeShader computeShader;
+    [SerializeField] private float minSpeedForDrag = 1.0f;
     
     private Camera dragCamera;
     
@@ -16,9 +17,6 @@ public class DragCamera : NeoclipCharacterComponent
     
     private int computeKernel;
     private ComputeBuffer hitBuffer;
-
-    private FixedTimeUpdatedProperty<float[]> rigidbodySurfaceAreas;
-    public float[] RigidbodySurfaceAreas => rigidbodySurfaceAreas.GetValue();
     
     public override void Init()
     {
@@ -38,8 +36,6 @@ public class DragCamera : NeoclipCharacterComponent
         hitBuffer = new ComputeBuffer(ragdollAverages.NumBones, sizeof(int));
         computeShader.SetTexture(computeKernel, Shader.PropertyToID("InputTexture"), dragCamera.targetTexture);
         computeShader.SetBuffer(computeKernel, Shader.PropertyToID("ColorCounts"), hitBuffer);
-        
-        rigidbodySurfaceAreas = new FixedTimeUpdatedProperty<float[]>(CalculateSurfaceAreas);
     }
 
     private void MoveCamera()
@@ -70,22 +66,25 @@ public class DragCamera : NeoclipCharacterComponent
         return hitsPerColor;
     }
     
-    private float[] CalculateSurfaceAreas()
+    public bool CalculateSurfaceAreas(float[] surfaceAreas)
     {
+        if (ragdollAverages.AverageVelocity.sqrMagnitude < minSpeedForDrag * minSpeedForDrag)
+        {
+            return false;
+        }
+        
         MoveCamera();
         
         RenderPipeline.SubmitRenderRequest(dragCamera, renderRequest);
         
         int[] hits = CalculateHitsPerColor();
-
-        float[] result = new float[ragdollAverages.NumBones];
-
+        
         for (int i = 0; i < ragdollAverages.NumBones; i++)
         {
-            result[i] = hits[i] * areaPerPixel;
+            surfaceAreas[i] = hits[i] * areaPerPixel;
         }
 
-        return result;
+        return true;
     }
 
     private void OnDestroy()

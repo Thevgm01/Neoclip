@@ -7,7 +7,7 @@ using UnityEngine.Serialization;
 public class ConcaveClipHelper : MonoBehaviour
 {
     [SerializeField] private RagdollAverages ragdollAverages;
-    [FormerlySerializedAs("layerMask")] [SerializeField] private LayerMask ignoreLayerMask;
+    [SerializeField] private LayerMask layerMask;
 
     private const float MAX_DISTANCE = 100.0f;
     private const float DOT_THRESHOLD = 0.0f;
@@ -26,14 +26,14 @@ public class ConcaveClipHelper : MonoBehaviour
         Vector3 halfExtents = boxCollider.size / 2.0f;
         Quaternion orientation = boxTransform.rotation;
 
-        if (Physics.CheckBox(origin, halfExtents, orientation, ignoreLayerMask.value))
+        if (Physics.CheckBox(origin, halfExtents, orientation, layerMask.value))
         {
             return true;
         }
 
         for (int i = 0; i < directions.Length; i++)
         {
-            if (Physics.BoxCast(origin, halfExtents, directions[i], out RaycastHit hit, orientation, MAX_DISTANCE, ignoreLayerMask.value) &&
+            if (Physics.BoxCast(origin, halfExtents, directions[i], out RaycastHit hit, orientation, MAX_DISTANCE, layerMask.value) &&
                 Vector3.Dot(hit.normal, directions[i]) > DOT_THRESHOLD)
             {
                 return true;
@@ -52,14 +52,14 @@ public class ConcaveClipHelper : MonoBehaviour
         Vector3 point1 = origin + axis;
         Vector3 point2 = origin - axis;
         
-        if (Physics.CheckCapsule(point1, point2, capsuleCollider.radius, ignoreLayerMask.value))
+        if (Physics.CheckCapsule(point1, point2, capsuleCollider.radius, layerMask.value))
         {
             return true;
         }
 
         for (int i = 0; i < directions.Length; i++)
         {
-            if (Physics.CapsuleCast(point1, point2, capsuleCollider.radius, directions[i], out RaycastHit hit, MAX_DISTANCE, ignoreLayerMask.value) &&
+            if (Physics.CapsuleCast(point1, point2, capsuleCollider.radius, directions[i], out RaycastHit hit, MAX_DISTANCE, layerMask.value) &&
                 Vector3.Dot(hit.normal, directions[i]) > DOT_THRESHOLD)
             {
                 return true;
@@ -73,14 +73,14 @@ public class ConcaveClipHelper : MonoBehaviour
     {
         Vector3 origin = sphereCollider.transform.TransformPoint(sphereCollider.center);
 
-        if (Physics.CheckSphere(origin, sphereCollider.radius, ignoreLayerMask.value))
+        if (Physics.CheckSphere(origin, sphereCollider.radius, layerMask.value))
         {
             return true;
         }
 
         for (int i = 0; i < directions.Length; i++)
         {
-            if (Physics.SphereCast(origin, sphereCollider.radius, directions[i], out RaycastHit hit, MAX_DISTANCE, ignoreLayerMask.value) &&
+            if (Physics.SphereCast(origin, sphereCollider.radius, directions[i], out RaycastHit hit, MAX_DISTANCE, layerMask.value) &&
                 Vector3.Dot(hit.normal, directions[i]) > DOT_THRESHOLD)
             {
                 return true;

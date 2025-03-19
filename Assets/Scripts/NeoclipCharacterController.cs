@@ -9,10 +9,10 @@ public class NeoclipCharacterController : MonoBehaviour
     [SerializeField] private ConcaveClipHelper concaveClipHelper;
     
     [Space]
-    [SerializeField] private float minSpeedForDrag = 1.0f;
     [SerializeField] private float maxMoveSpeed = 5.0f;
     [SerializeField] private float moveAcceleration = 1.0f;
-    [SerializeField] private LayerMask layersToExcludeWhileNoclipping;
+    [Tooltip("Don't collide with these layers while noclipping")]
+    [SerializeField] private LayerMask noclipIgnoreLayers;
 
     [Space]
     [SerializeField] private InputActionReference moveAction;
@@ -22,9 +22,11 @@ public class NeoclipCharacterController : MonoBehaviour
     private bool noclipInput;
     private void SetNoclipInput(InputAction.CallbackContext context) => noclipInput = context.ReadValueAsButton();
 
-    private int defaultExcludeLayers;
+    private int defaultIgnoreLayers;
 
+    private float[] boneSurfaceAreas;
     private bool[] boneClipStates;
+    private bool wasAnyClippingLastFrame = false;
     
     private void Awake()
     {
@@ -32,7 +34,8 @@ public class NeoclipCharacterController : MonoBehaviour
         dragCamera.Init();
         cameraController.Init();
 
-        defaultExcludeLayers = ragdollAverages.GetCollider(0).excludeLayers.value;
+        defaultIgnoreLayers = ragdollAverages.GetCollider(0).excludeLayers.value;
+        boneSurfaceAreas = new float[ragdollAverages.NumBones];
         boneClipStates = new bool[ragdollAverages.NumBones];
         
         Cursor.visible = false;
@@ -57,41 +60,45 @@ public class NeoclipCharacterController : MonoBehaviour
     
     private void FixedUpdate()
     {
-        bool applyDrag = ragdollAverages.AverageVelocity.sqrMagnitude >= minSpeedForDrag * minSpeedForDrag;
-
         Vector3 movement = cameraController.CameraRelativeMoveVector(moveInput) * moveAcceleration;
-
-        bool anyBoneClipping = concaveClipHelper.CheckAllBones(boneClipStates);
-        Debug.Log(string.Join(", ", boneClipStates));
+        
+        bool shouldApplyDrag = dragCamera.CalculateSurfaceAreas(boneSurfaceAreas);
+        bool anyBoneClipping = 
+            (noclipInput || wasAnyClippingLastFrame) &&
+            concaveClipHelper.CheckAllBones(boneClipStates);
         
         for (int i = 0; i < ragdollAverages.NumBones; i++)
         {
             Rigidbody rigidbody = ragdollAverages.GetRigidbody(i);
+            Collider collider = ragdollAverages.GetCollider(i);
             
-            if (noclipInput && ragdollAverages.GetCollider(i).excludeLayers == defaultExcludeLayers)
+            if (noclipInput && collider.excludeLayers == defaultIgnoreLayers)
             {
-                //noclipDetector.enabled = true;
-                ragdollAverages.GetCollider(i).excludeLayers = defaultExcludeLayers ^ layersToExcludeWhileNoclipping.value;
+                collider.excludeLayers = defaultIgnoreLayers ^ noclipIgnoreLayers.value;
             }
-            else if (!noclipInput && !boneClipStates[i])
+            else if (!noclipInput && !anyBoneClipping)
             {
-                //noclipDetector.enabled = false;
-                ragdollAverages.GetCollider(i).excludeLayers = defaultExcludeLayers;
+                collider.excludeLayers = defaultIgnoreLayers;
             }
             
             Vector3 force = Vector3.zero;
             Vector3 acceleration = Vector3.zero;
 
-            if (!boneClipStates[i])
+            if (!boneClipStates[i]) // This bone is in open space
             {
                 acceleration += Physics.gravity;
             }
-            else if (!noclipInput)
+            else if (!noclipInput) // This bone is clipping (but the button isn't held down)
             {
                 acceleration -= Physics.gravity;
+
+                if (anyBoneClipping && Mathf.Abs(rigidbody.linearVelocity.y) < 1.0f)
+                {
+                    acceleration += Vector3.up * 10.0f;
+                }
             }
             
-            if (applyDrag)
+            if (shouldApplyDrag)
             {
                 float density = boneClipStates[i]
                     ? Constants.Density.CLIPSPACE
@@ -101,7 +108,7 @@ public class NeoclipCharacterController : MonoBehaviour
                          density *
                          rigidbody.linearVelocity.sqrMagnitude * 
                          0.7f *
-                         dragCamera.RigidbodySurfaceAreas[i] * 
+                         boneSurfaceAreas[i] * 
                          dragCamera.transform.forward;
             }
 
@@ -110,6 +117,8 @@ public class NeoclipCharacterController : MonoBehaviour
             rigidbody.AddForce(force, ForceMode.Force);
             rigidbody.AddForce(acceleration, ForceMode.Acceleration);
         }
+        
+        wasAnyClippingLastFrame = anyBoneClipping;
     }
     
     private void LateUpdate()
