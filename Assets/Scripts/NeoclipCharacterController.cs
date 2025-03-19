@@ -29,6 +29,7 @@ public class NeoclipCharacterController : MonoBehaviour
         ragdollAverages.Init();
         dragCamera.Init();
         cameraController.Init();
+        concaveClipHelper.Init();
 
         defaultExcludeLayers = ragdollAverages.GetCollider(0).excludeLayers.value;
         

@@ -19,8 +19,8 @@ public class ConcaveClipHelper : NeoclipCharacterComponent
     
     public override void Init()
     {
-        parametersA = new QueryParameters(castMask.value, hitMultipleFaces: false, hitBackfaces: false);
-        parametersB = new QueryParameters(castMask.value, hitMultipleFaces: false, hitBackfaces: true);
+        parametersA = new QueryParameters(layerMask: castMask.value, hitBackfaces: false);
+        parametersB = new QueryParameters(layerMask: castMask.value, hitBackfaces: true);
     }
     
     public bool IsInsideSomething()
@@ -29,10 +29,20 @@ public class ConcaveClipHelper : NeoclipCharacterComponent
         var commands = new NativeArray<SpherecastCommand>(12, Allocator.TempJob);
 
         SphereCollider sphereCollider = ragdollAverages.GetSphereCollider(0);
+        Vector3 origin = sphereCollider.transform.TransformPoint(sphereCollider.center);
+        
         for (int i = 0; i < 6; i++)
         {
-            commands[i * 2 + 0] = sphereCollider.ToCommand(directions[i], parametersA);
-            commands[i * 2 + 1] = sphereCollider.ToCommand(directions[i], parametersB);
+            commands[i * 2 + 0] = new SpherecastCommand(
+                origin,
+                sphereCollider.radius,
+                directions[i],
+                parametersA);
+            commands[i * 2 + 1] = new SpherecastCommand(
+                origin,
+                sphereCollider.radius,
+                directions[i],
+                parametersB);
         }
         
         JobHandle handle = SpherecastCommand.ScheduleBatch(commands, results, 1, 1, default(JobHandle));
@@ -47,10 +57,10 @@ public class ConcaveClipHelper : NeoclipCharacterComponent
             temp[i * 3 + 0] = results[i * 2 + 0].point;
             temp[i * 3 + 1] = results[i * 2 + 1].point;
             temp[i * 3 + 2] = results[i * 2 + 1].point - results[i * 2 + 0].point;
-            inside = inside || results[i * 2 + 0].point != results[i * 2 + 1].point;
+            inside = inside || (results[i * 2 + 1].point - results[i * 2 + 0].point).sqrMagnitude > 0.1f;
         }
         
-        Debug.Log(string.Join(", ", temp));
+        Debug.Log($"{results[3 * 3].point} {results[3 * 3 + 1].point}");
 
         // Dispose the buffers
         results.Dispose();
