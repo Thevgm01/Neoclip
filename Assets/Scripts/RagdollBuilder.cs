@@ -23,6 +23,7 @@ public class RagdollBuilder : MonoBehaviour
     public PhysicsMaterial physicsMaterial;
     public LayerNumber defaultLayer;
     public LayerMask defaultExcludeLayers;
+    public bool addTrigger = false;
     public LayerNumber triggerLayer;
     public LayerMask triggerExcludeLayers;
     
@@ -154,12 +155,15 @@ public class RagdollBuilder : MonoBehaviour
                     {
                         Undo.DestroyObjectImmediate(colliders[j]);
                     }
-                    
-                    Collider triggerCollider = collider.CopyTo(gameObject);
-                    triggerCollider.enabled = false;
-                    triggerCollider.isTrigger = true;
-                    triggerCollider.sharedMaterial = null;
-                    triggerCollider.excludeLayers = triggerExcludeLayers;
+
+                    if (addTrigger)
+                    {
+                        Collider triggerCollider = collider.CopyTo(gameObject);
+                        triggerCollider.enabled = false;
+                        triggerCollider.isTrigger = true;
+                        triggerCollider.sharedMaterial = null;
+                        triggerCollider.excludeLayers = triggerExcludeLayers;
+                    }
                 }
                 
                 // Set the mass
@@ -174,11 +178,14 @@ public class RagdollBuilder : MonoBehaviour
                 
                 // Keep track of the total mass
                 totalMass += rigidbody.mass;
-                
-                // Add trigger script
-                NoclipDetector noclipDetector = Undo.AddComponent<NoclipDetector>(gameObject);
-                noclipDetector.enabled = false;
-                
+
+                if (addTrigger)
+                {
+                    // Add trigger script
+                    NoclipDetector noclipDetector = Undo.AddComponent<NoclipDetector>(gameObject);
+                    noclipDetector.enabled = false;
+                }
+
                 // Add a ConfigurableJoint
                 Rigidbody parentRigidbody = rigidbody.transform.parent.GetComponentInParent<Rigidbody>();
                 if (parentRigidbody)
@@ -195,7 +202,7 @@ public class RagdollBuilder : MonoBehaviour
                     {
                         positionSpring = jointSpringStrength,
                         positionDamper = 1.0f,
-                        maximumForce = 3.402823e+38f // Copied from default
+                        maximumForce = float.MaxValue
                     };
                     newJoint.angularXDrive = defaultJointDrive;
                     newJoint.angularYZDrive = defaultJointDrive;

@@ -6,6 +6,7 @@ public class NeoclipCharacterController : MonoBehaviour
     [SerializeField] private RagdollAverages ragdollAverages;
     [SerializeField] private DragCamera dragCamera;
     [SerializeField] private NeoclipCameraController cameraController;
+    [SerializeField] private ConcaveClipHelper concaveClipHelper;
     
     [Space]
     [SerializeField] private float minSpeedForDrag = 1.0f;
@@ -56,27 +57,30 @@ public class NeoclipCharacterController : MonoBehaviour
         bool applyDrag = ragdollAverages.AverageVelocity.sqrMagnitude >= minSpeedForDrag * minSpeedForDrag;
 
         Vector3 movement = cameraController.CameraRelativeMoveVector(moveInput) * moveAcceleration;
+
+        bool IsInsideAnything = concaveClipHelper.IsInsideSomething();
+        bool IsOutsideEverything = !IsInsideAnything;
         
         for (int i = 0; i < ragdollAverages.NumBones; i++)
         {
             Rigidbody rigidbody = ragdollAverages.GetRigidbody(i);
-            NoclipDetector noclipDetector = ragdollAverages.GetNoclipDetector(i);
+            //NoclipDetector noclipDetector = ragdollAverages.GetNoclipDetector(i);
             
-            if (noclipInput && !noclipDetector.enabled)
+            if (noclipInput && ragdollAverages.GetCollider(i).excludeLayers == defaultExcludeLayers)
             {
-                noclipDetector.enabled = true;
+                //noclipDetector.enabled = true;
                 ragdollAverages.GetCollider(i).excludeLayers = defaultExcludeLayers ^ layersToExcludeWhileNoclipping.value;
             }
-            else if (!noclipInput && noclipDetector.IsOutsideEverything)
+            else if (!noclipInput && IsOutsideEverything)
             {
-                noclipDetector.enabled = false;
+                //noclipDetector.enabled = false;
                 ragdollAverages.GetCollider(i).excludeLayers = defaultExcludeLayers;
             }
             
             Vector3 force = Vector3.zero;
             Vector3 acceleration = Vector3.zero;
 
-            if (noclipDetector.IsOutsideEverything)
+            if (IsOutsideEverything)
             {
                 acceleration += Physics.gravity;
             }
@@ -87,7 +91,7 @@ public class NeoclipCharacterController : MonoBehaviour
             
             if (applyDrag)
             {
-                float density = noclipDetector.IsInsideAnything
+                float density = IsInsideAnything
                     ? Constants.Density.CLIPSPACE
                     : Constants.Density.AIR;
                 

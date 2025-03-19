@@ -4,7 +4,7 @@ public class RagdollAverages : NeoclipCharacterComponent
 {
     public float TotalMass { get; private set; }
     public int NumBones { get; private set; }
-
+    
     private const int STRIDE = 6;
     private Object[] objects;
     
@@ -14,7 +14,19 @@ public class RagdollAverages : NeoclipCharacterComponent
     public Collider GetCollider(int index) => (Collider)objects[index * STRIDE + 3];
     public Collider GetTrigger(int index) => (Collider)objects[index * STRIDE + 4];
     public NoclipDetector GetNoclipDetector(int index) => (NoclipDetector)objects[index * STRIDE + 5];
-
+    
+    private BoxCollider[] boxColliders;
+    private CapsuleCollider[] capsuleColliders;
+    private SphereCollider[] sphereColliders;
+    
+    public int NumBoxColliders => boxColliders.Length;
+    public int NumCapsuleColliders => capsuleColliders.Length;
+    public int NumSphereColliders => sphereColliders.Length;
+    
+    public BoxCollider GetBoxCollider(int index) => boxColliders[index];
+    public CapsuleCollider GetCapsuleCollider(int index) => capsuleColliders[index];
+    public SphereCollider GetSphereCollider(int index) => sphereColliders[index];
+    
     private Vector3 CalculateAveragePosition()
     {
         Vector3 temp = Vector3.zero;
@@ -54,11 +66,15 @@ public class RagdollAverages : NeoclipCharacterComponent
             objects[i * STRIDE + 1] = rigidbody.gameObject;
             objects[i * STRIDE + 2] = rigidbody.transform;
             objects[i * STRIDE + 3] = colliders[0];
-            objects[i * STRIDE + 4] = colliders[1];
+            //objects[i * STRIDE + 4] = colliders[1];
             objects[i * STRIDE + 5] = rigidbody.GetComponent<NoclipDetector>();
             
             TotalMass += rigidbody.mass;
         }
+
+        boxColliders = GetComponentsInChildren<BoxCollider>();
+        capsuleColliders = GetComponentsInChildren<CapsuleCollider>();
+        sphereColliders = GetComponentsInChildren<SphereCollider>();
     }
     
     public override void Init()

@@ -3,6 +3,17 @@ using UnityEngine;
 
 public static class ColliderUtils
 {
+	public static Vector3 GetAxis(this CapsuleCollider capsuleCollider)
+	{
+		switch (capsuleCollider.direction)
+		{
+			case 0: return Vector3.right;
+			case 1: return Vector3.up;
+			case 2: return Vector3.forward;
+			default: return Vector3.zero;
+		}
+	}
+	
     //https://discussions.unity.com/t/getting-a-primitive-mesh-without-creating-a-new-gameobject/78809/6
     private static Mesh _unityCapsuleMesh = null;
     private static Mesh _unityCubeMesh = null;
@@ -198,6 +209,42 @@ public static class ColliderUtils
 	    newCollider.excludeLayers = collider.excludeLayers;
 		
 	    return newCollider;
+    }
+
+    public static BoxcastCommand ToCommand(this BoxCollider boxCollider, Vector3 direction, QueryParameters parameters, float distance = float.MaxValue)
+    {
+	    return new BoxcastCommand(
+		    boxCollider.transform.TransformPoint(boxCollider.center),
+		    boxCollider.size,
+		    boxCollider.transform.rotation,
+		    direction,
+		    parameters,
+		    distance
+	    );
+    }
+
+    public static CapsulecastCommand ToCommand(this CapsuleCollider capsuleCollider, Vector3 direction, QueryParameters parameters, float distance = float.MaxValue)
+    {
+	    Vector3 axis = capsuleCollider.transform.TransformDirection(capsuleCollider.GetAxis()) * capsuleCollider.height / 2.0f;
+	    return new CapsulecastCommand(
+		    capsuleCollider.transform.TransformPoint(capsuleCollider.center) + axis,
+		    capsuleCollider.transform.TransformPoint(capsuleCollider.center) - axis,
+		    capsuleCollider.radius,
+		    direction,
+		    parameters,
+		    distance
+	    );
+    }
+    
+    public static SpherecastCommand ToCommand(this SphereCollider sphereCollider, Vector3 direction, QueryParameters parameters, float distance = float.MaxValue)
+    {
+	    return new SpherecastCommand(
+		    sphereCollider.transform.TransformPoint(sphereCollider.center),
+		    sphereCollider.radius,
+		    direction,
+		    parameters,
+		    distance
+	    );
     }
 
     public static int HashCollider(Collider collider)
