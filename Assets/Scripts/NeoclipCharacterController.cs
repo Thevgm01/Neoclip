@@ -72,7 +72,7 @@ public class NeoclipCharacterController : MonoBehaviour
             Rigidbody rigidbody = ragdollAverages.GetRigidbody(i);
             Collider collider = ragdollAverages.GetCollider(i);
             
-            if (noclipInput && collider.excludeLayers == defaultIgnoreLayers)
+            if (noclipInput && !wasAnyClippingLastFrame)
             {
                 collider.excludeLayers = defaultIgnoreLayers ^ noclipIgnoreLayers.value;
             }
