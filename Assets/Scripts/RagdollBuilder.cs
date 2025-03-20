@@ -18,9 +18,6 @@ public class RagdollBuilder : MonoBehaviour
     public ConfigurableJoint defaultJoint;
     public LayerNumber defaultLayer;
     public LayerMask defaultExcludeLayers;
-    public bool addTrigger = false;
-    public LayerNumber triggerLayer;
-    public LayerMask triggerExcludeLayers;
     
     private UnityEngine.Object lastSelectedObject = null; // Double-clicking won't select the mirror
     private UnityEngine.Object mirrorBoneObject = null;
@@ -114,9 +111,7 @@ public class RagdollBuilder : MonoBehaviour
         {
             float totalMass = 0.0f;
             int dragMeshesCreated = 0;
-
-            EditorUtils.TryDestroyObjectsImmediate(GameObject.FindGameObjectsWithTag(LayerMask.LayerToName(triggerLayer.value)));
-
+            
             for (int i = 0; i < rigidbodies.Length; i++)
             {
                 Rigidbody rigidbody = rigidbodies[i];
@@ -132,8 +127,7 @@ public class RagdollBuilder : MonoBehaviour
                 EditorUtils.TryDestroyObjectImmediate(gameObject.GetComponent<Joint>());
                 EditorUtils.TryDestroyObjectImmediate(gameObject.GetComponent<MeshFilter>());
                 EditorUtils.TryDestroyObjectImmediate(gameObject.GetComponent<MeshRenderer>());
-                EditorUtils.TryDestroyObjectImmediate(gameObject.GetComponent<NoclipDetector>());
-                
+                                
                 // Modify the primary collider, add a second trigger collider if necessary
                 Collider collider;
                 Collider[] colliders = rigidbody.GetComponents<Collider>();
@@ -155,15 +149,6 @@ public class RagdollBuilder : MonoBehaviour
                     {
                         Undo.DestroyObjectImmediate(colliders[j]);
                     }
-
-                    if (addTrigger)
-                    {
-                        Collider triggerCollider = collider.CopyTo(gameObject);
-                        triggerCollider.enabled = false;
-                        triggerCollider.isTrigger = true;
-                        triggerCollider.sharedMaterial = null;
-                        triggerCollider.excludeLayers = triggerExcludeLayers;
-                    }
                 }
                 
                 // Set the mass
@@ -178,14 +163,7 @@ public class RagdollBuilder : MonoBehaviour
                 
                 // Keep track of the total mass
                 totalMass += rigidbody.mass;
-
-                if (addTrigger)
-                {
-                    // Add trigger script
-                    NoclipDetector noclipDetector = Undo.AddComponent<NoclipDetector>(gameObject);
-                    noclipDetector.enabled = false;
-                }
-
+                
                 // Add a ConfigurableJoint
                 Rigidbody parentRigidbody = rigidbody.transform.parent.GetComponentInParent<Rigidbody>();
                 if (parentRigidbody)
