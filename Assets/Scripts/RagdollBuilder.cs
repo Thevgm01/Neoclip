@@ -212,7 +212,7 @@ public class RagdollBuilder : MonoBehaviour
                 }
 
                 // Create and add the DragMesh
-                Mesh dragMesh = collider.ToMeshWithVertexColor(new Color32((byte)(i * 8), 0, 0, 255));
+                Mesh dragMesh = collider.ToMeshWithVertexColor(new Color32((byte)(dragMeshesCreated * 8), 0, 0, 255));
                 if (dragMesh)
                 {
                     dragMesh.normals = Array.Empty<Vector3>();
