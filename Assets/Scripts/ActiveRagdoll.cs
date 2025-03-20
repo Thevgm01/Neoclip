@@ -26,20 +26,7 @@ public class ActiveRagdoll : MonoBehaviour
     }
     
     private TreeNode<ActiveRagdollBone> activeRagdollParentBone;
-    
-    private void DepthFirst(List<ActiveRagdollBone> activeRagdollBones, TreeNode<ActiveRagdollBone> activeRagdollBone)
-    {
-        activeRagdollBones.Add(activeRagdollBone.value);
 
-        if (activeRagdollBone.children != null)
-        {
-            foreach (TreeNode<ActiveRagdollBone> child in activeRagdollBone.children)
-            {
-                DepthFirst(activeRagdollBones, child);
-            }
-        }
-    }
-    
     private TreeNode<ActiveRagdollBone> SetRecursive(Transform driverTransform, Transform ragdollTransform)
     {
         TreeNode<ActiveRagdollBone> node = new TreeNode<ActiveRagdollBone>(
@@ -63,9 +50,12 @@ public class ActiveRagdoll : MonoBehaviour
     private void Awake()
     {
         activeRagdollParentBone = SetRecursive(driverSkeleton, ragdollSkeleton);
-        
-        List<ActiveRagdollBone> asDepthFirst = new List<ActiveRagdollBone>();
-        DepthFirst(asDepthFirst, activeRagdollParentBone);
-        Debug.Log(string.Join("\n", asDepthFirst));
+
+        List<ActiveRagdollBone> boneList = new List<ActiveRagdollBone>();
+        foreach (ActiveRagdollBone bone in activeRagdollParentBone.Leaves())
+        {
+            boneList.Add(bone);
+        }
+        Debug.Log(string.Join("\n", boneList));
     }
 }
