@@ -11,11 +11,6 @@ using UnityEngine.EventSystems;
 [ExecuteInEditMode]
 public class RagdollBuilder : MonoBehaviour
 {
-    private enum ColliderType { SPHERE, CAPSULE, BOX, NONE, IGNORE }
-    
-    [SerializedDictionary("Collider Type", "Matching Bone Names")]
-    [SerializeField] private SerializedDictionary<string, ColliderType> collidersForBoneName;
-
     public bool autoselectMirrorBone = true;
     public float initialMassMult = 1.0f;
     public float jointSpringStrength = 20.0f;
