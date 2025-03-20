@@ -28353,6 +28353,11 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 4301438, guid: c925872ce3bfa384589bf34b953d5a65, type: 3}
+--- !u!4 &709733589 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4804747518323938600, guid: 02b9d175903ae3147826b939a3a7d36b, type: 3}
+  m_PrefabInstance: {fileID: 58690253522921608}
+  m_PrefabAsset: {fileID: 0}
 --- !u!64 &711680389
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -30044,6 +30049,10 @@ PrefabInstance:
     - target: {fileID: 5866666021909216657, guid: 2067653716b0db34abd2c2ca5aca1f8a, type: 3}
       propertyPath: m_WarningMessage
       value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 5866666021909216657, guid: 2067653716b0db34abd2c2ca5aca1f8a, type: 3}
+      propertyPath: m_ApplyRootMotion
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects:
@@ -33230,6 +33239,11 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 4300332, guid: c925872ce3bfa384589bf34b953d5a65, type: 3}
+--- !u!4 &1093905707 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -1429697328490936681, guid: 2067653716b0db34abd2c2ca5aca1f8a, type: 3}
+  m_PrefabInstance: {fileID: 876236700}
+  m_PrefabAsset: {fileID: 0}
 --- !u!64 &1094680496
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -46516,6 +46530,7 @@ GameObject:
   - component: {fileID: 2107269549}
   - component: {fileID: 2107269548}
   - component: {fileID: 2107269550}
+  - component: {fileID: 2107269551}
   m_Layer: 0
   m_Name: Character
   m_TagString: Untagged
@@ -46559,8 +46574,8 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 59713681}
   - {fileID: 1772433198}
+  - {fileID: 59713681}
   - {fileID: 1361785009}
   - {fileID: 330585546}
   m_Father: {fileID: 0}
@@ -46581,6 +46596,20 @@ MonoBehaviour:
   layerMask:
     serializedVersion: 2
     m_Bits: 1
+--- !u!114 &2107269551
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2107269547}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 32bef968d2e72c54b86329b493c60a1e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  driverSkeleton: {fileID: 1093905707}
+  ragdollSkeleton: {fileID: 709733589}
 --- !u!64 &2109273405
 MeshCollider:
   m_ObjectHideFlags: 0
