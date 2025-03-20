@@ -9,6 +9,7 @@ using UnityEngine.UIElements;
 public class RagdollBuilderEditor : Editor
 {
     private RagdollBuilder builder;
+    private Rigidbody hips;
     private Rigidbody head;
     
     public override void OnInspectorGUI()
@@ -22,10 +23,14 @@ public class RagdollBuilderEditor : Editor
         {
             foreach (Rigidbody rigidbody in builder.GetComponentsInChildren<Rigidbody>())
             {
-                if (rigidbody.name.ToLower().Contains("head"))
+                string nameLower = rigidbody.name.ToLower();
+                if (nameLower.Contains("hips"))
+                {
+                    hips = rigidbody;
+                }
+                else if (nameLower.Contains("head"))
                 {
                     head = rigidbody;
-                    break;
                 }
             }
         }
@@ -58,11 +63,18 @@ public class RagdollBuilderEditor : Editor
         
         EditorGUILayout.Space();
         
-        if (GUILayout.Button(head.isKinematic ? "Free head" : "Lock head"))
-        {
-            Undo.RecordObject(head, $"Set head kinematic {!head.isKinematic}");
-            head.isKinematic = !head.isKinematic;
-        }
+        EditorGUILayout.BeginHorizontal();
+            if (GUILayout.Button(hips.isKinematic ? "Free hips" : "Lock hips"))
+            {
+                Undo.RecordObject(head, $"Set hips kinematic {!hips.isKinematic}");
+                hips.isKinematic = !hips.isKinematic;
+            }
+            if (GUILayout.Button(head.isKinematic ? "Free head" : "Lock head"))
+            {
+                Undo.RecordObject(head, $"Set head kinematic {!head.isKinematic}");
+                head.isKinematic = !head.isKinematic;
+            }
+        EditorGUILayout.EndHorizontal();
     }
 }
 #endif
