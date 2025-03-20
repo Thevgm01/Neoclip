@@ -13,9 +13,9 @@ public class RagdollBuilder : MonoBehaviour
 {
     public bool autoselectMirrorBone = true;
     public float initialMassMult = 1.0f;
-    public float jointSpringStrength = 20.0f;
     public Material dragMeshMaterial;
     public PhysicsMaterial physicsMaterial;
+    public ConfigurableJoint defaultJoint;
     public LayerNumber defaultLayer;
     public LayerMask defaultExcludeLayers;
     public bool addTrigger = false;
@@ -120,8 +120,13 @@ public class RagdollBuilder : MonoBehaviour
             for (int i = 0; i < rigidbodies.Length; i++)
             {
                 Rigidbody rigidbody = rigidbodies[i];
-                
                 GameObject gameObject = rigidbody.gameObject;
+
+                if (gameObject == this.gameObject)
+                {
+                    continue;
+                }
+                
                 gameObject.layer = defaultLayer.value;
                 
                 EditorUtils.TryDestroyObjectImmediate(gameObject.GetComponent<Joint>());
@@ -186,22 +191,10 @@ public class RagdollBuilder : MonoBehaviour
                 if (parentRigidbody)
                 {
                     ConfigurableJoint newJoint = Undo.AddComponent<ConfigurableJoint>(gameObject);
+                    GenericUtils.CopyConfigurableJointValues(defaultJoint, newJoint);
                     
                     newJoint.connectedBody = parentRigidbody;
-                    newJoint.enablePreprocessing = false;
-                    newJoint.xMotion = ConfigurableJointMotion.Locked;
-                    newJoint.yMotion = ConfigurableJointMotion.Locked;
-                    newJoint.zMotion = ConfigurableJointMotion.Locked;
                     
-                    JointDrive defaultJointDrive = new JointDrive
-                    {
-                        positionSpring = jointSpringStrength,
-                        positionDamper = 1.0f,
-                        maximumForce = float.MaxValue
-                    };
-                    newJoint.angularXDrive = defaultJointDrive;
-                    newJoint.angularYZDrive = defaultJointDrive;
-
                     if (gameObject.name.Contains("LeftLeg") || gameObject.name.Contains("RightLeg"))
                     {
                         SetElbowParameters(newJoint);
@@ -234,10 +227,10 @@ public class RagdollBuilder : MonoBehaviour
                 }
             }
             
-            Debug.Log($"RagdollBuilder: Set the mass of {rigidbodies.Length} rigidbodies. Total mass is {totalMass} kg.");
+            Debug.Log($"RagdollBuilder: Set the mass of {rigidbodies.Length - 1} rigidbodies. Total mass is {totalMass} kg.");
 
             // -1 because the root rigidbody has no parent, so it won't get a joint
-            Debug.Log($"RagdollBuilder: Created {rigidbodies.Length - 1} ConfigurableJoints.");
+            Debug.Log($"RagdollBuilder: Created {rigidbodies.Length - 2} ConfigurableJoints.");
             
             Debug.Log($"RagdollBuilder: Created {dragMeshesCreated} drag meshes.");
         }

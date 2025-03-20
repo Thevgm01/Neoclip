@@ -62,6 +62,8 @@ public class RagdollAverages : NeoclipCharacterComponent
     
     public override void Init()
     {
+        DestroyImmediate(GetComponent<ConfigurableJoint>());
+        DestroyImmediate(GetComponent<Rigidbody>());
         FillObjectArray();
         averagePosition = new TimeUpdatedProperty<Vector3>(CalculateAveragePosition);
         averageVelocity = new FixedTimeUpdatedProperty<Vector3>(CalculateAverageVelocity);
