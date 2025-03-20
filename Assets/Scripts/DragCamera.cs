@@ -8,15 +8,16 @@ public class DragCamera : NeoclipCharacterComponent
     [SerializeField] private float minSpeedForDrag = 1.0f;
     
     private Camera dragCamera;
-    
-    private Vector2Int renderTextureDimensions;
-    
-    private float areaPerPixel;
 
     private RenderPipeline.StandardRequest renderRequest;
     
     private int computeKernel;
     private ComputeBuffer hitBuffer;
+    
+    private Vector2Int renderTextureDimensions;
+    private float areaPerPixel;
+    private int[] pixelHits;
+    private bool hasData;
     
     public override void Init()
     {
@@ -36,6 +37,8 @@ public class DragCamera : NeoclipCharacterComponent
         hitBuffer = new ComputeBuffer(ragdollAverages.NumBones, sizeof(int));
         computeShader.SetTexture(computeKernel, Shader.PropertyToID("InputTexture"), dragCamera.targetTexture);
         computeShader.SetBuffer(computeKernel, Shader.PropertyToID("ColorCounts"), hitBuffer);
+
+        pixelHits = new int[ragdollAverages.NumBones];
     }
 
     private void MoveCamera()
@@ -47,44 +50,47 @@ public class DragCamera : NeoclipCharacterComponent
             rotation);
     }
 
-    private int[] CalculateHitsPerColor()
+    private void CalculateHitsPerColor()
     {
         // Create a buffer for color counts
-        int[] hitsPerColor = new int[ragdollAverages.NumBones];
-        hitBuffer.SetData(hitsPerColor);
+        hitBuffer.SetData(new int[ragdollAverages.NumBones]);
 
         // Dispatch the compute shader
         int threadGroupsX = Mathf.CeilToInt(renderTextureDimensions.x / 8.0f);
         int threadGroupsY = Mathf.CeilToInt(renderTextureDimensions.y / 8.0f);
         computeShader.Dispatch(computeKernel, threadGroupsX, threadGroupsY, 1);
 
-        // Retrieve results
-        //float time = Time.realtimeSinceStartup;
-        hitBuffer.GetData(hitsPerColor); // Use async method?
-        //Debug.Log(Time.realtimeSinceStartup - time);
-        
-        return hitsPerColor;
+        // Grab the data when it's done
+        AsyncGPUReadback.Request(hitBuffer, OnCompleteReadback);
+    }
+
+    private void OnCompleteReadback(AsyncGPUReadbackRequest request)
+    {
+        request.GetData<int>().CopyTo(pixelHits);
+        hasData = true;
     }
     
     public bool CalculateSurfaceAreas(float[] surfaceAreas)
     {
-        if (ragdollAverages.AverageVelocity.sqrMagnitude < minSpeedForDrag * minSpeedForDrag)
+        if (ragdollAverages.AverageVelocity.sqrMagnitude >= minSpeedForDrag * minSpeedForDrag)
         {
-            return false;
+            MoveCamera();
+            RenderPipeline.SubmitRenderRequest(dragCamera, renderRequest);
+            CalculateHitsPerColor();
         }
         
-        MoveCamera();
-        
-        RenderPipeline.SubmitRenderRequest(dragCamera, renderRequest);
-        
-        int[] hits = CalculateHitsPerColor();
-        
-        for (int i = 0; i < ragdollAverages.NumBones; i++)
+        if (hasData)
         {
-            surfaceAreas[i] = hits[i] * areaPerPixel;
+            for (int i = 0; i < ragdollAverages.NumBones; i++)
+            {
+                surfaceAreas[i] = pixelHits[i] * areaPerPixel;
+            }
+            
+            hasData = false;
+            return true;
         }
 
-        return true;
+        return false;
     }
 
     private void OnDestroy()
