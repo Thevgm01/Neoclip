@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -11,8 +12,6 @@ public class ActiveRagdoll : MonoBehaviour
         public Transform driverBone;
         public Transform ragdollBone;
         
-        public bool hasRigidbodyChild;
-
         public ActiveRagdollBone(Transform driverBone, Transform ragdollBone)
         {
             this.driverBone = driverBone;
@@ -25,9 +24,12 @@ public class ActiveRagdoll : MonoBehaviour
         }
     }
     
-    private TreeNode<ActiveRagdollBone> activeRagdollParentBone;
+    private TreeNode<ActiveRagdollBone> activeRagdollTree;
 
-    private TreeNode<ActiveRagdollBone> SetRecursive(Transform driverTransform, Transform ragdollTransform)
+    private List<Transform> copyTransformDrivers;
+    private List<Transform> copyTransformRagdolls;
+
+    private TreeNode<ActiveRagdollBone> BuildTreeRecursive(Transform driverTransform, Transform ragdollTransform)
     {
         TreeNode<ActiveRagdollBone> node = new TreeNode<ActiveRagdollBone>(
             new ActiveRagdollBone(driverTransform, ragdollTransform));
@@ -39,7 +41,7 @@ public class ActiveRagdoll : MonoBehaviour
 
             for (int i = 0; i < childCount; i++)
             {
-                node.children[i] = SetRecursive(driverTransform.GetChild(i), ragdollTransform.GetChild(i));
+                node.children[i] = BuildTreeRecursive(driverTransform.GetChild(i), ragdollTransform.GetChild(i));
                 node.children[i].parent = node;
             }
         }
@@ -49,13 +51,28 @@ public class ActiveRagdoll : MonoBehaviour
     
     private void Awake()
     {
-        activeRagdollParentBone = SetRecursive(driverSkeleton, ragdollSkeleton);
+        activeRagdollTree = BuildTreeRecursive(driverSkeleton, ragdollSkeleton);
 
-        List<ActiveRagdollBone> boneList = new List<ActiveRagdollBone>();
-        foreach (ActiveRagdollBone bone in activeRagdollParentBone.Leaves())
+        copyTransformDrivers = new List<Transform>();
+        copyTransformRagdolls = new List<Transform>();
+        foreach (TreeNode<ActiveRagdollBone> leafNode in activeRagdollTree.Leaves())
         {
-            boneList.Add(bone);
+            TreeNode<ActiveRagdollBone> treeNode = leafNode;
+            while (treeNode != null && treeNode.value.ragdollBone.GetComponent<Rigidbody>() == null)
+            {
+                copyTransformDrivers.Add(treeNode.value.driverBone);
+                copyTransformRagdolls.Add(treeNode.value.ragdollBone);
+                treeNode = treeNode.parent;
+            }
         }
-        Debug.Log(string.Join("\n", boneList));
+    }
+
+    private void LateUpdate()
+    {
+        for (int i = 0; i < copyTransformDrivers.Count; i++)
+        {
+            copyTransformDrivers[i].GetLocalPositionAndRotation(out Vector3 position, out Quaternion rotation);
+            copyTransformRagdolls[i].SetLocalPositionAndRotation(position, rotation);
+        }
     }
 }

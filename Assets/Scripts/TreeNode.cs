@@ -48,19 +48,19 @@ public class TreeNode<T>
         yield return value;
     }
 
-    public IEnumerable<T> Leaves()
+    public IEnumerable<TreeNode<T>> Leaves()
     {
         if (IsLeaf)
         {
-            yield return value;
+            yield return this;
         }
         else
         {
-            foreach (var child in children)
+            foreach (var childNode in children)
             {
-                foreach (var childValue in child.Leaves())
+                foreach (var childIterator in childNode.Leaves())
                 {
-                    yield return childValue;
+                    yield return childIterator;
                 }
             }
         }
