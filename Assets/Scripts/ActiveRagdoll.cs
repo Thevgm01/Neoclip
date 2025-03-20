@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 public class ActiveRagdoll : MonoBehaviour
 {
@@ -23,17 +24,71 @@ public class ActiveRagdoll : MonoBehaviour
             return driverBone.name;
         }
     }
+
+    private class ActiveRagdollJointBone : ActiveRagdollBone
+    {
+        public ConfigurableJoint joint;
+
+        public Quaternion startRotation;
+        public Quaternion worldToJointSpace;
+        public Quaternion jointToWorldSpace;
+        
+        public ActiveRagdollJointBone(ActiveRagdollBone bone, ConfigurableJoint joint) : base(bone.driverBone, bone.ragdollBone)
+        {
+            this.joint = joint;
+
+            // https://gist.github.com/mstevenson/7b85893e8caf5ca034e6
+            startRotation = ragdollBone.localRotation;
+
+            Vector3 right = joint.axis;
+            Vector3 forward = Vector3.Cross(joint.axis, joint.secondaryAxis).normalized;
+            Vector3 up = Vector3.Cross(forward, right).normalized; // Is this needed?
+        }
+
+        public void SetTargetRotation()
+        {
+            Quaternion targetRotation = driverBone.localRotation;
+            
+            // Calculate the rotation expressed by the joint's axis and secondary axis
+            var right = joint.axis;
+            var forward = Vector3.Cross (joint.axis, joint.secondaryAxis).normalized;
+            var up = Vector3.Cross (forward, right).normalized;
+            Quaternion worldToJointSpace = Quaternion.LookRotation (forward, up);
+		
+            // Transform into world space
+            Quaternion resultRotation = Quaternion.Inverse (worldToJointSpace);
+		
+            // Counter-rotate and apply the new local rotation.
+            // Joint space is the inverse of world space, so we need to invert our value
+            //if (space == Space.World) {
+            //    resultRotation *= startRotation * Quaternion.Inverse (targetRotation);
+            //} else {
+                resultRotation *= Quaternion.Inverse (targetRotation) * startRotation;
+            //}
+		
+            // Transform back into joint space
+            resultRotation *= worldToJointSpace;
+		
+            // Set target rotation to our newly calculated rotation
+            joint.targetRotation = resultRotation;
+        }
+    }
     
-    private TreeNode<ActiveRagdollBone> activeRagdollTree;
+    private List<ActiveRagdollJointBone> joints;
 
     private List<Transform> copyTransformDrivers;
     private List<Transform> copyTransformRagdolls;
-
+    
     private TreeNode<ActiveRagdollBone> BuildTreeRecursive(Transform driverTransform, Transform ragdollTransform)
     {
         TreeNode<ActiveRagdollBone> node = new TreeNode<ActiveRagdollBone>(
             new ActiveRagdollBone(driverTransform, ragdollTransform));
 
+        if (ragdollTransform.TryGetComponent(out ConfigurableJoint joint))
+        {
+            joints.Add(new ActiveRagdollJointBone(node.value, joint));
+        }
+        
         int childCount = driverTransform.childCount;
         if (childCount > 0)
         {
@@ -51,10 +106,12 @@ public class ActiveRagdoll : MonoBehaviour
     
     private void Awake()
     {
-        activeRagdollTree = BuildTreeRecursive(driverSkeleton, ragdollSkeleton);
+        joints = new List<ActiveRagdollJointBone>();
+        TreeNode<ActiveRagdollBone> activeRagdollTree = BuildTreeRecursive(driverSkeleton, ragdollSkeleton);
 
         copyTransformDrivers = new List<Transform>();
         copyTransformRagdolls = new List<Transform>();
+        // FIXME this is potentially adding the same nodes multiple times
         foreach (TreeNode<ActiveRagdollBone> leafNode in activeRagdollTree.Leaves())
         {
             TreeNode<ActiveRagdollBone> treeNode = leafNode;
@@ -73,6 +130,11 @@ public class ActiveRagdoll : MonoBehaviour
         {
             copyTransformDrivers[i].GetLocalPositionAndRotation(out Vector3 position, out Quaternion rotation);
             copyTransformRagdolls[i].SetLocalPositionAndRotation(position, rotation);
+        }
+
+        for (int i = 0; i < joints.Count; i++)
+        {
+            joints[i].SetTargetRotation();
         }
     }
 }

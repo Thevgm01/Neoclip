@@ -9,6 +9,7 @@ public class NeoclipCharacterController : MonoBehaviour
     [SerializeField] private ConcaveClipHelper concaveClipHelper;
     
     [Space]
+    [SerializeField] private bool applyGravity = true;
     [SerializeField] private float maxMoveSpeed = 5.0f;
     [SerializeField] private float moveAcceleration = 1.0f;
     [Tooltip("Don't collide with these layers while noclipping")]
@@ -86,7 +87,7 @@ public class NeoclipCharacterController : MonoBehaviour
 
             if (!boneClipStates[i]) // This bone is in open space
             {
-                acceleration += Physics.gravity;
+                acceleration += applyGravity ? Physics.gravity : Vector3.zero;
             }
             else if (!noclipInput) // This bone is clipping (but the button isn't held down)
             {
