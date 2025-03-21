@@ -8,7 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: s_stripe_TransP2
-  m_Shader: {fileID: -6465566751694194690, guid: ba150e14e53907349833a61773a77ea0, type: 3}
+  m_Shader: {fileID: -6465566751694194690, guid: 318ae9302029a3d4cb829251b365b63c, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -71,6 +71,7 @@ Material:
     - _DstBlend: 0
     - _DstBlendAlpha: 0
     - _GlossinessSource: 0
+    - _JitterMagnitude: 1
     - _QueueControl: 0
     - _QueueOffset: 0
     - _ReceiveShadows: 1

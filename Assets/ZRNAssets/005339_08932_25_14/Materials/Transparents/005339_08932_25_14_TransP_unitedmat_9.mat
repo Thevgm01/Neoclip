@@ -8,7 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: 005339_08932_25_14_TransP_unitedmat_9
-  m_Shader: {fileID: -6465566751694194690, guid: ba150e14e53907349833a61773a77ea0, type: 3}
+  m_Shader: {fileID: -6465566751694194690, guid: 318ae9302029a3d4cb829251b365b63c, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -104,6 +104,7 @@ Material:
     - _DstBlendAlpha: 0
     - _Glossiness: 0.5
     - _GlossinessSource: 0
+    - _JitterMagnitude: 1
     - _Metallic: 0
     - _Mode: 1
     - _OcclusionStrength: 1
