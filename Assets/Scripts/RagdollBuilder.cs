@@ -166,7 +166,7 @@ public class RagdollBuilder : MonoBehaviour
                 
                 // Add a ConfigurableJoint
                 Rigidbody parentRigidbody = rigidbody.transform.parent.GetComponentInParent<Rigidbody>();
-                if (parentRigidbody)
+                if (parentRigidbody && parentRigidbody.gameObject != this.gameObject)
                 {
                     ConfigurableJoint newJoint = Undo.AddComponent<ConfigurableJoint>(gameObject);
                     GenericUtils.CopyConfigurableJointValues(defaultJoint, newJoint);
