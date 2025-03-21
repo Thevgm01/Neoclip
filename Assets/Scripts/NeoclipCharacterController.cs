@@ -63,7 +63,8 @@ public class NeoclipCharacterController : MonoBehaviour
     {
         Vector3 movement = cameraController.CameraRelativeMoveVector(moveInput) * moveAcceleration;
         
-        bool shouldApplyDrag = dragCamera.CalculateSurfaceAreas(boneSurfaceAreas);
+        bool shouldApplyDrag =
+            dragCamera.TryUpdateSurfaceAreas(boneSurfaceAreas);
         bool anyBoneClipping = 
             (noclipInput || wasAnyClippingLastFrame) &&
             concaveClipHelper.CheckAllBones(boneClipStates);

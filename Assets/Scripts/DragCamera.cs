@@ -70,7 +70,7 @@ public class DragCamera : NeoclipCharacterComponent
         hasData = true;
     }
     
-    public bool CalculateSurfaceAreas(float[] surfaceAreas)
+    public bool TryUpdateSurfaceAreas(float[] surfaceAreas)
     {
         if (ragdollAverages.AverageVelocity.sqrMagnitude >= minSpeedForDrag * minSpeedForDrag)
         {
