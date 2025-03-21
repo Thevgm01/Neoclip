@@ -10,8 +10,8 @@ public class ActiveRagdoll : MonoBehaviour
     
     private class ActiveRagdollBone
     {
-        public Transform driverBone;
-        public Transform ragdollBone;
+        public Transform driverBone { get; }
+        public Transform ragdollBone { get; }
         
         public ActiveRagdollBone(Transform driverBone, Transform ragdollBone)
         {
@@ -19,20 +19,31 @@ public class ActiveRagdoll : MonoBehaviour
             this.ragdollBone = ragdollBone;
         }
         
+        public ActiveRagdollBone(ActiveRagdollBone other) : this(other.driverBone, other.ragdollBone) {}
+        
         public override string ToString()
         {
             return driverBone.name;
         }
+        
+        public virtual void SetRotation() {}
+    }
+
+    private class ActiveRagdollTransformBone : ActiveRagdollBone
+    {
+        public ActiveRagdollTransformBone(ActiveRagdollBone original) : base(original) {}
+        
+        public override void SetRotation() => ragdollBone.localRotation = driverBone.localRotation;
     }
 
     private class ActiveRagdollJointBone : ActiveRagdollBone
     {
-        public ConfigurableJoint joint;
+        private readonly ConfigurableJoint joint;
 
-        public Quaternion worldToStartSpace;
-        public Quaternion jointToWorldSpace;
+        private readonly Quaternion worldToStartSpace;
+        private readonly Quaternion jointToWorldSpace;
         
-        public ActiveRagdollJointBone(ActiveRagdollBone bone, ConfigurableJoint joint) : base(bone.driverBone, bone.ragdollBone)
+        public ActiveRagdollJointBone(ActiveRagdollBone original, ConfigurableJoint joint) : base(original)
         {
             this.joint = joint;
 
@@ -44,14 +55,11 @@ public class ActiveRagdoll : MonoBehaviour
             worldToStartSpace = ragdollBone.localRotation * worldToJointSpace;
         }
 
-        public void SetTargetRotation() =>
+        public override void SetRotation() =>
             joint.targetRotation = jointToWorldSpace * Quaternion.Inverse(driverBone.localRotation) * worldToStartSpace;
     }
     
-    private List<ActiveRagdollJointBone> joints;
-
-    private List<Transform> copyTransformDrivers;
-    private List<Transform> copyTransformRagdolls;
+    private HashSet<ActiveRagdollBone> bones;
     
     private TreeNode<ActiveRagdollBone> BuildTreeRecursive(Transform driverTransform, Transform ragdollTransform)
     {
@@ -60,7 +68,7 @@ public class ActiveRagdoll : MonoBehaviour
 
         if (ragdollTransform.TryGetComponent(out ConfigurableJoint joint))
         {
-            joints.Add(new ActiveRagdollJointBone(node.value, joint));
+            bones.Add(new ActiveRagdollJointBone(node.value, joint));
         }
         
         int childCount = driverTransform.childCount;
@@ -80,19 +88,15 @@ public class ActiveRagdoll : MonoBehaviour
     
     private void Awake()
     {
-        joints = new List<ActiveRagdollJointBone>();
+        bones = new HashSet<ActiveRagdollBone>();
         TreeNode<ActiveRagdollBone> activeRagdollTree = BuildTreeRecursive(driverSkeleton, ragdollSkeleton);
 
-        copyTransformDrivers = new List<Transform>();
-        copyTransformRagdolls = new List<Transform>();
-        // FIXME this is potentially adding the same nodes multiple times
         foreach (TreeNode<ActiveRagdollBone> leafNode in activeRagdollTree.Leaves())
         {
             TreeNode<ActiveRagdollBone> treeNode = leafNode;
             while (treeNode != null && treeNode.value.ragdollBone.GetComponent<Rigidbody>() == null)
             {
-                copyTransformDrivers.Add(treeNode.value.driverBone);
-                copyTransformRagdolls.Add(treeNode.value.ragdollBone);
+                bones.Add(new ActiveRagdollTransformBone(treeNode.value));
                 treeNode = treeNode.parent;
             }
         }
@@ -100,15 +104,9 @@ public class ActiveRagdoll : MonoBehaviour
 
     private void LateUpdate()
     {
-        for (int i = 0; i < copyTransformDrivers.Count; i++)
+        foreach (ActiveRagdollBone bone in bones)
         {
-            copyTransformDrivers[i].GetLocalPositionAndRotation(out Vector3 position, out Quaternion rotation);
-            copyTransformRagdolls[i].SetLocalPositionAndRotation(position, rotation);
-        }
-
-        for (int i = 0; i < joints.Count; i++)
-        {
-            joints[i].SetTargetRotation();
+            bone.SetRotation();
         }
     }
 }
