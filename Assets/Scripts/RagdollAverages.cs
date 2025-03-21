@@ -7,14 +7,18 @@ public class RagdollAverages : NeoclipCharacterComponent
 {
     public float TotalMass { get; private set; }
     public int NumBones { get; private set; }
+
+    private Rigidbody[] rigidbodies;
+    private Transform[] transforms;
+    private Collider[] colliders;
+
+    public Rigidbody[] Rigidbodies => (Rigidbody[])rigidbodies.Clone();
+    public Transform[] Transforms => (Transform[])transforms.Clone();
+    public Collider[] Colliders => (Collider[])colliders.Clone();
     
-    private const int STRIDE = 4;
-    private Object[] objects;
-    
-    public Rigidbody GetRigidbody(int boneIndex) => (Rigidbody)objects[boneIndex * STRIDE + 0];
-    public GameObject GetGameObject(int boneIndex) => (GameObject)objects[boneIndex * STRIDE + 1];
-    public Transform GetTransform(int boneIndex) => (Transform)objects[boneIndex * STRIDE + 2];
-    public Collider GetCollider(int boneIndex) => (Collider)objects[boneIndex * STRIDE + 3];
+    public Rigidbody GetRigidbody(int index) => rigidbodies[index];
+    public Transform GetTransform(int index) => transforms[index];
+    public Collider GetCollider(int index) => colliders[index];
 
     private Vector3 CalculateAveragePosition()
     {
@@ -40,23 +44,20 @@ public class RagdollAverages : NeoclipCharacterComponent
     private FixedTimeUpdatedProperty<Vector3> averageVelocity;
     public Vector3 AverageVelocity => averageVelocity.GetValue();
 
-    private void FillObjectArray()
+    private void FillArrays()
     {
-        Rigidbody[] rigidbodies = GetComponentsInChildren<Rigidbody>();
+        rigidbodies = GetComponentsInChildren<Rigidbody>();
         NumBones = rigidbodies.Length;
-        objects = new Object[NumBones * STRIDE];
-    
+        transforms = new Transform[NumBones];
+        colliders = new Collider[NumBones];
+        
         for (int i = 0; i < NumBones; i++)
         {
             Rigidbody rigidbody = rigidbodies[i];
             TotalMass += rigidbody.mass;
-
-            Collider collider = rigidbody.GetComponent<Collider>();
-
-            objects[i * STRIDE + 0] = rigidbody;
-            objects[i * STRIDE + 1] = rigidbody.gameObject;
-            objects[i * STRIDE + 2] = rigidbody.transform;
-            objects[i * STRIDE + 3] = collider;
+            
+            transforms[i] = rigidbody.transform;
+            colliders[i] = rigidbody.GetComponent<Collider>();;
         }
     }
     
@@ -64,7 +65,7 @@ public class RagdollAverages : NeoclipCharacterComponent
     {
         DestroyImmediate(GetComponent<ConfigurableJoint>());
         DestroyImmediate(GetComponent<Rigidbody>());
-        FillObjectArray();
+        FillArrays();
         averagePosition = new TimeUpdatedProperty<Vector3>(CalculateAveragePosition);
         averageVelocity = new FixedTimeUpdatedProperty<Vector3>(CalculateAverageVelocity);
     }

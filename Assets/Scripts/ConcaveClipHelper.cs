@@ -4,11 +4,11 @@ using Unity.Jobs;
 using UnityEngine;
 using UnityEngine.Serialization;
 
-public class ConcaveClipHelper : MonoBehaviour
+public class ConcaveClipHelper
 {
-    [SerializeField] private RagdollAverages ragdollAverages;
-    [SerializeField] private LayerMask shapeCheckLayerMask;
-    [SerializeField] private LayerMask shapeCastLayerMask;
+    private Collider[] colliders;
+    private int shapeCheckLayerMask;
+    private int shapeCastLayerMask;
 
     private const float MAX_DISTANCE = 100.0f;
     private const float DOT_THRESHOLD = 0.0f;
@@ -27,14 +27,14 @@ public class ConcaveClipHelper : MonoBehaviour
         Vector3 halfExtents = boxCollider.size / 2.0f;
         Quaternion orientation = boxTransform.rotation;
 
-        if (Physics.CheckBox(origin, halfExtents, orientation, shapeCheckLayerMask.value))
+        if (Physics.CheckBox(origin, halfExtents, orientation, shapeCheckLayerMask))
         {
             return true;
         }
 
         for (int i = 0; i < directions.Length; i++)
         {
-            if (Physics.BoxCast(origin, halfExtents, directions[i], out RaycastHit hit, orientation, MAX_DISTANCE, shapeCastLayerMask.value) &&
+            if (Physics.BoxCast(origin, halfExtents, directions[i], out RaycastHit hit, orientation, MAX_DISTANCE, shapeCastLayerMask) &&
                 Vector3.Dot(hit.normal, directions[i]) > DOT_THRESHOLD)
             {
                 //Debug.DrawLine(origin, hit.point);
@@ -54,14 +54,14 @@ public class ConcaveClipHelper : MonoBehaviour
         Vector3 point1 = origin + axis;
         Vector3 point2 = origin - axis;
         
-        if (Physics.CheckCapsule(point1, point2, capsuleCollider.radius, shapeCheckLayerMask.value))
+        if (Physics.CheckCapsule(point1, point2, capsuleCollider.radius, shapeCheckLayerMask))
         {
             return true;
         }
 
         for (int i = 0; i < directions.Length; i++)
         {
-            if (Physics.CapsuleCast(point1, point2, capsuleCollider.radius, directions[i], out RaycastHit hit, MAX_DISTANCE, shapeCastLayerMask.value) &&
+            if (Physics.CapsuleCast(point1, point2, capsuleCollider.radius, directions[i], out RaycastHit hit, MAX_DISTANCE, shapeCastLayerMask) &&
                 Vector3.Dot(hit.normal, directions[i]) > DOT_THRESHOLD)
             {
                 //Debug.DrawLine(origin, hit.point);
@@ -76,14 +76,14 @@ public class ConcaveClipHelper : MonoBehaviour
     {
         Vector3 origin = sphereCollider.transform.TransformPoint(sphereCollider.center);
 
-        if (Physics.CheckSphere(origin, sphereCollider.radius, shapeCheckLayerMask.value))
+        if (Physics.CheckSphere(origin, sphereCollider.radius, shapeCheckLayerMask))
         {
             return true;
         }
 
         for (int i = 0; i < directions.Length; i++)
         {
-            if (Physics.SphereCast(origin, sphereCollider.radius, directions[i], out RaycastHit hit, MAX_DISTANCE, shapeCastLayerMask.value) &&
+            if (Physics.SphereCast(origin, sphereCollider.radius, directions[i], out RaycastHit hit, MAX_DISTANCE, shapeCastLayerMask) &&
                 Vector3.Dot(hit.normal, directions[i]) > DOT_THRESHOLD)
             {
                 //Debug.DrawLine(origin, hit.point);
@@ -98,9 +98,9 @@ public class ConcaveClipHelper : MonoBehaviour
     {
         bool anythingInside = false;
 
-        for (int i = 0; i < ragdollAverages.NumBones; i++)
+        for (int i = 0; i < colliders.Length; i++)
         {
-            switch (ragdollAverages.GetCollider(i))
+            switch (colliders[i])
             {
                 case BoxCollider boxCollider:
                     results[i] = CheckOrCastBox(boxCollider);
@@ -117,5 +117,12 @@ public class ConcaveClipHelper : MonoBehaviour
         }
 
         return anythingInside;
+    }
+
+    public ConcaveClipHelper(Collider[] colliders, int shapeCheckLayerMask, int shapeCastIgnoreLayerMask)
+    {
+        this.colliders = colliders;
+        this.shapeCheckLayerMask = shapeCheckLayerMask;
+        this.shapeCastLayerMask = shapeCheckLayerMask ^ shapeCastIgnoreLayerMask;
     }
 }

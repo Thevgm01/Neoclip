@@ -6,14 +6,16 @@ public class NeoclipCharacterController : MonoBehaviour
     [SerializeField] private RagdollAverages ragdollAverages;
     [SerializeField] private DragCamera dragCamera;
     [SerializeField] private NeoclipCameraController cameraController;
-    [SerializeField] private ConcaveClipHelper concaveClipHelper;
-    
+    [SerializeField] private ActiveRagdoll activeRagdoll;
+    private ConcaveClipHelper concaveClipHelper;
+
     [Space]
     [SerializeField] private bool applyGravity = true;
     [SerializeField] private float maxMoveSpeed = 5.0f;
     [SerializeField] private float moveAcceleration = 1.0f;
     [Tooltip("Don't collide with these layers while noclipping")]
-    [SerializeField] private LayerMask noclipIgnoreLayers;
+    [SerializeField] private LayerMask noclipLayers;
+    [SerializeField] private LayerMask shapecastIgnoreLayers;
 
     [Space]
     [SerializeField] private InputActionReference moveAction;
@@ -34,6 +36,10 @@ public class NeoclipCharacterController : MonoBehaviour
         ragdollAverages.Init();
         dragCamera.Init();
         cameraController.Init();
+        concaveClipHelper = new ConcaveClipHelper(
+            ragdollAverages.Colliders, 
+            noclipLayers.value, 
+            shapecastIgnoreLayers.value);
 
         defaultIgnoreLayers = ragdollAverages.GetCollider(0).excludeLayers.value;
         boneSurfaceAreas = new float[ragdollAverages.NumBones];
@@ -76,7 +82,7 @@ public class NeoclipCharacterController : MonoBehaviour
             
             if (noclipInput && !wasAnyClippingLastFrame)
             {
-                collider.excludeLayers = defaultIgnoreLayers ^ noclipIgnoreLayers.value;
+                collider.excludeLayers = defaultIgnoreLayers ^ noclipLayers.value;
             }
             else if (!noclipInput && !anyBoneClipping)
             {

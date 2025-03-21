@@ -51614,7 +51614,6 @@ GameObject:
   m_Component:
   - component: {fileID: 2107269549}
   - component: {fileID: 2107269548}
-  - component: {fileID: 2107269550}
   - component: {fileID: 2107269551}
   m_Layer: 0
   m_Name: Character
@@ -51638,13 +51637,16 @@ MonoBehaviour:
   ragdollAverages: {fileID: 59713680}
   dragCamera: {fileID: 1361785010}
   cameraController: {fileID: 330585548}
-  concaveClipHelper: {fileID: 2107269550}
+  activeRagdoll: {fileID: 2107269551}
   applyGravity: 1
   maxMoveSpeed: 5
   moveAcceleration: 5
-  noclipIgnoreLayers:
+  noclipLayers:
     serializedVersion: 2
     m_Bits: 129
+  shapecastIgnoreLayers:
+    serializedVersion: 2
+    m_Bits: 128
   moveAction: {fileID: -1680190386980627800, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   noclipAction: {fileID: 1120369429361536294, guid: 052faaac586de48259a63d0c4782560b, type: 3}
 --- !u!4 &2107269549
@@ -51666,25 +51668,6 @@ Transform:
   - {fileID: 330585546}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2107269550
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2107269547}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b8bdff4fbdf7c3d45beb8f819b8280c9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  ragdollAverages: {fileID: 59713680}
-  shapeCheckLayerMask:
-    serializedVersion: 2
-    m_Bits: 129
-  shapeCastLayerMask:
-    serializedVersion: 2
-    m_Bits: 1
 --- !u!114 &2107269551
 MonoBehaviour:
   m_ObjectHideFlags: 0
