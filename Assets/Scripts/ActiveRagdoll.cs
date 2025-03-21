@@ -29,8 +29,7 @@ public class ActiveRagdoll : MonoBehaviour
     {
         public ConfigurableJoint joint;
 
-        public Quaternion startRotation;
-        public Quaternion worldToJointSpace;
+        public Quaternion worldToStartSpace;
         public Quaternion jointToWorldSpace;
         
         public ActiveRagdollJointBone(ActiveRagdollBone bone, ConfigurableJoint joint) : base(bone.driverBone, bone.ragdollBone)
@@ -38,40 +37,15 @@ public class ActiveRagdoll : MonoBehaviour
             this.joint = joint;
 
             // https://gist.github.com/mstevenson/7b85893e8caf5ca034e6
-            startRotation = ragdollBone.localRotation;
-
-            Vector3 right = joint.axis;
-            Vector3 forward = Vector3.Cross(joint.axis, joint.secondaryAxis).normalized;
-            Vector3 up = Vector3.Cross(forward, right).normalized; // Is this needed?
+            var forward = Vector3.Cross(joint.axis, joint.secondaryAxis).normalized;
+            var up = Vector3.Cross(forward, joint.axis).normalized;
+            Quaternion worldToJointSpace = Quaternion.LookRotation(forward, up);
+            jointToWorldSpace = Quaternion.Inverse(worldToJointSpace);
+            worldToStartSpace = ragdollBone.localRotation * worldToJointSpace;
         }
 
-        public void SetTargetRotation()
-        {
-            Quaternion targetRotation = driverBone.localRotation;
-            
-            // Calculate the rotation expressed by the joint's axis and secondary axis
-            var right = joint.axis;
-            var forward = Vector3.Cross (joint.axis, joint.secondaryAxis).normalized;
-            var up = Vector3.Cross (forward, right).normalized;
-            Quaternion worldToJointSpace = Quaternion.LookRotation (forward, up);
-		
-            // Transform into world space
-            Quaternion resultRotation = Quaternion.Inverse (worldToJointSpace);
-		
-            // Counter-rotate and apply the new local rotation.
-            // Joint space is the inverse of world space, so we need to invert our value
-            //if (space == Space.World) {
-            //    resultRotation *= startRotation * Quaternion.Inverse (targetRotation);
-            //} else {
-                resultRotation *= Quaternion.Inverse (targetRotation) * startRotation;
-            //}
-		
-            // Transform back into joint space
-            resultRotation *= worldToJointSpace;
-		
-            // Set target rotation to our newly calculated rotation
-            joint.targetRotation = resultRotation;
-        }
+        public void SetTargetRotation() =>
+            joint.targetRotation = jointToWorldSpace * Quaternion.Inverse(driverBone.localRotation) * worldToStartSpace;
     }
     
     private List<ActiveRagdollJointBone> joints;
