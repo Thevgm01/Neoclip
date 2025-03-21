@@ -37,14 +37,7 @@ public class ActiveRagdoll : MonoBehaviour
             return AnimatedBone.GetHashCode() ^ DrivenBone.GetHashCode();
         }
         
-        public virtual void SetRotation() {}
-    }
-
-    private class TransformBonePair : BonePair
-    {
-        public TransformBonePair(BonePair original) : base(original) {}
-        
-        public override void SetRotation() => DrivenBone.localRotation = AnimatedBone.localRotation;
+        public virtual void SetRotation() => DrivenBone.localRotation = AnimatedBone.localRotation;
     }
 
     private class JointBonePair : BonePair
@@ -70,7 +63,7 @@ public class ActiveRagdoll : MonoBehaviour
             joint.targetRotation = jointToWorldSpace * Quaternion.Inverse(AnimatedBone.localRotation) * worldToStartSpace;
     }
     
-    private HashSet<TransformBonePair> transformBonePairs;
+    private HashSet<BonePair> basicBonePairs;
     private List<JointBonePair> jointBonePairs;
     
     private TreeNode<BonePair> BuildBonePairTreeRecursive(Transform driverTransform, Transform ragdollTransform)
@@ -100,7 +93,7 @@ public class ActiveRagdoll : MonoBehaviour
     
     private void Awake()
     {
-        transformBonePairs = new HashSet<TransformBonePair>();
+        basicBonePairs = new HashSet<BonePair>();
         jointBonePairs = new List<JointBonePair>();
         
         TreeNode<BonePair> bonePairTree = BuildBonePairTreeRecursive(driverSkeleton, ragdollSkeleton);
@@ -110,7 +103,7 @@ public class ActiveRagdoll : MonoBehaviour
             TreeNode<BonePair> node = leafNode;
             while (node != null && node.value.DrivenBone.GetComponent<Rigidbody>() == null)
             {
-                transformBonePairs.Add(new TransformBonePair(node.value));
+                basicBonePairs.Add(node.value);
                 node = node.parent;
             }
         }
@@ -118,9 +111,9 @@ public class ActiveRagdoll : MonoBehaviour
 
     private void LateUpdate()
     {
-        foreach (TransformBonePair transformBonePair in transformBonePairs)
+        foreach (BonePair basicBonePair in basicBonePairs)
         {
-            transformBonePair.SetRotation();
+            basicBonePair.SetRotation();
         }
     }
 
