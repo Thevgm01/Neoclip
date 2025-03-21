@@ -23,7 +23,7 @@ public class NeoclipCameraController : NeoclipCharacterComponent
     private Quaternion currentRotation = Quaternion.identity;
     private Quaternion desiredRotation = Quaternion.identity;
 
-    public Vector3 CameraRelativeMoveVector(Vector2 moveInput)
+    public Vector3 GetCameraRelativeMoveVector(Vector2 moveInput)
     {
         switch (lookMode)
         {
@@ -34,6 +34,25 @@ public class NeoclipCameraController : NeoclipCharacterComponent
                 return desiredRotation * new Vector3(moveInput.x, 0, moveInput.y);
             default:
                 return Vector3.zero;
+        }
+    }
+
+    public void ApplyMouseInput(InputAction.CallbackContext context)
+    {
+        Vector2 delta = context.ReadValue<Vector2>() * mouseSensitivity;
+        
+        switch (lookMode)
+        {
+            case LookMode.UP:
+                manualCameraAngles = new Vector3(
+                    Mathf.Clamp(manualCameraAngles.x - delta.y, -89, 89), 
+                    Mathf.Repeat(manualCameraAngles.y + delta.x, 360), 
+                    Mathf.Repeat(manualCameraAngles.z, 360));
+                desiredRotation = Quaternion.Euler(manualCameraAngles);
+                break;
+            case LookMode.FREE:
+                desiredRotation *= Quaternion.Euler(-delta.y, delta.x, 0);
+                break;
         }
     }
     
@@ -49,22 +68,6 @@ public class NeoclipCameraController : NeoclipCharacterComponent
 
     public override void Tick()
     {
-        Vector2 movement = mouseSensitivity * Mouse.current.delta.ReadValue() * Time.smoothDeltaTime;
-
-        switch (lookMode)
-        {
-            case LookMode.UP:
-                manualCameraAngles = new Vector3(
-                    Mathf.Clamp(manualCameraAngles.x - movement.y, -89, 89), 
-                    Mathf.Repeat(manualCameraAngles.y + movement.x, 360), 
-                    Mathf.Repeat(manualCameraAngles.z, 360));
-                desiredRotation = Quaternion.Euler(manualCameraAngles);
-                break;
-            case LookMode.FREE:
-                desiredRotation *= Quaternion.Euler(-movement.y, movement.x, 0);
-                break;
-        }
-        
         desiredPosition = ragdollAverages.AveragePosition;
         currentPosition = Vector3.Lerp(currentPosition, desiredPosition, GenericUtils.ExpT(followSpeed));
 

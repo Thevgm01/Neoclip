@@ -24301,7 +24301,7 @@ MonoBehaviour:
   followSpeed: 10
   followDistance: 3
   lookMode: 0
-  mouseSensitivity: {x: 30, y: 30}
+  mouseSensitivity: {x: 0.2, y: 0.2}
   rotationSpeed: 50
   skewStrength: 0.5
 --- !u!64 &332295545
@@ -51647,6 +51647,7 @@ MonoBehaviour:
   shapecastIgnoreLayers:
     serializedVersion: 2
     m_Bits: 128
+  mouseMoveAction: {fileID: -5630151704836100654, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   moveAction: {fileID: -1680190386980627800, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   noclipAction: {fileID: 1120369429361536294, guid: 052faaac586de48259a63d0c4782560b, type: 3}
 --- !u!4 &2107269549

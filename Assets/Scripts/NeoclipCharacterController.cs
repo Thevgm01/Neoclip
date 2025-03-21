@@ -18,12 +18,13 @@ public class NeoclipCharacterController : MonoBehaviour
     [SerializeField] private LayerMask shapecastIgnoreLayers;
 
     [Space]
+    [SerializeField] private InputActionReference mouseMoveAction;
     [SerializeField] private InputActionReference moveAction;
-    private Vector2 moveInput;
-    private void SetMoveInput(InputAction.CallbackContext context) => moveInput = context.ReadValue<Vector2>();
     [SerializeField] private InputActionReference noclipAction;
-    private bool noclipInput;
+    private void SetMoveInput(InputAction.CallbackContext context) => moveInput = context.ReadValue<Vector2>();
     private void SetNoclipInput(InputAction.CallbackContext context) => noclipInput = context.ReadValueAsButton();
+    private Vector2 moveInput;
+    private bool noclipInput;
 
     private int defaultIgnoreLayers;
 
@@ -51,6 +52,8 @@ public class NeoclipCharacterController : MonoBehaviour
     
     private void OnEnable()
     {
+        mouseMoveAction.action.performed += cameraController.ApplyMouseInput;
+        //mouseMoveAction.action.canceled += cameraController.ApplyMouseInput;
         moveAction.action.performed += SetMoveInput;
         moveAction.action.canceled += SetMoveInput;
         noclipAction.action.performed += SetNoclipInput;
@@ -59,6 +62,8 @@ public class NeoclipCharacterController : MonoBehaviour
 
     private void OnDisable()
     {
+        mouseMoveAction.action.performed -= cameraController.ApplyMouseInput;
+        //mouseMoveAction.action.canceled -= cameraController.ApplyMouseInput;
         moveAction.action.performed -= SetMoveInput;
         moveAction.action.canceled -= SetMoveInput;
         noclipAction.action.performed -= SetNoclipInput;
@@ -67,7 +72,7 @@ public class NeoclipCharacterController : MonoBehaviour
     
     private void FixedUpdate()
     {
-        Vector3 movement = cameraController.CameraRelativeMoveVector(moveInput) * moveAcceleration;
+        Vector3 movement = cameraController.GetCameraRelativeMoveVector(moveInput) * moveAcceleration;
         
         bool shouldApplyDrag =
             dragCamera.TryUpdateSurfaceAreas(boneSurfaceAreas);
