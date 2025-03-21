@@ -172,20 +172,38 @@ public class RagdollBuilder : MonoBehaviour
                     GenericUtils.CopyConfigurableJointValues(defaultJoint, newJoint);
                     
                     newJoint.connectedBody = parentRigidbody;
+                    string nameLower = gameObject.name.ToLower();
                     
-                    if (gameObject.name.Contains("LeftLeg") || gameObject.name.Contains("RightLeg"))
+                    if (nameLower.Contains("leftleg") || nameLower.Contains("rightleg"))
                     {
                         SetElbowParameters(newJoint);
                     }
-                    else if (gameObject.name.Contains("LeftForeArm"))
+                    else if (nameLower.Contains("leftforearm"))
                     {
                         newJoint.axis = Vector3.forward;
                         SetElbowParameters(newJoint);
                     }
-                    else if (gameObject.name.Contains("RightForeArm"))
+                    else if (nameLower.Contains("rightforearm"))
                     {
                         newJoint.axis = Vector3.back;
                         SetElbowParameters(newJoint);
+                    }
+                    else if (nameLower.Contains("spine1"))
+                    {
+                        newJoint.angularXDrive = new JointDrive()
+                        {
+                            positionSpring = newJoint.angularXDrive.positionSpring * 3.0f,
+                            positionDamper = newJoint.angularXDrive.positionDamper * 3.0f,
+                            maximumForce = newJoint.angularXDrive.maximumForce,
+                            useAcceleration = newJoint.angularXDrive.useAcceleration
+                        };
+                        newJoint.angularYZDrive = new JointDrive()
+                        {
+                            positionSpring = newJoint.angularYZDrive.positionSpring * 3.0f,
+                            positionDamper = newJoint.angularYZDrive.positionDamper * 3.0f,
+                            maximumForce = newJoint.angularXDrive.maximumForce,
+                            useAcceleration = newJoint.angularYZDrive.useAcceleration
+                        };
                     }
                 }
 
