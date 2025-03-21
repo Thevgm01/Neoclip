@@ -25,6 +25,17 @@ public class ActiveRagdoll : MonoBehaviour
         {
             return AnimatedBone.name;
         }
+
+        public override bool Equals(object obj)
+        {
+            BonePair other = obj as BonePair;
+            return other != null && other.AnimatedBone == AnimatedBone && other.DrivenBone == DrivenBone;
+        }
+
+        public override int GetHashCode()
+        {
+            return AnimatedBone.GetHashCode() ^ DrivenBone.GetHashCode();
+        }
         
         public virtual void SetRotation() {}
     }
@@ -59,7 +70,8 @@ public class ActiveRagdoll : MonoBehaviour
             joint.targetRotation = jointToWorldSpace * Quaternion.Inverse(AnimatedBone.localRotation) * worldToStartSpace;
     }
     
-    private HashSet<BonePair> bonePairs;
+    private HashSet<TransformBonePair> transformBonePairs;
+    private List<JointBonePair> jointBonePairs;
     
     private TreeNode<BonePair> BuildBonePairTreeRecursive(Transform driverTransform, Transform ragdollTransform)
     {
@@ -68,7 +80,7 @@ public class ActiveRagdoll : MonoBehaviour
 
         if (ragdollTransform.TryGetComponent(out ConfigurableJoint joint))
         {
-            bonePairs.Add(new JointBonePair(node.value, joint));
+            jointBonePairs.Add(new JointBonePair(node.value, joint));
         }
         
         int childCount = driverTransform.childCount;
@@ -88,15 +100,17 @@ public class ActiveRagdoll : MonoBehaviour
     
     private void Awake()
     {
-        bonePairs = new HashSet<BonePair>();
-        TreeNode<BonePair> activeRagdollTree = BuildBonePairTreeRecursive(driverSkeleton, ragdollSkeleton);
+        transformBonePairs = new HashSet<TransformBonePair>();
+        jointBonePairs = new List<JointBonePair>();
+        
+        TreeNode<BonePair> bonePairTree = BuildBonePairTreeRecursive(driverSkeleton, ragdollSkeleton);
 
-        foreach (TreeNode<BonePair> leafNode in activeRagdollTree.Leaves())
+        foreach (TreeNode<BonePair> leafNode in bonePairTree.Leaves())
         {
             TreeNode<BonePair> node = leafNode;
             while (node != null && node.value.DrivenBone.GetComponent<Rigidbody>() == null)
             {
-                bonePairs.Add(new TransformBonePair(node.value));
+                transformBonePairs.Add(new TransformBonePair(node.value));
                 node = node.parent;
             }
         }
@@ -104,9 +118,17 @@ public class ActiveRagdoll : MonoBehaviour
 
     private void LateUpdate()
     {
-        foreach (BonePair bonePair in bonePairs)
+        foreach (TransformBonePair transformBonePair in transformBonePairs)
         {
-            bonePair.SetRotation();
+            transformBonePair.SetRotation();
+        }
+    }
+
+    private void FixedUpdate()
+    {
+        foreach (JointBonePair jointBonePair in jointBonePairs)
+        {
+            jointBonePair.SetRotation();
         }
     }
 }
