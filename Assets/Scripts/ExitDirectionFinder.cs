@@ -5,7 +5,7 @@ using UnityEngine;
 
 public class ExitDirectionFinder : MonoBehaviour
 {
-    private const int NUM_RAYS = 2048;
+    private const int NUM_RAYS = 4096;
 
     [SerializeField] private float distance = 100.0f;
     [SerializeField] private LayerMask layerMask;
@@ -13,7 +13,7 @@ public class ExitDirectionFinder : MonoBehaviour
     private readonly NativeArray<Vector3> rayDirections = new (NUM_RAYS, Allocator.Persistent);
     private readonly NativeArray<RaycastHit> results = new (NUM_RAYS, Allocator.Persistent);
     private readonly NativeArray<RaycastCommand> commands = new (NUM_RAYS, Allocator.Persistent);
-    private readonly NativeArray<Vector3> exitDirection = new (1, Allocator.Persistent);
+    private NativeReference<Vector3> exitDirection = new (Vector3.zero, Allocator.Persistent);
     
     public struct RayCreationParameters
     {
@@ -95,11 +95,32 @@ public class ExitDirectionFinder : MonoBehaviour
     private struct CalculateAverageDirection : IJob
     {
         [ReadOnly] private NativeArray<RaycastHit> hits;
-        private NativeArray<Vector3> result;
+        private NativeReference<Vector3> result;
+        [ReadOnly] private RayCreationParameters rayCreationParameters;
+
+        public static JobHandle Schedule(
+            NativeArray<RaycastHit> hits,
+            NativeReference<Vector3> result,
+            RayCreationParameters rayCreationParameters,
+            JobHandle dependsOn = default) =>
+            new CalculateAverageDirection
+            {
+                rayCreationParameters = rayCreationParameters,
+                hits = hits,
+                result = result,
+            }.Schedule(dependsOn);
         
         public void Execute()
         {
+            for (int i = 0; i < NUM_RAYS; i++)
+            {
+                if (hits[i].point != default) // Hopefully this hack works
+                {
+                    result.Value += hits[i].point - rayCreationParameters.origin;
+                }
+            }
             
+            result.Value /= -NUM_RAYS;
         }
     }
     
@@ -120,25 +141,22 @@ public class ExitDirectionFinder : MonoBehaviour
             },
             distance = distance
         };
+
+        exitDirection.Value = Vector3.zero;
         
-        return RaycastCommand.ScheduleBatch(commands, results, 1, 1, 
-            CreateInRays.Schedule(commands, results, rayParameters, 
-                RaycastCommand.ScheduleBatch(commands, results, 1, 1, 
-                    CreateOutRays.Schedule(commands, rayParameters))));
-        
-        JobHandle createOutRays = CreateOutRays.Schedule(commands, rayParameters);
-        JobHandle castOutRays = RaycastCommand.ScheduleBatch(commands, results, 1, 1, createOutRays);
-        JobHandle createInRays = CreateInRays.Schedule(commands, results, rayParameters, castOutRays);
-        JobHandle castInRays = RaycastCommand.ScheduleBatch(commands, results, 1, 1, createInRays);
-        
-        return castInRays;
+        return CalculateAverageDirection.Schedule(results, exitDirection, rayParameters, 
+            RaycastCommand.ScheduleBatch(commands, results, 1, 1, 
+                CreateInRays.Schedule(commands, results, rayParameters, 
+                    RaycastCommand.ScheduleBatch(commands, results, 1, 1, 
+                        CreateOutRays.Schedule(commands, rayParameters)))));
     }
     
 #if UNITY_EDITOR
     private void OnDrawGizmosSelected()
     {
         ScheduleJobs().Complete();
-        
+
+        Gizmos.color = new Color(1.0f, 1.0f, 1.0f, 0.2f);
         for (int i = 0; i < NUM_RAYS; i++)
         {
             if (results[i].collider != null)
@@ -146,6 +164,10 @@ public class ExitDirectionFinder : MonoBehaviour
                 Gizmos.DrawLine(transform.position, results[i].point);
             }
         }
+        
+        Gizmos.color = Color.green;
+        Gizmos.DrawLine(transform.position, transform.position + exitDirection.Value);
+        Gizmos.DrawSphere(transform.position + exitDirection.Value, 0.2f);
     }
 #endif
 }
