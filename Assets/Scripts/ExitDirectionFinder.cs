@@ -114,6 +114,11 @@ public class ExitDirectionFinder : MonoBehaviour
             distance = distance
         };
         
+        return RaycastCommand.ScheduleBatch(commands, results, 1, 1, 
+            CreateInRays.Schedule(commands, results, rayParameters, 
+                RaycastCommand.ScheduleBatch(commands, results, 1, 1, 
+                    CreateOutRays.Schedule(commands, rayParameters))));
+        
         JobHandle createOutRays = CreateOutRays.Schedule(commands, rayParameters);
         JobHandle castOutRays = RaycastCommand.ScheduleBatch(commands, results, 1, 1, createOutRays);
         JobHandle createInRays = CreateInRays.Schedule(commands, results, rayParameters, castOutRays);
