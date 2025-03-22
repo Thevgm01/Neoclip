@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Jobs;
 using UnityEngine;
@@ -11,7 +12,7 @@ public class ExitDirectionFinder : MonoBehaviour
     [SerializeField] private float distance = 1.0f;
     [SerializeField] private LayerMask layerMask;
     
-    private readonly Vector3[] feelerDirections = new Vector3[NUM_RAYS];
+    private readonly Vector3[] rayDirections = new Vector3[NUM_RAYS];
 
 #if UNITY_EDITOR
         private void OnDrawGizmosSelected()
@@ -20,13 +21,28 @@ public class ExitDirectionFinder : MonoBehaviour
         }
 #endif
 
-    private bool GetIndexOfLastInsideHit(NativeArray<RaycastHit> results, int startIndex, out int backfaceIndex)
+    private class RaycastComparer : IComparer<RaycastHit>
     {
+        public int Compare(RaycastHit a, RaycastHit b)
+        {
+            if (a.collider == null && b.collider == null) return 0;
+            if (a.collider == null) return 1;
+            if (b.collider == null) return -1;
+            return a.distance.CompareTo(b.distance);
+        }
+    }
+        
+    private bool GetIndexOfLastInsideHit(NativeSlice<RaycastHit> hits, out int backfaceIndex)
+    {
+        backfaceIndex = 0;
+        return true;
+
+        /*
         backfaceIndex = -1;
 
         for (int i = 0; i < NUM_HITS; i++)
         {
-            RaycastHit hit = results[startIndex * NUM_HITS + i];
+            RaycastHit hit = hits[i];
 
             if (hit.collider == null)
             {
@@ -46,16 +62,19 @@ public class ExitDirectionFinder : MonoBehaviour
         }
 
         return false;
+        */
     }
     
     private void RunRaycasts()
     {
+        Physics.SyncTransforms();
+        
         NativeArray<RaycastHit> results = new NativeArray<RaycastHit>(NUM_RAYS * NUM_HITS, Allocator.TempJob);
         NativeArray<RaycastCommand> commands = new NativeArray<RaycastCommand>(NUM_RAYS, Allocator.TempJob);
 
         Vector3 origin = transform.position;
         
-        transform.TransformDirections(UniformSpherePoints.GetCachedVectors(NUM_RAYS), feelerDirections);
+        transform.TransformDirections(UniformSpherePoints.GetCachedVectors(NUM_RAYS), rayDirections);
         
         QueryParameters parameters = new QueryParameters()
         {
@@ -66,19 +85,23 @@ public class ExitDirectionFinder : MonoBehaviour
         
         for (int i = 0; i < NUM_RAYS; i++)
         {
-            commands[i] = new RaycastCommand(origin, feelerDirections[i], parameters, distance);
+            commands[i] = new RaycastCommand(origin, rayDirections[i], parameters, distance);
         }
                 
         JobHandle handle = RaycastCommand.ScheduleBatch(commands, results, 1, NUM_HITS);
         
         handle.Complete();
 
+        var comparer = new RaycastComparer();
+        
         for (int i = 0; i < NUM_RAYS; i++)
         {
-            if (GetIndexOfLastInsideHit(results, i, out int backfaceIndex))
+            NativeSlice<RaycastHit> singleRaycast = results.Slice(i * NUM_HITS, NUM_HITS);
+            singleRaycast.Sort(comparer);
+            if (GetIndexOfLastInsideHit(singleRaycast, out int backfaceIndex))
             {
 #if UNITY_EDITOR
-                Gizmos.DrawLine(origin, results[i * NUM_HITS + backfaceIndex].point);
+                Gizmos.DrawLine(origin, singleRaycast[0].point);
 #endif
             }
         }
