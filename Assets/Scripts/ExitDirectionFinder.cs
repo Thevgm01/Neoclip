@@ -5,7 +5,7 @@ using UnityEngine;
 
 public class ExitDirectionFinder : MonoBehaviour
 {
-    private const int NUM_RAYS = 1000;
+    private const int NUM_RAYS = 2048;
 
     [SerializeField] private float distance = 100.0f;
     [SerializeField] private LayerMask layerMask;
@@ -13,6 +13,7 @@ public class ExitDirectionFinder : MonoBehaviour
     private readonly NativeArray<Vector3> rayDirections = new (NUM_RAYS, Allocator.Persistent);
     private readonly NativeArray<RaycastHit> results = new (NUM_RAYS, Allocator.Persistent);
     private readonly NativeArray<RaycastCommand> commands = new (NUM_RAYS, Allocator.Persistent);
+    private readonly NativeArray<Vector3> exitDirection = new (1, Allocator.Persistent);
     
     public struct RayCreationParameters
     {
@@ -24,7 +25,7 @@ public class ExitDirectionFinder : MonoBehaviour
     }
     
     [BurstCompile]
-    public struct CreateOutRays : IJob
+    private struct CreateOutRays : IJobFor
     {
         private NativeArray<RaycastCommand> commands;
         [ReadOnly] private RayCreationParameters rayParameters;
@@ -37,23 +38,20 @@ public class ExitDirectionFinder : MonoBehaviour
             {
                 commands = commands,
                 rayParameters = rayParameters
-            }.Schedule(dependsOn);
+            }.ScheduleParallel(NUM_RAYS, 32, dependsOn);
         
-        public void Execute()
+        public void Execute(int index)
         {
-            for (int i = 0; i < NUM_RAYS; i++)
-            {
-                commands[i] = new RaycastCommand(
-                    rayParameters.origin,
-                    rayParameters.directions[i],
-                    rayParameters.query,
-                    rayParameters.distance);
-            }
+            commands[index] = new RaycastCommand(
+                rayParameters.origin,
+                rayParameters.directions[index],
+                rayParameters.query,
+                rayParameters.distance);
         }
     }
     
     [BurstCompile]
-    private struct CreateInRays : IJob
+    private struct CreateInRays : IJobFor
     {
         private NativeArray<RaycastCommand> commands;
         [ReadOnly] private NativeArray<RaycastHit> hits;
@@ -69,30 +67,39 @@ public class ExitDirectionFinder : MonoBehaviour
                 commands = commands,
                 hits = hits,
                 rayParameters = rayParameters
-            }.Schedule(dependsOn);
+            }.ScheduleParallel(NUM_RAYS, 32, dependsOn);
+        
+        public void Execute(int index)
+        {
+            //if (hits[i].collider == null) // Can't do this in a job!
+            if (hits[index].point == default) // Hopefully this hack works
+            {
+                commands[index] = new RaycastCommand(
+                    rayParameters.origin + rayParameters.directions[index] * rayParameters.distance,
+                    -rayParameters.directions[index],
+                    rayParameters.query,
+                    rayParameters.distance);
+            }
+            else
+            {
+                commands[index] = new RaycastCommand(
+                    hits[index].point,
+                    -rayParameters.directions[index],
+                    rayParameters.query,
+                    hits[index].distance);
+            }
+        }
+    }
+
+    [BurstCompile]
+    private struct CalculateAverageDirection : IJob
+    {
+        [ReadOnly] private NativeArray<RaycastHit> hits;
+        private NativeArray<Vector3> result;
         
         public void Execute()
         {
-            for (int i = 0; i < NUM_RAYS; i++)
-            {
-                //if (hits[i].collider == null) // Can't do this in a job!
-                if (hits[i].point == default) // Hopefully this hack works
-                {
-                    commands[i] = new RaycastCommand(
-                        rayParameters.origin + rayParameters.directions[i] * rayParameters.distance,
-                        -rayParameters.directions[i],
-                        rayParameters.query,
-                        rayParameters.distance);
-                }
-                else
-                {
-                    commands[i] = new RaycastCommand(
-                        hits[i].point,
-                        -rayParameters.directions[i],
-                        rayParameters.query,
-                        hits[i].distance);
-                }
-            }
+            
         }
     }
     
