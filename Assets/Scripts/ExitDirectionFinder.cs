@@ -29,11 +29,15 @@ public class ExitDirectionFinder : MonoBehaviour
         private NativeArray<RaycastCommand> commands;
         [ReadOnly] private RayCreationParameters rayParameters;
 
-        public CreateOutRays(NativeArray<RaycastCommand> commands, RayCreationParameters rayParameters)
-        {
-            this.commands = commands;
-            this.rayParameters = rayParameters;
-        }
+        public static JobHandle Schedule(
+            NativeArray<RaycastCommand> commands, 
+            RayCreationParameters rayParameters, 
+            JobHandle dependsOn = default) =>
+            new CreateOutRays
+            {
+                commands = commands,
+                rayParameters = rayParameters
+            }.Schedule(dependsOn);
         
         public void Execute()
         {
@@ -51,16 +55,21 @@ public class ExitDirectionFinder : MonoBehaviour
     [BurstCompile]
     private struct CreateInRays : IJob
     {
-        [ReadOnly] private RayCreationParameters rayParameters;
-        [ReadOnly] private NativeArray<RaycastHit> hits;
         private NativeArray<RaycastCommand> commands;
-        
-        public CreateInRays(NativeArray<RaycastCommand> commands, NativeArray<RaycastHit> hits, RayCreationParameters rayParameters)
-        {
-            this.commands = commands;
-            this.hits = hits;
-            this.rayParameters = rayParameters;
-        }
+        [ReadOnly] private NativeArray<RaycastHit> hits;
+        [ReadOnly] private RayCreationParameters rayParameters;
+
+        public static JobHandle Schedule(
+            NativeArray<RaycastCommand> commands,
+            NativeArray<RaycastHit> hits,
+            RayCreationParameters rayParameters, 
+            JobHandle dependsOn = default) =>
+            new CreateInRays
+            {
+                commands = commands,
+                hits = hits,
+                rayParameters = rayParameters
+            }.Schedule(dependsOn);
         
         public void Execute()
         {
@@ -105,9 +114,9 @@ public class ExitDirectionFinder : MonoBehaviour
             distance = distance
         };
         
-        JobHandle createOutRays = new CreateOutRays(commands, rayParameters).Schedule();
+        JobHandle createOutRays = CreateOutRays.Schedule(commands, rayParameters);
         JobHandle castOutRays = RaycastCommand.ScheduleBatch(commands, results, 1, 1, createOutRays);
-        JobHandle createInRays = new CreateInRays(commands, results, rayParameters).Schedule(castOutRays);
+        JobHandle createInRays = CreateInRays.Schedule(commands, results, rayParameters, castOutRays);
         JobHandle castInRays = RaycastCommand.ScheduleBatch(commands, results, 1, 1, createInRays);
         
         return castInRays;
@@ -116,10 +125,8 @@ public class ExitDirectionFinder : MonoBehaviour
 #if UNITY_EDITOR
     private void OnDrawGizmosSelected()
     {
-        float time = Time.realtimeSinceStartup;
         ScheduleJobs().Complete();
-        Debug.Log((Time.realtimeSinceStartup - time) / 1000.0f);
-
+        
         for (int i = 0; i < NUM_RAYS; i++)
         {
             if (results[i].collider != null)
