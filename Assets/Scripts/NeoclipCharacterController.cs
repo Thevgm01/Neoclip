@@ -7,15 +7,14 @@ public class NeoclipCharacterController : MonoBehaviour
     [SerializeField] private DragCamera dragCamera;
     [SerializeField] private NeoclipCameraController cameraController;
     [SerializeField] private ActiveRagdoll activeRagdoll;
-    private ConcaveClipHelper concaveClipHelper;
-
+    
     [Space]
     [SerializeField] private bool applyGravity = true;
     [SerializeField] private float maxMoveSpeed = 5.0f;
     [SerializeField] private float moveAcceleration = 1.0f;
     [Tooltip("Don't collide with these layers while noclipping")]
     [SerializeField] private LayerMask noclipLayers;
-    [SerializeField] private LayerMask shapecastIgnoreLayers;
+    [SerializeField] private LayerMask shapecastLayers;
 
     [Space]
     [SerializeField] private InputActionReference mouseMoveAction;
@@ -27,7 +26,7 @@ public class NeoclipCharacterController : MonoBehaviour
     private bool noclipInput;
 
     private int defaultIgnoreLayers;
-
+    
     private float[] boneSurfaceAreas;
     private bool[] boneClipStates;
     private bool wasAnyClippingLastFrame = false;
@@ -37,11 +36,7 @@ public class NeoclipCharacterController : MonoBehaviour
         ragdollAverages.Init();
         dragCamera.Init();
         cameraController.Init();
-        concaveClipHelper = new ConcaveClipHelper(
-            ragdollAverages.Colliders, 
-            noclipLayers.value, 
-            shapecastIgnoreLayers.value);
-
+        
         defaultIgnoreLayers = ragdollAverages.GetCollider(0).excludeLayers.value;
         boneSurfaceAreas = new float[ragdollAverages.NumBones];
         boneClipStates = new bool[ragdollAverages.NumBones];
@@ -74,11 +69,20 @@ public class NeoclipCharacterController : MonoBehaviour
     {
         Vector3 movement = cameraController.GetCameraRelativeMoveVector(moveInput) * moveAcceleration;
         
-        bool shouldApplyDrag =
-            dragCamera.TryUpdateSurfaceAreas(boneSurfaceAreas);
-        bool anyBoneClipping = 
-            (noclipInput || wasAnyClippingLastFrame) &&
-            concaveClipHelper.CheckAllBones(boneClipStates);
+        bool shouldApplyDrag = dragCamera.TryUpdateSurfaceAreas(boneSurfaceAreas);
+        
+        bool anyBoneClipping = false;
+        if (noclipInput || wasAnyClippingLastFrame)
+        {
+            for (int i = 0; i < ragdollAverages.NumBones; i++)
+            {
+                boneClipStates[i] = ClippingUtils.CheckOrCastCollider(
+                    ragdollAverages.GetCollider(i),
+                    noclipLayers.value,
+                    shapecastLayers.value);
+                anyBoneClipping = anyBoneClipping || boneClipStates[i];
+            }
+        }
         
         for (int i = 0; i < ragdollAverages.NumBones; i++)
         {
