@@ -173,29 +173,29 @@ public class ExitDirectionFinder : MonoBehaviour
     [BurstCompile]
     private struct CalculateAverageDirection : IJob
     {
-        [ReadOnly] private NativeArray<RaycastHit> hits;
         private NativeReference<Vector3> result;
+        [ReadOnly] private NativeArray<Vector3> finalPoints;
         [ReadOnly] private RayCreationParameters rayCreationParameters;
         
         public static JobHandle Schedule(
-            NativeArray<RaycastHit> hits,
             NativeReference<Vector3> result,
+            NativeArray<Vector3> finalPoints,
             RayCreationParameters rayCreationParameters,
             JobHandle dependsOn = default) =>
             new CalculateAverageDirection
             {
-                rayCreationParameters = rayCreationParameters,
-                hits = hits,
                 result = result,
+                finalPoints = finalPoints,
+                rayCreationParameters = rayCreationParameters,
             }.Schedule(dependsOn);
         
         public void Execute()
         {
             for (int i = 0; i < NUM_RAYS; i++)
             {
-                if (hits[i].colliderInstanceID != 0)
+                if (finalPoints[i] != default)
                 {
-                    result.Value += hits[i].point - rayCreationParameters.origin;
+                    result.Value += finalPoints[i] - rayCreationParameters.origin;
                 }
             }
             
@@ -233,7 +233,6 @@ public class ExitDirectionFinder : MonoBehaviour
         exitDirection.Value = Vector3.zero;
 
         JobHandle curHandle = default;
-
         for (int retryIndex = 0; retryIndex < NUM_RETRIES; retryIndex++)
         {
             curHandle = CreateRays.ScheduleBatch(rayCommands, rayData, rayDirections, rayParameters, retryIndex, 32, curHandle);
@@ -242,13 +241,14 @@ public class ExitDirectionFinder : MonoBehaviour
         }
         
         JobHandle dataHandle = ProcessData.ScheduleBatch(finalPoints, rayData, 32, curHandle);
-        //JobHandle calculateAverageDirection = CalculateAverageDirection.Schedule(finalHits, exitDirection, rayParameters, curHandle);
+        JobHandle calculateAverageDirection = CalculateAverageDirection.Schedule(exitDirection, finalPoints, rayParameters, dataHandle);
         
 #if UNITY_EDITOR
         //double time = Time.realtimeSinceStartupAsDouble;
-        dataHandle.Complete();
+        calculateAverageDirection.Complete();
         //Debug.Log((Time.realtimeSinceStartupAsDouble - time) / 1000.0);
 
+        Gizmos.color = new Color(1.0f, 1.0f, 1.0f, 0.2f);
         for (int i = 0; i < NUM_RAYS; i++)
         {
             if (finalPoints[i] != default)
@@ -267,6 +267,10 @@ public class ExitDirectionFinder : MonoBehaviour
             }
         }
         */
+
+        Gizmos.color = Color.green;
+        Gizmos.DrawLine(rayParameters.origin, rayParameters.origin + exitDirection.Value);
+        Gizmos.DrawSphere(rayParameters.origin + exitDirection.Value, 0.2f);
         
         rayCommands.Dispose();
         rayDirections.Dispose();
@@ -279,7 +283,7 @@ public class ExitDirectionFinder : MonoBehaviour
         rayDirections.Dispose(curHandle);
         rayHits.Dispose(curHandle);
         rayData.Dispose(dataHandle);
-        finalPoints.Dispose(dataHandle);
+        finalPoints.Dispose(calculateAverageDirection);
         return default;
 #endif
     }
