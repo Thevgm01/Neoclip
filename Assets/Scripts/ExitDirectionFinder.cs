@@ -7,7 +7,7 @@ using UnityEngine;
 
 public class ExitDirectionFinder : MonoBehaviour
 {
-    private const int NUM_RAYS = 2048;
+    private const int NUM_RAYS = 64;
     private const int NUM_RETRIES = 8;
     private const float RAY_SEPARATION = 0.1f;
     
@@ -15,6 +15,7 @@ public class ExitDirectionFinder : MonoBehaviour
     [SerializeField] private LayerMask layerMask;
     [SerializeField] private int debugRay = 0;
     [SerializeField] private bool showBalls = true;
+    [SerializeField] private bool showDetailedRayInfo = true;
     
     private NativeReference<Vector3> exitDirection = new (Vector3.zero, Allocator.Persistent);
     
@@ -247,27 +248,31 @@ public class ExitDirectionFinder : MonoBehaviour
         //double time = Time.realtimeSinceStartupAsDouble;
         calculateAverageDirection.Complete();
         //Debug.Log((Time.realtimeSinceStartupAsDouble - time) / 1000.0);
-
-        Gizmos.color = new Color(1.0f, 1.0f, 1.0f, 0.2f);
-        for (int i = 0; i < NUM_RAYS; i++)
+        
+        if (showDetailedRayInfo)
         {
-            if (finalPoints[i] != default)
+            for (int i = 0; i < NUM_RAYS; i++)
             {
-                Gizmos.DrawLine(rayParameters.origin, finalPoints[i]);
+                for (int j = 0; j < NUM_RETRIES; j++)
+                {
+                    RaycastData data = rayData[i * NUM_RETRIES + j];
+                    Gizmos.color = data.hitBackface ? Color.green : Color.blue;
+                    Gizmos.DrawRay(data.point, -rayDirections[i] * data.distance);
+                }
             }
         }
-        /*
-        for (int i = 0; i < NUM_RAYS; i++)
+        else
         {
-            for (int j = 0; j < NUM_RETRIES; j++)
+            Gizmos.color = new Color(1.0f, 1.0f, 1.0f, 0.2f);
+            for (int i = 0; i < NUM_RAYS; i++)
             {
-                RaycastData data = rayData[i * NUM_RETRIES + j];
-                Gizmos.color = data.hitBackface ? Color.green : Color.blue;
-                Gizmos.DrawRay(data.point, -rayDirections[i] * data.distance);
+                if (finalPoints[i] != default)
+                {
+                    Gizmos.DrawLine(rayParameters.origin, finalPoints[i]);
+                }
             }
         }
-        */
-
+        
         Gizmos.color = Color.green;
         Gizmos.DrawLine(rayParameters.origin, rayParameters.origin + exitDirection.Value);
         Gizmos.DrawSphere(rayParameters.origin + exitDirection.Value, 0.2f);
