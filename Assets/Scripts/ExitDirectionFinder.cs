@@ -75,10 +75,10 @@ public class ExitDirectionFinder : MonoBehaviour
             }
             else
             {
-                int prevImportantBitsIndex = index * NUM_RETRIES + retryIndex - 1;
+                int prevDataIndex = index * NUM_RETRIES + retryIndex - 1;
 
-                if (!rayData[prevImportantBitsIndex].hitAnything ||
-                    rayData[prevImportantBitsIndex].cumulativeDistance >= rayParameters.distance - 1.0f)
+                if (!rayData[prevDataIndex].hitAnything ||
+                    rayData[prevDataIndex].cumulativeDistance >= rayParameters.distance - 1.0f)
                 {
                     rayCommands[index] = new RaycastCommand
                     {
@@ -90,8 +90,8 @@ public class ExitDirectionFinder : MonoBehaviour
                     rayCommands[index] = new RaycastCommand
                     {
                         direction = directions[index],
-                        distance = rayParameters.distance - rayData[prevImportantBitsIndex].cumulativeDistance - RAY_SEPARATION,
-                        from = rayData[prevImportantBitsIndex].point + directions[index] * RAY_SEPARATION,
+                        distance = rayParameters.distance - rayData[prevDataIndex].cumulativeDistance - RAY_SEPARATION,
+                        from = rayData[prevDataIndex].point + directions[index] * RAY_SEPARATION,
                         queryParameters = rayParameters.query
                     };
                 }
@@ -124,17 +124,49 @@ public class ExitDirectionFinder : MonoBehaviour
         
         public void Execute(int index)
         {
-            int importantBitsIndex = index * NUM_RETRIES + retryIndex;
-            rayData[importantBitsIndex] = new RaycastData
+            int dataIndex = index * NUM_RETRIES + retryIndex;
+            rayData[dataIndex] = new RaycastData
             {
                 point = rayHits[index].point,
                 distance = rayHits[index].distance,
                 cumulativeDistance = rayHits[index].distance + (retryIndex > 0
-                    ? rayData[importantBitsIndex - 1].cumulativeDistance + RAY_SEPARATION
+                    ? rayData[dataIndex - 1].cumulativeDistance + RAY_SEPARATION
                     : 0.0f),
                 hitAnything = rayHits[index].colliderInstanceID != 0,
                 hitBackface = Vector3.Dot(rayHits[index].normal, directions[index]) > 0.0f
             };
+        }
+    }
+
+    [BurstCompile]
+    private struct ProcessData : IJobFor
+    {
+        private NativeArray<Vector3> finalPoints;
+        [ReadOnly] private NativeArray<RaycastData> rayData;
+                                
+        public static JobHandle ScheduleBatch(
+            NativeArray<Vector3> finalPoints,
+            NativeArray<RaycastData> rayData,
+            int minCommandsPerJob,
+            JobHandle dependsOn = default) =>
+            new ProcessData
+            {
+                finalPoints = finalPoints,
+                rayData = rayData
+            }.ScheduleParallel(finalPoints.Length, minCommandsPerJob, dependsOn);
+        
+        public void Execute(int index)
+        {
+            for (int i = 1; i < NUM_RETRIES; i++)
+            {
+                int dataIndex = index * NUM_RETRIES + i;
+                if (!rayData[dataIndex].hitAnything ||
+                    !rayData[dataIndex].hitBackface && rayData[dataIndex].distance > 2.0f)
+                {
+                    finalPoints[index] = rayData[dataIndex - 1].point;
+                    return;
+                }
+            }
         }
     }
     
@@ -177,6 +209,7 @@ public class ExitDirectionFinder : MonoBehaviour
         NativeArray<Vector3> rayDirections = new (NUM_RAYS, Allocator.TempJob);
         NativeArray<RaycastHit> rayHits = new (NUM_RAYS, Allocator.TempJob);
         NativeArray<RaycastData> rayData = new (NUM_RAYS * NUM_RETRIES, Allocator.TempJob);
+        NativeArray<Vector3> finalPoints = new (NUM_RAYS, Allocator.TempJob);
         
         transform.TransformDirections(UniformSpherePoints.GetCachedVectors(NUM_RAYS), rayDirections);
         
@@ -208,12 +241,22 @@ public class ExitDirectionFinder : MonoBehaviour
             curHandle = ProcessHits.ScheduleBatch(rayData, rayDirections, rayHits, retryIndex, 32, curHandle);
         }
         
+        JobHandle dataHandle = ProcessData.ScheduleBatch(finalPoints, rayData, 32, curHandle);
         //JobHandle calculateAverageDirection = CalculateAverageDirection.Schedule(finalHits, exitDirection, rayParameters, curHandle);
         
 #if UNITY_EDITOR
         //double time = Time.realtimeSinceStartupAsDouble;
-        curHandle.Complete();
+        dataHandle.Complete();
         //Debug.Log((Time.realtimeSinceStartupAsDouble - time) / 1000.0);
+
+        for (int i = 0; i < NUM_RAYS; i++)
+        {
+            if (finalPoints[i] != default)
+            {
+                Gizmos.DrawLine(rayParameters.origin, finalPoints[i]);
+            }
+        }
+        /*
         for (int i = 0; i < NUM_RAYS; i++)
         {
             for (int j = 0; j < NUM_RETRIES; j++)
@@ -223,16 +266,20 @@ public class ExitDirectionFinder : MonoBehaviour
                 Gizmos.DrawRay(data.point, -rayDirections[i] * data.distance);
             }
         }
+        */
+        
         rayCommands.Dispose();
         rayDirections.Dispose();
         rayHits.Dispose();
         rayData.Dispose();
+        finalPoints.Dispose();
         return default;
 #else
         rayCommands.Dispose(curHandle);
         rayDirections.Dispose(curHandle);
         rayHits.Dispose(curHandle);
-        rayData.Dispose(curHandle);
+        rayData.Dispose(dataHandle);
+        finalPoints.Dispose(dataHandle);
         return default;
 #endif
     }
