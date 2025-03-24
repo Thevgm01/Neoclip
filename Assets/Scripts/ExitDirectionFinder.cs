@@ -8,124 +8,136 @@ using UnityEngine;
 public class ExitDirectionFinder : MonoBehaviour
 {
     private const int NUM_RAYS = 2048;
-    private const int HITS_PER_RAY = 8;
-
+    private const int NUM_RETRIES = 8;
+    private const float RAY_SEPARATION = 0.1f;
+    
     [SerializeField] private float distance = 100.0f;
     [SerializeField] private LayerMask layerMask;
     [SerializeField] private int debugRay = 0;
     [SerializeField] private bool showBalls = true;
     
-    NativeArray<RaycastHit> rayHits;
-    private NativeArray<RaycastHit> finalHits = new (NUM_RAYS, Allocator.Persistent);
     private NativeReference<Vector3> exitDirection = new (Vector3.zero, Allocator.Persistent);
     
-    public struct RayCreationParameters
+    private struct RayCreationParameters
     {
         public Vector3 origin;
         public QueryParameters query;
+        public QueryParameters nullQuery;
         public float distance;
+    }
+
+    private struct RaycastData
+    {
+        public Vector3 point;
+        public float distance;
+        public float cumulativeDistance;
+        public bool hitAnything;
+        public bool hitBackface;
     }
     
     [BurstCompile]
     private struct CreateRays : IJobFor
     {
+        private NativeArray<RaycastCommand> rayCommands;
+        [ReadOnly] private NativeArray<RaycastData> rayData;
         [ReadOnly] private NativeArray<Vector3> directions;
-        private NativeArray<RaycastCommand> commands;
         [ReadOnly] private RayCreationParameters rayParameters;
-
-        public static JobHandle Schedule(
-            NativeArray<RaycastCommand> commands, 
+        [ReadOnly] private int retryIndex;
+                
+        public static JobHandle ScheduleBatch(
+            NativeArray<RaycastCommand> rayCommands, 
+            NativeArray<RaycastData> rayData,
             NativeArray<Vector3> directions,
             RayCreationParameters rayParameters,
+            int retryIndex,
             int minCommandsPerJob,
             JobHandle dependsOn = default) =>
             new CreateRays
             {
+                rayCommands = rayCommands,
+                rayData = rayData,
                 directions = directions,
-                commands = commands,
-                rayParameters = rayParameters
+                rayParameters = rayParameters,
+                retryIndex = retryIndex
             }.ScheduleParallel(NUM_RAYS, minCommandsPerJob, dependsOn);
         
         public void Execute(int index)
         {
-            commands[index] = new RaycastCommand(
-                rayParameters.origin,
-                directions[index],
-                rayParameters.query,
-                rayParameters.distance);
-        }
-    }
-    
-    [BurstCompile]
-    private struct RaycastComparer : IComparer<RaycastHit>
-    {
-        [SuppressMessage("ReSharper", "CompareOfFloatsByEqualityOperator")]
-        public int Compare(RaycastHit x, RaycastHit y)
-        {
-            if (x.colliderInstanceID == 0 && y.colliderInstanceID == 0) return 0;
-            if (x.colliderInstanceID == 0) return 1;
-            if (y.colliderInstanceID == 0) return -1;
-            // This is a stupid hack! Without this it'll stop dead when both rays hit the exact same position
-            if (x.distance == y.distance) return x.colliderInstanceID.CompareTo(y.colliderInstanceID);
-            return x.distance.CompareTo(y.distance);
-        }
-    }
-    
-    [BurstCompile]
-    private struct RayProcessor : IJobFor
-    {
-        [ReadOnly] private NativeArray<Vector3> directions;
-        [NativeDisableParallelForRestriction] private NativeArray<RaycastHit> hits;
-        private NativeArray<RaycastHit> finalHits;
-        [ReadOnly] private RaycastComparer comparer;
+            if (retryIndex == 0)
+            {
+                rayCommands[index] = new RaycastCommand
+                {
+                    direction = directions[index],
+                    distance = rayParameters.distance,
+                    from = rayParameters.origin,
+                    queryParameters = rayParameters.query
+                };
+            }
+            else
+            {
+                int prevImportantBitsIndex = index * NUM_RETRIES + retryIndex - 1;
 
-        public static JobHandle Schedule(
+                if (!rayData[prevImportantBitsIndex].hitAnything ||
+                    rayData[prevImportantBitsIndex].cumulativeDistance >= rayParameters.distance - 1.0f)
+                {
+                    rayCommands[index] = new RaycastCommand
+                    {
+                        queryParameters = rayParameters.nullQuery
+                    };
+                }
+                else
+                {
+                    rayCommands[index] = new RaycastCommand
+                    {
+                        direction = directions[index],
+                        distance = rayParameters.distance - rayData[prevImportantBitsIndex].cumulativeDistance - RAY_SEPARATION,
+                        from = rayData[prevImportantBitsIndex].point + directions[index] * RAY_SEPARATION,
+                        queryParameters = rayParameters.query
+                    };
+                }
+            }
+        }
+    }
+    
+    [BurstCompile]
+    private struct ProcessHits : IJobFor
+    {
+        [NativeDisableParallelForRestriction] private NativeArray<RaycastData> rayData;
+        [ReadOnly] private NativeArray<Vector3> directions;
+        [ReadOnly] private NativeArray<RaycastHit> rayHits;
+        [ReadOnly] private int retryIndex;
+        
+        public static JobHandle ScheduleBatch(
+            NativeArray<RaycastData> rayData,
             NativeArray<Vector3> directions,
-            NativeArray<RaycastHit> hits,
-            NativeArray<RaycastHit> finalHits,
+            NativeArray<RaycastHit> rayHits,
+            int retryIndex,
             int minCommandsPerJob,
             JobHandle dependsOn = default) =>
-            new RayProcessor
+            new ProcessHits
             {
+                rayData = rayData,
                 directions = directions,
-                hits = hits,
-                finalHits = finalHits,
-                comparer = new RaycastComparer()
+                retryIndex = retryIndex,
+                rayHits = rayHits
             }.ScheduleParallel(NUM_RAYS, minCommandsPerJob, dependsOn);
         
         public void Execute(int index)
         {
-            int rayStartIndex = index * HITS_PER_RAY;
-            
-            NativeSlice<RaycastHit> myHits = hits.Slice(rayStartIndex, HITS_PER_RAY);
-            myHits.Sort(comparer);
-            
-            bool isCurInside = Vector3.Dot(myHits[0].normal, directions[index]) > 0;
-            
-            for (int i = 0; i < HITS_PER_RAY - 1; i++)
+            int importantBitsIndex = index * NUM_RETRIES + retryIndex;
+            rayData[importantBitsIndex] = new RaycastData
             {
-                bool isNextInside = Vector3.Dot(myHits[i + 1].normal, directions[index]) > 0;
-                
-                // Innie -> Innie: Continue
-                // Innie -> Outie: Continue if near, stop if far
-                // Outie -> Innie: Continue
-                // Outie -> Outie: Continue
-                
-                if (myHits[i + 1].colliderInstanceID == 0 || // If the next hit went off into the void, the current hit is the last valid one
-                    (isCurInside && !isNextInside && myHits[i + 1].distance > myHits[i].distance + 1.0f)) // If the next hit is far away from the current hit, mark the current hit as the boundary
-                {
-                    finalHits[index] = myHits[i];
-                    return;
-                }
-
-                isCurInside = isNextInside;
-            }
-            // If we reached the end, that means the geometry was so dense that we used every ray
-            // So just set the result to be the last ray
-            finalHits[index] = myHits[HITS_PER_RAY - 1];
+                point = rayHits[index].point,
+                distance = rayHits[index].distance,
+                cumulativeDistance = rayHits[index].distance + (retryIndex > 0
+                    ? rayData[importantBitsIndex - 1].cumulativeDistance + RAY_SEPARATION
+                    : 0.0f),
+                hitAnything = rayHits[index].colliderInstanceID != 0,
+                hitBackface = Vector3.Dot(rayHits[index].normal, directions[index]) > 0.0f
+            };
         }
     }
-
+    
     [BurstCompile]
     private struct CalculateAverageDirection : IJob
     {
@@ -161,12 +173,13 @@ public class ExitDirectionFinder : MonoBehaviour
     
     public JobHandle ScheduleJobs()
     {
-        NativeArray<Vector3> rayDirections = new (NUM_RAYS, Allocator.TempJob);
         NativeArray<RaycastCommand> rayCommands = new (NUM_RAYS, Allocator.TempJob);
-        rayHits = new (NUM_RAYS * HITS_PER_RAY, Allocator.TempJob);
-                
+        NativeArray<Vector3> rayDirections = new (NUM_RAYS, Allocator.TempJob);
+        NativeArray<RaycastHit> rayHits = new (NUM_RAYS, Allocator.TempJob);
+        NativeArray<RaycastData> rayData = new (NUM_RAYS * NUM_RETRIES, Allocator.TempJob);
+        
         transform.TransformDirections(UniformSpherePoints.GetCachedVectors(NUM_RAYS), rayDirections);
-
+        
         RayCreationParameters rayParameters = new RayCreationParameters
         {
             origin = transform.position,
@@ -177,30 +190,58 @@ public class ExitDirectionFinder : MonoBehaviour
                 hitTriggers = QueryTriggerInteraction.UseGlobal,
                 hitBackfaces = true
             },
+            nullQuery = new QueryParameters
+            {
+                layerMask = 0
+            },
             distance = distance
         };
 
         exitDirection.Value = Vector3.zero;
-        
-        JobHandle createRays = CreateRays.Schedule(rayCommands, rayDirections, rayParameters, 32);
-        JobHandle raycast = RaycastCommand.ScheduleBatch(rayCommands, rayHits, 1, HITS_PER_RAY, createRays);
-        JobHandle processRays = RayProcessor.Schedule(rayDirections, rayHits, finalHits, 16, raycast);
-        JobHandle calculateAverageDirection = CalculateAverageDirection.Schedule(finalHits, exitDirection, rayParameters, processRays);
-        
-        rayCommands.Dispose(raycast);
-        rayDirections.Dispose(processRays);
-        #if !UNITY_EDITOR
-        rayHits.Dispose(processRays);
-        #endif
 
-        return calculateAverageDirection;
+        JobHandle curHandle = default;
+
+        for (int retryIndex = 0; retryIndex < NUM_RETRIES; retryIndex++)
+        {
+            curHandle = CreateRays.ScheduleBatch(rayCommands, rayData, rayDirections, rayParameters, retryIndex, 32, curHandle);
+            curHandle = RaycastCommand.ScheduleBatch(rayCommands, rayHits, 1, 1, curHandle);
+            curHandle = ProcessHits.ScheduleBatch(rayData, rayDirections, rayHits, retryIndex, 32, curHandle);
+        }
+        
+        //JobHandle calculateAverageDirection = CalculateAverageDirection.Schedule(finalHits, exitDirection, rayParameters, curHandle);
+        
+#if UNITY_EDITOR
+        //double time = Time.realtimeSinceStartupAsDouble;
+        curHandle.Complete();
+        //Debug.Log((Time.realtimeSinceStartupAsDouble - time) / 1000.0);
+        for (int i = 0; i < NUM_RAYS; i++)
+        {
+            for (int j = 0; j < NUM_RETRIES; j++)
+            {
+                RaycastData data = rayData[i * NUM_RETRIES + j];
+                Gizmos.color = data.hitBackface ? Color.green : Color.blue;
+                Gizmos.DrawRay(data.point, -rayDirections[i] * data.distance);
+            }
+        }
+        rayCommands.Dispose();
+        rayDirections.Dispose();
+        rayHits.Dispose();
+        rayData.Dispose();
+        return default;
+#else
+        rayCommands.Dispose(curHandle);
+        rayDirections.Dispose(curHandle);
+        rayHits.Dispose(curHandle);
+        rayData.Dispose(curHandle);
+        return default;
+#endif
     }
     
 #if UNITY_EDITOR
     private void OnDrawGizmosSelected()
     {
-        ScheduleJobs().Complete();
-
+        ScheduleJobs();
+        /*
         if (debugRay < 0)
         {
             Gizmos.color = new Color(1.0f, 1.0f, 1.0f, 0.2f);
@@ -211,7 +252,7 @@ public class ExitDirectionFinder : MonoBehaviour
                     Gizmos.DrawLine(transform.position, finalHits[i].point);
                 }
             }
-            
+
             Gizmos.color = Color.green;
             Gizmos.DrawLine(transform.position, transform.position + exitDirection.Value);
             Gizmos.DrawSphere(transform.position + exitDirection.Value, 0.2f);
@@ -223,7 +264,7 @@ public class ExitDirectionFinder : MonoBehaviour
 
             //Gizmos.color = new Color(1.0f, 1.0f, 1.0f, 0.2f);
             //Gizmos.DrawLine(transform.position, rayOutHits[(debugRay + 1) * HITS_PER_RAY - 1].point);
-            
+
             for (int i = 0; i < HITS_PER_RAY; i++)
             {
                 int rayIndex = debugRay * HITS_PER_RAY + i;
@@ -232,7 +273,7 @@ public class ExitDirectionFinder : MonoBehaviour
                 Vector3 colorNormal = (rayNormal + Vector3.one) * 0.5f;
                 Gizmos.color = new Color(colorNormal.x, colorNormal.y, colorNormal.z, 1.0f);
                 Gizmos.DrawLine(rayHits[rayIndex].point, rayHits[rayIndex].point + rayNormal);
-                
+
                 if (showBalls)
                 {
                     Gizmos.color = Color.HSVToRGB((float)i / HITS_PER_RAY, 1.0f, 1.0f);
@@ -244,6 +285,7 @@ public class ExitDirectionFinder : MonoBehaviour
         }
 
         rayHits.Dispose();
+        */
     }
 #endif
 }
