@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using Random = System.Random;
 
 public static class GenericUtils
 {
@@ -13,6 +14,19 @@ public static class GenericUtils
     {
 	    float cos = Mathf.Cos(radians), sin = Mathf.Sin(radians);
 	    return new Vector2(v.x * cos - v.y * sin, v.x * sin + v.y * cos);
+    }
+
+    // https://discussions.unity.com/t/randomize-array-in-c/443241/6
+    // https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle
+    public static void Shuffle<T>(this T[] array)
+    {
+	    for (int t = 0; t < array.Length; t++ )
+	    {
+		    T tmp = array[t];
+		    int r = UnityEngine.Random.Range(t, array.Length);
+		    array[t] = array[r];
+		    array[r] = tmp;
+	    }
     }
 
     public static void CopyConfigurableJointValues(ConfigurableJoint source, ConfigurableJoint target)
