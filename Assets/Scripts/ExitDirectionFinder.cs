@@ -51,10 +51,10 @@ public class ExitDirectionFinder : MonoBehaviour
     [BurstCompile]
     private struct CountBackfaceHits : IJobFor
     {
-        private NativeArray<int> pointBackfaceHits;
+        private NativeArray<byte> pointBackfaceHits;
         [ReadOnly] private NativeArray<RaycastHit> rayHits;
               
-        public static JobHandle ScheduleBatch(NativeArray<int> pointBackfaceHits,
+        public static JobHandle ScheduleBatch(NativeArray<byte> pointBackfaceHits,
                 NativeArray<RaycastHit> rayHits, int minCommandsPerJob, JobHandle dependsOn = default) =>
             new CountBackfaceHits
             {
@@ -67,7 +67,7 @@ public class ExitDirectionFinder : MonoBehaviour
             for (int i = 0; i < ClippingUtils.NUM_CASTS; i++)
             {
                 pointBackfaceHits[index] += 
-                    rayHits[index * ClippingUtils.NUM_CASTS + i].IsBackface(ClippingUtils.CastDirections[i]) ? 1 : 0;
+                    rayHits[index * ClippingUtils.NUM_CASTS + i].IsBackface(ClippingUtils.CastDirections[i]) ? (byte)1 : (byte)0;
             }
         }
     }
@@ -77,32 +77,50 @@ public class ExitDirectionFinder : MonoBehaviour
     {
         private NativeReference<Vector3> result;
         [ReadOnly] private NativeArray<Vector3> points;
-        [ReadOnly] private NativeArray<int> pointBackfaceHits;
+        [ReadOnly] private NativeArray<byte> pointBackfaceHits;
+        [ReadOnly] private Vector3 origin;
         
         public static JobHandle Schedule(NativeReference<Vector3> result, NativeArray<Vector3> points,
-                NativeArray<int> pointBackfaceHits, JobHandle dependsOn = default) =>
+                NativeArray<byte> pointBackfaceHits, Vector3 origin, JobHandle dependsOn = default) =>
             new CalculateAverageDirection
             {
                 result = result,
                 points = points,
                 pointBackfaceHits = pointBackfaceHits,
+                origin = origin
             }.Schedule(dependsOn);
         
         public void Execute()
         {
+            for (int index = 0; index < points.Length; index++)
+            {
+                if (pointBackfaceHits[index] <= 2)
+                {
+                    result.Value += points[index] - origin;
+                }
+            }
 
+            result.Value *= 2.0f / points.Length;
         }
     }
     
     public JobHandle ScheduleJobs(bool displayDebug = false)
     {
-        Vector3[] rawPoints = CachedSpherePoints.solidSphereInstance.Get((CHECK_RADIUS, CHECK_SPACING));
+        //Vector3[] rawPoints = CachedSpherePoints.solidSphereInstance.Get((CHECK_RADIUS, CHECK_SPACING));
+        Vector3[] rawPoints = new Vector3[2048];
+        CachedSpherePoints.goldenSpiralShellInstance.Get(2048).CopyTo(rawPoints, 0);
+        for (int i = 0; i < rawPoints.Length; i++)
+        {
+            rawPoints[i] *= Mathf.Pow(1.5f, ((i * 3141592653) % 2048) / 300.0f);
+        }
+        
         int numPoints = rawPoints.Length;
         NativeArray<Vector3> points = new(numPoints, Allocator.TempJob);
         NativeArray<RaycastCommand> rayCommands = new (numPoints * ClippingUtils.NUM_CASTS, Allocator.TempJob);
         NativeArray<RaycastHit> rayHits = new (numPoints * ClippingUtils.NUM_CASTS, Allocator.TempJob);
-        NativeArray<int> pointBackfaceHits = new (numPoints, Allocator.TempJob);
+        NativeArray<byte> pointBackfaceHits = new (numPoints, Allocator.TempJob);
         
+        Vector3 origin = transform.position;
         transform.TransformPoints(rawPoints, points);
 
         QueryParameters queryParameters = new QueryParameters
@@ -118,7 +136,7 @@ public class ExitDirectionFinder : MonoBehaviour
         JobHandle createRayCommands = CreateRayCommands.ScheduleBatch(rayCommands, points, queryParameters, 1);
         JobHandle raycast = RaycastCommand.ScheduleBatch(rayCommands, rayHits, 1, createRayCommands);
         JobHandle countBackfaceHits = CountBackfaceHits.ScheduleBatch(pointBackfaceHits, rayHits, 1, raycast);
-        JobHandle calculateAverageDirection = CalculateAverageDirection.Schedule(exitDirection, points, pointBackfaceHits, countBackfaceHits);
+        JobHandle calculateAverageDirection = CalculateAverageDirection.Schedule(exitDirection, points, pointBackfaceHits, origin, countBackfaceHits);
         
 #if UNITY_EDITOR
         if (displayDebug)
@@ -129,13 +147,17 @@ public class ExitDirectionFinder : MonoBehaviour
             {
                 Debug.Log((Time.realtimeSinceStartupAsDouble - time) * 1000.0);
             }
-
+            
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawSphere(transform.position + exitDirection.Value, 0.1f);
+            Gizmos.DrawLine(transform.position, transform.position + exitDirection.Value);
+            
             if (showBalls)
             {
                 for (int i = 0; i < numPoints; i++)
                 {
                     Gizmos.color = new Color((float)pointBackfaceHits[i] / ClippingUtils.NUM_CASTS, 0.0f, 0.0f, 1.0f);
-                    Gizmos.DrawWireSphere(points[i], 0.2f);
+                    Gizmos.DrawSphere(points[i], 0.05f);
                 }
             }
 
