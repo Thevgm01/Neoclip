@@ -125,11 +125,13 @@ public class NeoclipCharacterController : MonoBehaviour
                 acceleration -= Physics.gravity;
                 
                 acceleration += exitDirection * 10.0f;
-
+                
+                /*
                 if (anyBoneClipping && Mathf.Abs(rigidbody.linearVelocity.y) < 1.0f)
                 {
                     acceleration += Vector3.up * 10.0f;
                 }
+                */
             }
             
             if (shouldApplyDrag)
