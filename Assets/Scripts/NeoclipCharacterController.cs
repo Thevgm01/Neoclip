@@ -32,13 +32,13 @@ public class NeoclipCharacterController : MonoBehaviour
     private float[] boneSurfaceAreas;
     private bool[] boneClipStates;
     private bool wasAnyClippingLastFrame = false;
-    private JobHandle exitDirectionJob;
     
     private void Awake()
     {
         ragdollAverages.Init();
         dragCamera.Init();
         cameraController.Init();
+        exitDirectionFinder.Init();
         
         defaultIgnoreLayers = ragdollAverages.GetCollider(0).excludeLayers.value;
         boneSurfaceAreas = new float[ragdollAverages.NumBones];
@@ -87,16 +87,16 @@ public class NeoclipCharacterController : MonoBehaviour
             }
         }
 
-        if (!exitDirectionJob.IsCompleted)
+        if (!exitDirectionFinder.MainJob.IsCompleted)
         {
             Debug.LogWarning("NeoclipCharacterController.FixedUpdate(): Had to wait for exitDirectionJob to complete!");
         }
-        exitDirectionJob.Complete();
+        exitDirectionFinder.MainJob.Complete();
         Vector3 exitDirection = exitDirectionFinder.ExitDirection;
         if (anyBoneClipping)
         {
             exitDirectionFinder.transform.position = ragdollAverages.AveragePosition;
-            exitDirectionJob = exitDirectionFinder.ScheduleJobs();
+            exitDirectionFinder.ScheduleJobs();
         }
         
         for (int i = 0; i < ragdollAverages.NumBones; i++)
@@ -153,6 +153,17 @@ public class NeoclipCharacterController : MonoBehaviour
         }
         
         wasAnyClippingLastFrame = anyBoneClipping;
+    }
+
+    private void Update()
+    {
+#if UNITY_EDITOR
+        // Make the spheres look better in motion
+        if (wasAnyClippingLastFrame)
+        {
+            exitDirectionFinder.transform.position = ragdollAverages.AveragePosition;
+        }
+#endif
     }
     
     private void LateUpdate()

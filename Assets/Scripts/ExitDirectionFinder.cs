@@ -15,12 +15,18 @@ public class ExitDirectionFinder : MonoBehaviour
     private static Vector3[] rawPoints;
     
     [SerializeField] private LayerMask layerMask;
-    [SerializeField] private int debugRay = 0;
     [SerializeField] private bool showBalls = true;
     [SerializeField] private bool printJobTime = true;
+
+    public JobHandle MainJob { get; private set; }
     
-    private NativeReference<Vector3> exitDirection = new (Vector3.zero, Allocator.Persistent);
+    private readonly NativeReference<Vector3> exitDirection = new (Vector3.zero, Allocator.Persistent);
     public Vector3 ExitDirection => exitDirection.Value;
+    
+    #if UNITY_EDITOR
+    public bool IsSelected { get; private set; }
+    private readonly Color[] debugColors = new Color[NUM_POINTS];
+    #endif
     
     [BurstCompile]
     private struct CreateCommands : IJobFor
@@ -116,6 +122,8 @@ public class ExitDirectionFinder : MonoBehaviour
         
         public void Execute()
         {
+            result.Value = Vector3.zero;
+            
             for (int index = 0; index < points.Length; index++)
             {
                 if (pointBackfaceHits[index] <= 2)
@@ -128,7 +136,7 @@ public class ExitDirectionFinder : MonoBehaviour
         }
     }
     
-    public JobHandle ScheduleJobs(bool drawGizmos = false)
+    public void ScheduleJobs()
     {
         NativeArray<Vector3> points = new(NUM_POINTS, Allocator.TempJob);
         
@@ -150,8 +158,6 @@ public class ExitDirectionFinder : MonoBehaviour
             hitBackfaces = true
         };
         
-        exitDirection.Value = Vector3.zero;
-        
         JobHandle createCommands = CreateCommands.ScheduleBatch(overlapCommands, rayCommands, points, queryParameters, 1);
         
         JobHandle overlapSpheres = OverlapSphereCommand.ScheduleBatch(overlapCommands, overlapHits, 1, 1, createCommands);
@@ -160,70 +166,35 @@ public class ExitDirectionFinder : MonoBehaviour
         
         JobHandle countBackfaceHits = CountBackfaceHits.ScheduleBatch(pointBackfaceHits, overlapHits, rayHits, 1, physicsChecks);
         
-        JobHandle calculateAverageDirection = CalculateAverageDirection.Schedule(exitDirection, points, pointBackfaceHits, transform.position, countBackfaceHits);
+        MainJob = CalculateAverageDirection.Schedule(exitDirection, points, pointBackfaceHits, transform.position, countBackfaceHits);
         
 #if UNITY_EDITOR
-        if (drawGizmos)
+        if (IsSelected)
         {
             double time = Time.realtimeSinceStartupAsDouble;
-            calculateAverageDirection.Complete();
+            MainJob.Complete();
             if (printJobTime)
             {
                 Debug.Log((Time.realtimeSinceStartupAsDouble - time) * 1000.0);
             }
-            
-            Gizmos.color = Color.yellow;
-            Gizmos.DrawSphere(transform.position + exitDirection.Value, 0.1f);
-            Gizmos.DrawLine(transform.position, transform.position + exitDirection.Value);
-            
-            if (showBalls)
+
+            for (int i = 0; i < NUM_POINTS; i++)
             {
-                for (int i = 0; i < NUM_POINTS; i++)
-                {
-                    Gizmos.color = overlapHits[i].instanceID != 0 ? Color.magenta :
-                        new Color((float)pointBackfaceHits[i] / ClippingUtils.NUM_CASTS, 0.0f, 0.0f, 1.0f);
-                    Gizmos.DrawSphere(points[i], 0.05f);
-                }
+                debugColors[i] = overlapHits[i].instanceID != 0
+                    ? Color.magenta
+                    : new Color((float)pointBackfaceHits[i] / ClippingUtils.NUM_CASTS, 0.0f, 0.0f, 1.0f);
             }
             
-            if (debugRay >= 0)
-            {
-                for (int i = 0; i < ClippingUtils.NUM_CASTS; i++)
-                {
-                    int hitIndex = debugRay * ClippingUtils.NUM_CASTS + i;
-                    if (rayHits[hitIndex].colliderInstanceID != 0)
-                    {
-                        Gizmos.color = rayHits[hitIndex].IsBackface(ClippingUtils.CastDirections[i])
-                            ? Color.green
-                            : Color.blue;
-                        Gizmos.DrawLine(points[debugRay], rayHits[hitIndex].point);
-                    }
-                }
-            }
-
-            debugRay = Mathf.Clamp(debugRay, -1, NUM_POINTS - 1);
-
-            overlapCommands.Dispose();
-            overlapHits.Dispose();
-            rayCommands.Dispose();
-            rayHits.Dispose();
-            points.Dispose();
-            pointBackfaceHits.Dispose();
-            return default;
+            IsSelected = false;
         }
-        else
-        {
 #endif
+
         overlapCommands.Dispose(overlapSpheres);
         overlapHits.Dispose(countBackfaceHits);
         rayCommands.Dispose(raycasts);
         rayHits.Dispose(countBackfaceHits);
-        points.Dispose(calculateAverageDirection);
-        pointBackfaceHits.Dispose(calculateAverageDirection);
-        return calculateAverageDirection;
-#if UNITY_EDITOR
-        }
-#endif
+        points.Dispose(MainJob);
+        pointBackfaceHits.Dispose(MainJob);
     }
     
     [RuntimeInitializeOnLoadMethod]
@@ -241,15 +212,45 @@ public class ExitDirectionFinder : MonoBehaviour
 #if UNITY_EDITOR
     private void OnDrawGizmosSelected()
     {
+        // Specifically only render if this object is highlighted
         if (Selection.activeGameObject == this.gameObject)
         {
-            if (rawPoints == null) SetRawPoints();
-            ScheduleJobs(true);
+            IsSelected = true;
+
+            if (rawPoints == null)
+            {
+                SetRawPoints();
+            }
+            if (!Application.isPlaying)
+            {
+                ScheduleJobs();
+            }
+            MainJob.Complete();
+
+            if (showBalls)
+            {
+                Vector3[] points = new Vector3[NUM_POINTS];
+                transform.TransformPoints(rawPoints, points);
+
+                for (int i = 0; i < NUM_POINTS; i++)
+                {
+                    Gizmos.color = debugColors[i];
+                    Gizmos.DrawSphere(points[i], 0.05f);
+                }
+            }
+            
+            Gizmos.color = Color.green;
+            for (int i = 0; i < 10; i++)
+            {
+                Gizmos.DrawSphere(
+                    transform.position + Vector3.Lerp(Vector3.zero, ExitDirection, i / 10.0f),
+                    Mathf.Sqrt((i + 1) / 9.0f) * 0.2f);
+            }
         }
     }
 #endif
     
-    private void Awake()
+    public void Init()
     {
         SetRawPoints();
     }
