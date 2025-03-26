@@ -29,10 +29,10 @@ public class RagdollAverages : NeoclipCharacterComponent
         }
         return temp / TotalMass;
     }
-    private TimeUpdatedProperty<Vector3> averagePosition;
-    public Vector3 AveragePosition => averagePosition.GetValue();
+    private TimeUpdatedProperty<Vector3> averagePositionProperty;
+    public Vector3 AveragePosition => averagePositionProperty.GetValue();
 
-    private Vector3 CalculateAverageVelocity()
+    private Vector3 CalculateAverageLinearVelocity()
     {
         Vector3 temp = Vector3.zero;
         for (int i = 0; i < NumBones; i++)
@@ -41,9 +41,21 @@ public class RagdollAverages : NeoclipCharacterComponent
         }
         return temp / NumBones;
     }
-    private FixedTimeUpdatedProperty<Vector3> averageVelocity;
-    public Vector3 AverageVelocity => averageVelocity.GetValue();
-
+    private FixedTimeUpdatedProperty<Vector3> averageLinearVelocityProperty;
+    public Vector3 AverageLinearVelocity => averageLinearVelocityProperty.GetValue();
+    
+    private Vector3 CalculateAverageAngularVelocity()
+    {
+        Vector3 temp = Vector3.zero;
+        for (int i = 0; i < NumBones; i++)
+        {
+            temp += GetRigidbody(i).angularVelocity;
+        }
+        return temp / NumBones;
+    }
+    private FixedTimeUpdatedProperty<Vector3> averageAngularVelocityProperty;
+    public Vector3 AverageAngularVelocity => averageAngularVelocityProperty.GetValue();
+    
     private void FillArrays()
     {
         rigidbodies = GetComponentsInChildren<Rigidbody>();
@@ -66,7 +78,8 @@ public class RagdollAverages : NeoclipCharacterComponent
         DestroyImmediate(GetComponent<ConfigurableJoint>());
         DestroyImmediate(GetComponent<Rigidbody>());
         FillArrays();
-        averagePosition = new TimeUpdatedProperty<Vector3>(CalculateAveragePosition);
-        averageVelocity = new FixedTimeUpdatedProperty<Vector3>(CalculateAverageVelocity);
+        averagePositionProperty = new TimeUpdatedProperty<Vector3>(CalculateAveragePosition);
+        averageLinearVelocityProperty = new FixedTimeUpdatedProperty<Vector3>(CalculateAverageLinearVelocity);
+        averageAngularVelocityProperty = new FixedTimeUpdatedProperty<Vector3>(CalculateAverageAngularVelocity);
     }
 }

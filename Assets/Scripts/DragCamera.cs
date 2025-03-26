@@ -43,7 +43,7 @@ public class DragCamera : NeoclipCharacterComponent
 
     private void MoveCamera()
     {
-        Quaternion rotation = Quaternion.LookRotation(-ragdollAverages.AverageVelocity.normalized);
+        Quaternion rotation = Quaternion.LookRotation(-ragdollAverages.AverageLinearVelocity.normalized);
             
         transform.SetPositionAndRotation(
             ragdollAverages.AveragePosition + rotation * new Vector3(0, 0, -dragCamera.orthographicSize), 
@@ -72,7 +72,7 @@ public class DragCamera : NeoclipCharacterComponent
     
     public bool TryUpdateSurfaceAreas(float[] surfaceAreas)
     {
-        if (ragdollAverages.AverageVelocity.sqrMagnitude >= minSpeedForDrag * minSpeedForDrag)
+        if (ragdollAverages.AverageLinearVelocity.sqrMagnitude >= minSpeedForDrag * minSpeedForDrag)
         {
             MoveCamera();
             RenderPipeline.SubmitRenderRequest(dragCamera, renderRequest);

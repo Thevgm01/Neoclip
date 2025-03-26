@@ -11,7 +11,8 @@ public class PanicEstimator : MonoBehaviour
     [SerializeField] private int steps = 10;
     [SerializeField] private AnimationCurve panicAtImpactTime;
     [SerializeField] private AnimationCurve panicMultAtSpeed;
-
+    [SerializeField] private AnimationCurve panicAtAngularVelocity;
+    
     private int panicID;
     
 #if UNITY_EDITOR
@@ -43,7 +44,7 @@ public class PanicEstimator : MonoBehaviour
         using (new IgnoreBackfacesTemporary())
         {
             Vector3 position = ragdollAverages.AveragePosition;
-            Vector3 velocity = ragdollAverages.AverageVelocity;
+            Vector3 velocity = ragdollAverages.AverageLinearVelocity;
             float stepDeltaTime = panicAtImpactTime.keys[^1].time / steps;
             float timeToHit = -1.0f;
             
@@ -70,8 +71,9 @@ public class PanicEstimator : MonoBehaviour
             
             animator.SetFloat(
                 panicID,
-                panicAtImpactTime.Evaluate(timeToHit) *
-                panicMultAtSpeed.Evaluate(ragdollAverages.AverageVelocity.magnitude));
+                Mathf.Max(
+                    panicAtImpactTime.Evaluate(timeToHit) * panicMultAtSpeed.Evaluate(ragdollAverages.AverageLinearVelocity.magnitude),
+                    panicAtAngularVelocity.Evaluate(ragdollAverages.AverageAngularVelocity.magnitude)));
 
             return timeToHit;
         }
