@@ -9,6 +9,9 @@ public class ExitDirectionFinder : MonoBehaviour
 {
     private const float CHECK_RADIUS = 20.0f;
     private const float CHECK_SPACING = 2.0f;
+    private const int NUM_POINTS = 2048;
+
+    private static Vector3[] rawPoints;
     
     [SerializeField] private LayerMask layerMask;
     [SerializeField] private int debugRay = 0;
@@ -125,25 +128,15 @@ public class ExitDirectionFinder : MonoBehaviour
     
     public JobHandle ScheduleJobs(bool drawGizmos = false)
     {
-        //Vector3[] rawPoints = CachedSpherePoints.solidSphereInstance.Get((CHECK_RADIUS, CHECK_SPACING));
-        Vector3[] rawPoints = new Vector3[2048];
-        CachedSpherePoints.goldenSpiralShellInstance.Get(2048).CopyTo(rawPoints, 0);
-        for (int i = 0; i < rawPoints.Length; i++)
-        {
-            rawPoints[i] *= Mathf.Pow(1.5f, ((i * 3141592653) % 2048) / 300.0f);
-        }
+        NativeArray<Vector3> points = new(NUM_POINTS, Allocator.TempJob);
         
-        int numPoints = rawPoints.Length;
+        NativeArray<OverlapSphereCommand> overlapCommands = new(NUM_POINTS, Allocator.TempJob);
+        NativeArray<ColliderHit> overlapHits = new(NUM_POINTS, Allocator.TempJob);
         
-        NativeArray<Vector3> points = new(numPoints, Allocator.TempJob);
+        NativeArray<RaycastCommand> rayCommands = new (NUM_POINTS * ClippingUtils.NUM_CASTS, Allocator.TempJob);
+        NativeArray<RaycastHit> rayHits = new (NUM_POINTS * ClippingUtils.NUM_CASTS, Allocator.TempJob);
         
-        NativeArray<OverlapSphereCommand> overlapCommands = new(numPoints, Allocator.TempJob);
-        NativeArray<ColliderHit> overlapHits = new(numPoints, Allocator.TempJob);
-        
-        NativeArray<RaycastCommand> rayCommands = new (numPoints * ClippingUtils.NUM_CASTS, Allocator.TempJob);
-        NativeArray<RaycastHit> rayHits = new (numPoints * ClippingUtils.NUM_CASTS, Allocator.TempJob);
-        
-        NativeArray<byte> pointBackfaceHits = new (numPoints, Allocator.TempJob);
+        NativeArray<byte> pointBackfaceHits = new (NUM_POINTS, Allocator.TempJob);
         
         Vector3 origin = transform.position;
         transform.TransformPoints(rawPoints, points);
@@ -184,7 +177,7 @@ public class ExitDirectionFinder : MonoBehaviour
             
             if (showBalls)
             {
-                for (int i = 0; i < numPoints; i++)
+                for (int i = 0; i < NUM_POINTS; i++)
                 {
                     Gizmos.color = overlapHits[i].instanceID != 0 ? Color.magenta :
                         new Color((float)pointBackfaceHits[i] / ClippingUtils.NUM_CASTS, 0.0f, 0.0f, 1.0f);
@@ -207,7 +200,7 @@ public class ExitDirectionFinder : MonoBehaviour
                 }
             }
 
-            debugRay = Mathf.Clamp(debugRay, -1, numPoints - 1);
+            debugRay = Mathf.Clamp(debugRay, -1, NUM_POINTS - 1);
 
             overlapCommands.Dispose();
             overlapHits.Dispose();
@@ -231,11 +224,29 @@ public class ExitDirectionFinder : MonoBehaviour
         }
 #endif
     }
+
+    [RuntimeInitializeOnLoadMethod]
+    private static void SetRawPoints()
+    {
+        rawPoints = SpherePointGenerator.GenerateGoldenSpiralShell(NUM_POINTS);
+        for (int i = 0; i < NUM_POINTS; i++)
+        {
+            // These numbers are shamelessly hardcoded to facilitate a relatively-evenly-spread arrangement
+            // with the points generally clustered closer to the center
+            rawPoints[i] *= Mathf.Pow(1.5f, ((i * 3141592653) % NUM_POINTS) / 300.0f);
+        }
+    }
     
 #if UNITY_EDITOR
     private void OnDrawGizmosSelected()
     {
+        if (rawPoints == null) SetRawPoints();
         ScheduleJobs(true);
     }
 #endif
+    
+    private void Awake()
+    {
+        SetRawPoints();
+    }
 }
