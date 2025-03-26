@@ -22723,6 +22723,11 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 4300894, guid: c925872ce3bfa384589bf34b953d5a65, type: 3}
+--- !u!1 &215832014 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 2067653716b0db34abd2c2ca5aca1f8a, type: 3}
+  m_PrefabInstance: {fileID: 876236700}
+  m_PrefabAsset: {fileID: 0}
 --- !u!64 &219624346
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -29452,7 +29457,6 @@ MonoBehaviour:
   layerMask:
     serializedVersion: 2
     m_Bits: 1
-  debugRay: -1
   showBalls: 1
   printJobTime: 1
 --- !u!4 &687353706
@@ -32086,7 +32090,10 @@ PrefabInstance:
     m_RemovedGameObjects:
     - {fileID: 916439097795205407, guid: 2067653716b0db34abd2c2ca5aca1f8a, type: 3}
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 2067653716b0db34abd2c2ca5aca1f8a, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1772433200}
   m_SourcePrefab: {fileID: 100100000, guid: 2067653716b0db34abd2c2ca5aca1f8a, type: 3}
 --- !u!64 &876532393
 MeshCollider:
@@ -45598,6 +45605,88 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 2067653716b0db34abd2c2ca5aca1f8a, type: 3}
   m_PrefabInstance: {fileID: 876236700}
   m_PrefabAsset: {fileID: 0}
+--- !u!95 &1772433199 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 5866666021909216657, guid: 2067653716b0db34abd2c2ca5aca1f8a, type: 3}
+  m_PrefabInstance: {fileID: 876236700}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1772433200
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 215832014}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9770ee88cd0f75944ab65bc3d39d1478, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  animator: {fileID: 1772433199}
+  ragdollAverages: {fileID: 59713680}
+  sphereCastRadius: 1
+  sphereCastLayers:
+    serializedVersion: 2
+    m_Bits: 129
+  steps: 4
+  stepDeltaTime: 0.5
+  panicAtImpactTime:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: -0.001
+      value: 0
+      inSlope: Infinity
+      outSlope: Infinity
+      tangentMode: 103
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: Infinity
+      outSlope: -0.5
+      tangentMode: 65
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 2
+      value: 0
+      inSlope: -0.5
+      outSlope: -0.5
+      tangentMode: 34
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panicMultAtSpeed:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 5
+      outSlope: 5
+      tangentMode: 34
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 2
+      value: 5
+      inSlope: 5
+      outSlope: 5
+      tangentMode: 34
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!64 &1772975013
 MeshCollider:
   m_ObjectHideFlags: 0
