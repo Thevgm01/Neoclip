@@ -18,23 +18,31 @@ public class ExitDirectionFinder : MonoBehaviour
     private NativeReference<Vector3> exitDirection = new (Vector3.zero, Allocator.Persistent);
     
     [BurstCompile]
-    private struct CreateRayCommands : IJobFor
+    private struct CreateCommands : IJobFor
     {
+        private NativeArray<OverlapSphereCommand> overlapCommands;
         [NativeDisableParallelForRestriction] private NativeArray<RaycastCommand> rayCommands;
         [ReadOnly] private NativeArray<Vector3> points;
         [ReadOnly] private QueryParameters queryParameters;
                         
-        public static JobHandle ScheduleBatch(NativeArray<RaycastCommand> rayCommands, NativeArray<Vector3> points,
-                QueryParameters queryParameters, int minCommandsPerJob, JobHandle dependsOn = default) =>
-            new CreateRayCommands
+        public static JobHandle ScheduleBatch(NativeArray<OverlapSphereCommand> overlapCommands, NativeArray<RaycastCommand> rayCommands,
+                NativeArray<Vector3> points, QueryParameters queryParameters, int minCommandsPerJob, JobHandle dependsOn = default) =>
+            new CreateCommands
             {
                 rayCommands = rayCommands,
+                overlapCommands = overlapCommands,
                 points = points,
                 queryParameters = queryParameters
             }.ScheduleParallel(points.Length, minCommandsPerJob, dependsOn);
         
         public void Execute(int index)
         {
+            overlapCommands[index] = new OverlapSphereCommand
+            {
+                point = points[index],
+                queryParameters = queryParameters,
+                radius = 0.1f
+            };
             for (int i = 0; i < ClippingUtils.NUM_CASTS; i++)
             {
                 rayCommands[index * ClippingUtils.NUM_CASTS + i] = new RaycastCommand
@@ -52,22 +60,33 @@ public class ExitDirectionFinder : MonoBehaviour
     private struct CountBackfaceHits : IJobFor
     {
         private NativeArray<byte> pointBackfaceHits;
+        [ReadOnly] private NativeArray<ColliderHit> overlapHits;
         [ReadOnly] private NativeArray<RaycastHit> rayHits;
               
-        public static JobHandle ScheduleBatch(NativeArray<byte> pointBackfaceHits,
+        public static JobHandle ScheduleBatch(NativeArray<byte> pointBackfaceHits, NativeArray<ColliderHit> overlapHits,
                 NativeArray<RaycastHit> rayHits, int minCommandsPerJob, JobHandle dependsOn = default) =>
             new CountBackfaceHits
             {
                 pointBackfaceHits = pointBackfaceHits,
+                overlapHits = overlapHits,
                 rayHits = rayHits
             }.ScheduleParallel(pointBackfaceHits.Length, minCommandsPerJob, dependsOn);
         
         public void Execute(int index)
         {
-            for (int i = 0; i < ClippingUtils.NUM_CASTS; i++)
+            if (overlapHits[index].instanceID != 0)
             {
-                pointBackfaceHits[index] += 
-                    rayHits[index * ClippingUtils.NUM_CASTS + i].IsBackface(ClippingUtils.CastDirections[i]) ? (byte)1 : (byte)0;
+                pointBackfaceHits[index] = ClippingUtils.NUM_CASTS;
+            }
+            else
+            {
+                for (int i = 0; i < ClippingUtils.NUM_CASTS; i++)
+                {
+                    pointBackfaceHits[index] +=
+                        rayHits[index * ClippingUtils.NUM_CASTS + i].IsBackface(ClippingUtils.CastDirections[i])
+                            ? (byte)1
+                            : (byte)0;
+                }
             }
         }
     }
@@ -104,7 +123,7 @@ public class ExitDirectionFinder : MonoBehaviour
         }
     }
     
-    public JobHandle ScheduleJobs(bool displayDebug = false)
+    public JobHandle ScheduleJobs(bool drawGizmos = false)
     {
         //Vector3[] rawPoints = CachedSpherePoints.solidSphereInstance.Get((CHECK_RADIUS, CHECK_SPACING));
         Vector3[] rawPoints = new Vector3[2048];
@@ -115,9 +134,15 @@ public class ExitDirectionFinder : MonoBehaviour
         }
         
         int numPoints = rawPoints.Length;
+        
         NativeArray<Vector3> points = new(numPoints, Allocator.TempJob);
+        
+        NativeArray<OverlapSphereCommand> overlapCommands = new(numPoints, Allocator.TempJob);
+        NativeArray<ColliderHit> overlapHits = new(numPoints, Allocator.TempJob);
+        
         NativeArray<RaycastCommand> rayCommands = new (numPoints * ClippingUtils.NUM_CASTS, Allocator.TempJob);
         NativeArray<RaycastHit> rayHits = new (numPoints * ClippingUtils.NUM_CASTS, Allocator.TempJob);
+        
         NativeArray<byte> pointBackfaceHits = new (numPoints, Allocator.TempJob);
         
         Vector3 origin = transform.position;
@@ -133,13 +158,18 @@ public class ExitDirectionFinder : MonoBehaviour
 
         exitDirection.Value = Vector3.zero;
         
-        JobHandle createRayCommands = CreateRayCommands.ScheduleBatch(rayCommands, points, queryParameters, 1);
-        JobHandle raycast = RaycastCommand.ScheduleBatch(rayCommands, rayHits, 1, createRayCommands);
-        JobHandle countBackfaceHits = CountBackfaceHits.ScheduleBatch(pointBackfaceHits, rayHits, 1, raycast);
+        JobHandle createCommands = CreateCommands.ScheduleBatch(overlapCommands, rayCommands, points, queryParameters, 1);
+        
+        JobHandle overlapSpheres = OverlapSphereCommand.ScheduleBatch(overlapCommands, overlapHits, 1, 1, createCommands);
+        JobHandle raycasts = RaycastCommand.ScheduleBatch(rayCommands, rayHits, 1, 1, createCommands);
+        JobHandle physicsChecks = JobHandle.CombineDependencies(overlapSpheres, raycasts);
+        
+        JobHandle countBackfaceHits = CountBackfaceHits.ScheduleBatch(pointBackfaceHits, overlapHits, rayHits, 1, physicsChecks);
+        
         JobHandle calculateAverageDirection = CalculateAverageDirection.Schedule(exitDirection, points, pointBackfaceHits, origin, countBackfaceHits);
         
 #if UNITY_EDITOR
-        if (displayDebug)
+        if (drawGizmos)
         {
             double time = Time.realtimeSinceStartupAsDouble;
             calculateAverageDirection.Complete();
@@ -156,11 +186,12 @@ public class ExitDirectionFinder : MonoBehaviour
             {
                 for (int i = 0; i < numPoints; i++)
                 {
-                    Gizmos.color = new Color((float)pointBackfaceHits[i] / ClippingUtils.NUM_CASTS, 0.0f, 0.0f, 1.0f);
+                    Gizmos.color = overlapHits[i].instanceID != 0 ? Color.magenta :
+                        new Color((float)pointBackfaceHits[i] / ClippingUtils.NUM_CASTS, 0.0f, 0.0f, 1.0f);
                     Gizmos.DrawSphere(points[i], 0.05f);
                 }
             }
-
+            
             if (debugRay >= 0)
             {
                 for (int i = 0; i < ClippingUtils.NUM_CASTS; i++)
@@ -178,6 +209,8 @@ public class ExitDirectionFinder : MonoBehaviour
 
             debugRay = Mathf.Clamp(debugRay, -1, numPoints - 1);
 
+            overlapCommands.Dispose();
+            overlapHits.Dispose();
             rayCommands.Dispose();
             rayHits.Dispose();
             points.Dispose();
@@ -186,18 +219,16 @@ public class ExitDirectionFinder : MonoBehaviour
         }
         else
         {
-            rayCommands.Dispose(raycast);
-            rayHits.Dispose(countBackfaceHits);
-            points.Dispose(calculateAverageDirection);
-            pointBackfaceHits.Dispose(calculateAverageDirection);
-            return calculateAverageDirection;
-        }
-#else
-        rayCommands.Dispose(raycast);
+#endif
+        overlapCommands.Dispose(overlapSpheres);
+        overlapHits.Dispose(countBackfaceHits);
+        rayCommands.Dispose(raycasts);
         rayHits.Dispose(countBackfaceHits);
         points.Dispose(calculateAverageDirection);
         pointBackfaceHits.Dispose(calculateAverageDirection);
         return calculateAverageDirection;
+#if UNITY_EDITOR
+        }
 #endif
     }
     
