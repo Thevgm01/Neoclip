@@ -1,3 +1,4 @@
+using Unity.Jobs;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -7,6 +8,7 @@ public class NeoclipCharacterController : MonoBehaviour
     [SerializeField] private DragCamera dragCamera;
     [SerializeField] private NeoclipCameraController cameraController;
     [SerializeField] private ActiveRagdoll activeRagdoll;
+    [SerializeField] private ExitDirectionFinder exitDirectionFinder;
     
     [Space]
     [SerializeField] private bool applyGravity = true;
@@ -24,12 +26,13 @@ public class NeoclipCharacterController : MonoBehaviour
     private void SetNoclipInput(InputAction.CallbackContext context) => noclipInput = context.ReadValueAsButton();
     private Vector2 moveInput;
     private bool noclipInput;
-
+    
     private int defaultIgnoreLayers;
     
     private float[] boneSurfaceAreas;
     private bool[] boneClipStates;
     private bool wasAnyClippingLastFrame = false;
+    private JobHandle exitDirectionJob;
     
     private void Awake()
     {
@@ -83,6 +86,18 @@ public class NeoclipCharacterController : MonoBehaviour
                 anyBoneClipping = anyBoneClipping || boneClipStates[i];
             }
         }
+
+        if (!exitDirectionJob.IsCompleted)
+        {
+            Debug.LogWarning("NeoclipCharacterController.FixedUpdate(): Had to wait for exitDirectionJob to complete!");
+        }
+        exitDirectionJob.Complete();
+        Vector3 exitDirection = exitDirectionFinder.ExitDirection;
+        if (anyBoneClipping)
+        {
+            exitDirectionFinder.transform.position = ragdollAverages.AveragePosition;
+            exitDirectionJob = exitDirectionFinder.ScheduleJobs();
+        }
         
         for (int i = 0; i < ragdollAverages.NumBones; i++)
         {
@@ -100,7 +115,7 @@ public class NeoclipCharacterController : MonoBehaviour
             
             Vector3 force = Vector3.zero;
             Vector3 acceleration = Vector3.zero;
-
+            
             if (!boneClipStates[i]) // This bone is in open space
             {
                 acceleration += applyGravity ? Physics.gravity : Vector3.zero;
@@ -108,6 +123,8 @@ public class NeoclipCharacterController : MonoBehaviour
             else if (!noclipInput) // This bone is clipping (but the button isn't held down)
             {
                 acceleration -= Physics.gravity;
+                
+                acceleration += exitDirection * 10.0f;
 
                 if (anyBoneClipping && Mathf.Abs(rigidbody.linearVelocity.y) < 1.0f)
                 {

@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
+using UnityEditor;
 using UnityEngine;
 
 public class ExitDirectionFinder : MonoBehaviour
@@ -10,15 +11,16 @@ public class ExitDirectionFinder : MonoBehaviour
     private const float CHECK_RADIUS = 20.0f;
     private const float CHECK_SPACING = 2.0f;
     private const int NUM_POINTS = 2048;
-
+    
     private static Vector3[] rawPoints;
     
     [SerializeField] private LayerMask layerMask;
     [SerializeField] private int debugRay = 0;
     [SerializeField] private bool showBalls = true;
     [SerializeField] private bool printJobTime = true;
-        
+    
     private NativeReference<Vector3> exitDirection = new (Vector3.zero, Allocator.Persistent);
+    public Vector3 ExitDirection => exitDirection.Value;
     
     [BurstCompile]
     private struct CreateCommands : IJobFor
@@ -27,7 +29,7 @@ public class ExitDirectionFinder : MonoBehaviour
         [NativeDisableParallelForRestriction] private NativeArray<RaycastCommand> rayCommands;
         [ReadOnly] private NativeArray<Vector3> points;
         [ReadOnly] private QueryParameters queryParameters;
-                        
+        
         public static JobHandle ScheduleBatch(NativeArray<OverlapSphereCommand> overlapCommands, NativeArray<RaycastCommand> rayCommands,
                 NativeArray<Vector3> points, QueryParameters queryParameters, int minCommandsPerJob, JobHandle dependsOn = default) =>
             new CreateCommands
@@ -138,7 +140,6 @@ public class ExitDirectionFinder : MonoBehaviour
         
         NativeArray<byte> pointBackfaceHits = new (NUM_POINTS, Allocator.TempJob);
         
-        Vector3 origin = transform.position;
         transform.TransformPoints(rawPoints, points);
 
         QueryParameters queryParameters = new QueryParameters
@@ -148,7 +149,7 @@ public class ExitDirectionFinder : MonoBehaviour
             hitTriggers = QueryTriggerInteraction.UseGlobal,
             hitBackfaces = true
         };
-
+        
         exitDirection.Value = Vector3.zero;
         
         JobHandle createCommands = CreateCommands.ScheduleBatch(overlapCommands, rayCommands, points, queryParameters, 1);
@@ -159,7 +160,7 @@ public class ExitDirectionFinder : MonoBehaviour
         
         JobHandle countBackfaceHits = CountBackfaceHits.ScheduleBatch(pointBackfaceHits, overlapHits, rayHits, 1, physicsChecks);
         
-        JobHandle calculateAverageDirection = CalculateAverageDirection.Schedule(exitDirection, points, pointBackfaceHits, origin, countBackfaceHits);
+        JobHandle calculateAverageDirection = CalculateAverageDirection.Schedule(exitDirection, points, pointBackfaceHits, transform.position, countBackfaceHits);
         
 #if UNITY_EDITOR
         if (drawGizmos)
@@ -224,7 +225,7 @@ public class ExitDirectionFinder : MonoBehaviour
         }
 #endif
     }
-
+    
     [RuntimeInitializeOnLoadMethod]
     private static void SetRawPoints()
     {
@@ -240,8 +241,11 @@ public class ExitDirectionFinder : MonoBehaviour
 #if UNITY_EDITOR
     private void OnDrawGizmosSelected()
     {
-        if (rawPoints == null) SetRawPoints();
-        ScheduleJobs(true);
+        if (Selection.activeGameObject == this.gameObject)
+        {
+            if (rawPoints == null) SetRawPoints();
+            ScheduleJobs(true);
+        }
     }
 #endif
     
