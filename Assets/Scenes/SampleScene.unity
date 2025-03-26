@@ -45629,7 +45629,6 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 129
   steps: 4
-  stepDeltaTime: 0.5
   panicAtImpactTime:
     serializedVersion: 2
     m_Curve:
@@ -45645,19 +45644,19 @@ MonoBehaviour:
     - serializedVersion: 3
       time: 0
       value: 1
-      inSlope: Infinity
-      outSlope: -0.5
+      inSlope: 0
+      outSlope: -0.33333334
       tangentMode: 65
       weightedMode: 0
       inWeight: 0.33333334
       outWeight: 0.33333334
     - serializedVersion: 3
-      time: 2
+      time: 3
       value: 0
-      inSlope: -0.5
-      outSlope: -0.5
-      tangentMode: 34
-      weightedMode: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 1
       inWeight: 0.33333334
       outWeight: 0
     m_PreInfinity: 2

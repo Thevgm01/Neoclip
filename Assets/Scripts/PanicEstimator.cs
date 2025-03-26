@@ -9,7 +9,6 @@ public class PanicEstimator : MonoBehaviour
     [SerializeField] private float sphereCastRadius = 1.0f;
     [SerializeField] private LayerMask sphereCastLayers;
     [SerializeField] private int steps = 10;
-    [SerializeField] private float stepDeltaTime = 0.5f;
     [SerializeField] private AnimationCurve panicAtImpactTime;
     [SerializeField] private AnimationCurve panicMultAtSpeed;
 
@@ -45,6 +44,7 @@ public class PanicEstimator : MonoBehaviour
         {
             Vector3 position = ragdollAverages.AveragePosition;
             Vector3 velocity = ragdollAverages.AverageVelocity;
+            float stepDeltaTime = panicAtImpactTime.keys[^1].time / steps;
             float timeToHit = -1.0f;
             
             Gizmos.DrawWireSphere(position, sphereCastRadius);
