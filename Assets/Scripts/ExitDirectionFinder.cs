@@ -205,7 +205,7 @@ public class ExitDirectionFinder : MonoBehaviour
         {
             // These numbers are shamelessly hardcoded to facilitate a relatively-evenly-spread arrangement
             // with the points generally clustered closer to the center
-            rawPoints[i] *= Mathf.Pow(1.5f, ((i * 3141592653) % NUM_POINTS) / 300.0f);
+            rawPoints[i] *= Mathf.Pow(1.25f, ((i * 3141592653) % NUM_POINTS) / 200.0f);
         }
     }
     
