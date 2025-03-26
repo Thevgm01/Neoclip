@@ -33,45 +33,47 @@ public class PanicEstimator : MonoBehaviour
         }
     }
 #endif
-
-    private void Start()
+    
+    private void Awake()
     {
         panicID = Animator.StringToHash("Panic");
     }
     
     private float EstimateTimeToHit()
     {
-        Physics.queriesHitBackfaces = false;
-        
-        Vector3 position = ragdollAverages.AveragePosition;
-        Vector3 velocity = ragdollAverages.AverageVelocity;
-        float timeToHit = -1.0f;
-        
-        Gizmos.DrawWireSphere(position, sphereCastRadius);
-        
-        for (int i = 0; i < steps; i++)
+        using (new IgnoreBackfacesTemporary())
         {
-            float velocityMagnitude = velocity.magnitude;
-            Vector3 velocityNormalized = velocity / velocityMagnitude;
-            if (Physics.SphereCast(position, sphereCastRadius, velocityNormalized, 
-                    out RaycastHit hit, velocityMagnitude, sphereCastLayers.value))
-            {
-                Gizmos.color = Color.red;
-                Gizmos.DrawWireSphere(position + velocityNormalized * hit.distance, sphereCastRadius);
-                timeToHit = i * stepDeltaTime + hit.distance / velocityMagnitude;
-                break;
-            }
-            Gizmos.DrawWireSphere(position + velocity, sphereCastRadius);
+            Vector3 position = ragdollAverages.AveragePosition;
+            Vector3 velocity = ragdollAverages.AverageVelocity;
+            float timeToHit = -1.0f;
             
-            position += velocity * stepDeltaTime;
-            velocity += Physics.gravity * stepDeltaTime;
+            Gizmos.DrawWireSphere(position, sphereCastRadius);
+            
+            for (int i = 0; i < steps; i++)
+            {
+                float velocityMagnitude = velocity.magnitude;
+                Vector3 velocityNormalized = velocity / velocityMagnitude;
+                if (Physics.SphereCast(position, sphereCastRadius, velocityNormalized,
+                        out RaycastHit hit, velocityMagnitude, sphereCastLayers.value))
+                {
+                    Gizmos.color = Color.red;
+                    Gizmos.DrawWireSphere(position + velocityNormalized * hit.distance, sphereCastRadius);
+                    timeToHit = i * stepDeltaTime + hit.distance / velocityMagnitude;
+                    break;
+                }
+                
+                Gizmos.DrawWireSphere(position + velocity, sphereCastRadius);
+                
+                position += velocity * stepDeltaTime;
+                velocity += Physics.gravity * stepDeltaTime;
+            }
+            
+            animator.SetFloat(
+                panicID,
+                panicAtImpactTime.Evaluate(timeToHit) *
+                panicMultAtSpeed.Evaluate(ragdollAverages.AverageVelocity.magnitude));
+
+            return timeToHit;
         }
-        
-        Physics.queriesHitBackfaces = true;
-        animator.SetFloat(
-            panicID, 
-            panicAtImpactTime.Evaluate(timeToHit) * panicMultAtSpeed.Evaluate(ragdollAverages.AverageVelocity.magnitude));
-        
-        return timeToHit;
     }
 }
