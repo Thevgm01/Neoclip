@@ -126,7 +126,7 @@ public class ExitDirectionFinder : MonoBehaviour
             
             for (int index = 0; index < points.Length; index++)
             {
-                if (pointBackfaceHits[index] <= 2)
+                if (pointBackfaceHits[index] < ClippingUtils.MINIMUM_BACKFACES_TO_BE_INSIDE)
                 {
                     result.Value += points[index] - origin;
                 }
