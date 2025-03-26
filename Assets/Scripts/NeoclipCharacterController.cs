@@ -122,9 +122,9 @@ public class NeoclipCharacterController : MonoBehaviour
             }
             else if (!noclipInput) // This bone is clipping (but the button isn't held down)
             {
-                acceleration -= Physics.gravity;
+                acceleration -= Physics.gravity * 2.0f;
                 
-                acceleration += exitDirection * 10.0f;
+                acceleration += exitDirection * 20.0f;
                 
                 /*
                 if (anyBoneClipping && Mathf.Abs(rigidbody.linearVelocity.y) < 1.0f)
