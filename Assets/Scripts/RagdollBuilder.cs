@@ -123,7 +123,7 @@ public class RagdollBuilder : MonoBehaviour
                 
                 gameObject.layer = defaultLayer.value;
                 
-                EditorUtils.TryDestroyObjectImmediate(gameObject.GetComponent<Joint>());
+                EditorUtils.TryDestroyObjectsImmediate(gameObject.GetComponents<Joint>());
                 EditorUtils.TryDestroyObjectImmediate(gameObject.GetComponent<MeshFilter>());
                 EditorUtils.TryDestroyObjectImmediate(gameObject.GetComponent<MeshRenderer>());
                                 
