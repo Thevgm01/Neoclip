@@ -19,6 +19,11 @@ public class PanicEstimator : MonoBehaviour
     {
         panicID = Animator.StringToHash("Panic");
     }
+
+    private void Update()
+    {
+        transform.position = ragdollAverages.AveragePosition;
+    }
     
     public float EstimateTimeToHit()
     {
@@ -31,10 +36,10 @@ public class PanicEstimator : MonoBehaviour
             
             GizmoQueue.SubmitRequest(new GizmoQueue.GizmoDrawRequest
             {
-                owner = transform, criteria = GizmoQueue.DrawCriteria.SELECTED_ANY, shape = GizmoQueue.Shape.WIRE_SPHERE,
+                owner = transform, relativeTo = transform, criteria = GizmoQueue.DrawCriteria.SELECTED_ANY, shape = GizmoQueue.Shape.WIRE_SPHERE,
                 position = position, color = Color.cyan, radius = sphereCastRadius
             });
-                        
+            
             for (int i = 0; i < steps; i++)
             {
                 float velocityMagnitude = velocity.magnitude;

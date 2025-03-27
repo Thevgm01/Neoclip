@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
+[DefaultExecutionOrder(-999)]
 public class GizmoQueue : MonoBehaviour
 {
     public enum DrawCriteria
@@ -30,7 +31,29 @@ public class GizmoQueue : MonoBehaviour
         public DrawCriteria criteria;
         public Shape shape;
         public Color color;
-        public Vector3 position;
+        
+        private Transform _relativeTo;
+        private Vector3 _relativeToOriginalPosition;
+        public Transform relativeTo
+        {
+            get => _relativeTo;
+            set
+            {
+                _relativeTo = value;
+                if (value != null)
+                {
+                    _relativeToOriginalPosition = value.position;
+                }
+            }
+        }
+        
+        private Vector3 _position;
+        public Vector3 position
+        {
+            get => _relativeTo != null ? _position + _relativeTo.position - _relativeToOriginalPosition : _position;
+            set => _position = value;
+        }
+
         public Vector3 size;
         public float radius
         {
@@ -63,13 +86,14 @@ public class GizmoQueue : MonoBehaviour
             }
             
             GizmoDrawRequest lastRequest = fixedUpdateRequests[^1];
-            if (request.owner == default) request.owner = lastRequest.owner;
+            if (request.owner == null) request.owner = lastRequest.owner;
             if (request.criteria == default) request.criteria = lastRequest.criteria;
             if (request.shape == default) request.shape = lastRequest.shape;
             if (request.color == default) request.color = lastRequest.color;
+            if (request.relativeTo == null) request.relativeTo = lastRequest.relativeTo;
             if (request.position == default) request.position = lastRequest.position;
             if (request.size == default) request.size = lastRequest.size;
-
+            
             fixedUpdateRequests.Add(request);
         }
     }
@@ -105,13 +129,16 @@ public class GizmoQueue : MonoBehaviour
     {
         foreach (GizmoDrawRequest request in fixedUpdateRequests)
         {
-            if (request.criteria == DrawCriteria.SELECTED_EXCLUSIVE && Selection.activeTransform != request.owner) continue;
-            if (request.criteria == DrawCriteria.SELECTED_ANY && !IsChildOfAny(request.owner, Selection.transforms)) continue;
+            if (request.criteria == DrawCriteria.SELECTED_EXCLUSIVE && Selection.activeTransform != request.owner ||
+                request.criteria == DrawCriteria.SELECTED_ANY && !IsChildOfAny(request.owner, Selection.transforms))
+                continue;
             
             if (request.color != default)
             {
                 Gizmos.color = request.color;
             }
+            
+            Debug.Log(request.position);
             
             switch (request.shape)
             {
