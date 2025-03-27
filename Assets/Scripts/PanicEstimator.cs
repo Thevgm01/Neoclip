@@ -42,20 +42,14 @@ public class PanicEstimator : MonoBehaviour
                 if (Physics.SphereCast(position, sphereCastRadius, velocityNormalized,
                         out RaycastHit hit, velocityMagnitude, sphereCastLayers.value))
                 {
-                    GizmoQueue.SubmitRequest(new GizmoQueue.GizmoDrawRequest
-                    {
-                        owner = transform, criteria = GizmoQueue.DrawCriteria.SELECTED_ANY, shape = GizmoQueue.Shape.WIRE_SPHERE,
-                        position = position + velocityNormalized * hit.distance, color = Color.red, radius = sphereCastRadius
-                    });
+                    GizmoQueue.RepeatRequest(new GizmoQueue.GizmoDrawRequest
+                        { position = position + velocityNormalized * hit.distance, color = Color.red });
                     timeToHit = i * stepDeltaTime + hit.distance / velocityMagnitude;
                     break;
                 }
                 
-                GizmoQueue.SubmitRequest(new GizmoQueue.GizmoDrawRequest
-                {
-                    owner = transform, criteria = GizmoQueue.DrawCriteria.SELECTED_ANY, shape = GizmoQueue.Shape.WIRE_SPHERE,
-                    position = position + velocity, color = Color.cyan, radius = sphereCastRadius
-                });
+                GizmoQueue.RepeatRequest(new GizmoQueue.GizmoDrawRequest
+                    { position = position + velocity, color = Color.cyan });
                 
                 position += velocity * stepDeltaTime;
                 velocity += Physics.gravity * stepDeltaTime;

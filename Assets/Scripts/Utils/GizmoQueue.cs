@@ -9,6 +9,7 @@ public class GizmoQueue : MonoBehaviour
 {
     public enum DrawCriteria
     {
+        NULL,
         ALWAYS,
         SELECTED_ANY,
         SELECTED_EXCLUSIVE
@@ -49,6 +50,28 @@ public class GizmoQueue : MonoBehaviour
     public static void SubmitRequest(GizmoDrawRequest request)
     {
         if (Time.inFixedTimeStep) fixedUpdateRequests.Add(request);
+    }
+
+    public static void RepeatRequest(GizmoDrawRequest request)
+    {
+        if (Time.inFixedTimeStep)
+        {
+            if (fixedUpdateRequests.Count == 0)
+            {
+                Debug.LogError("GizmoQueue.RepeatRequest: No requests have been submitted this frame.");
+                return;
+            }
+            
+            GizmoDrawRequest lastRequest = fixedUpdateRequests[^1];
+            if (request.owner == default) request.owner = lastRequest.owner;
+            if (request.criteria == default) request.criteria = lastRequest.criteria;
+            if (request.shape == default) request.shape = lastRequest.shape;
+            if (request.color == default) request.color = lastRequest.color;
+            if (request.position == default) request.position = lastRequest.position;
+            if (request.size == default) request.size = lastRequest.size;
+
+            fixedUpdateRequests.Add(request);
+        }
     }
     
     private static bool IsChildOf(Transform child, Transform parent)
