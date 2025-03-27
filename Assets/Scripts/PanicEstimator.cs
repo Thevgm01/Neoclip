@@ -30,10 +30,10 @@ public class PanicEstimator : MonoBehaviour
             float stepDeltaTime = panicAtImpactTime.keys[^1].time / steps;
             float timeToHit = -1.0f;
             
-            GizmoQueue.SubmitRequest(new GizmoQueue.GizmoDrawRequest
+            GizmoAnywhere.SubmitRequest(new GizmoAnywhere.GizmoDrawRequest
             {
-                owner = transform, criteria = GizmoQueue.DrawCriteria.SELECTED_ANY, shape = GizmoQueue.Shape.WIRE_SPHERE,
-                position = position, color = Color.cyan, radius = sphereCastRadius, ragdollRelative = true
+                owner = transform, criteria = GizmoAnywhere.DrawCriteria.SELECTED_ANY, shape = GizmoAnywhere.Shape.WIRE_SPHERE,
+                position = position, color = Color.cyan, radius = sphereCastRadius, ragdollRelative = GizmoAnywhere.RagdollRelative.TRUE
             });
             
             for (int i = 0; i < steps; i++)
@@ -43,13 +43,13 @@ public class PanicEstimator : MonoBehaviour
                 if (Physics.SphereCast(position, sphereCastRadius, velocityNormalized,
                         out RaycastHit hit, velocityMagnitude, sphereCastLayers.value))
                 {
-                    GizmoQueue.RepeatRequest(new GizmoQueue.GizmoDrawRequest
+                    GizmoAnywhere.RepeatRequest(new GizmoAnywhere.GizmoDrawRequest
                         { position = position + velocityNormalized * hit.distance, color = Color.red });
                     timeToHit = i * stepDeltaTime + hit.distance / velocityMagnitude;
                     break;
                 }
                 
-                GizmoQueue.RepeatRequest(new GizmoQueue.GizmoDrawRequest
+                GizmoAnywhere.RepeatRequest(new GizmoAnywhere.GizmoDrawRequest
                     { position = position + velocity, color = Color.cyan });
                 
                 position += velocity * stepDeltaTime;

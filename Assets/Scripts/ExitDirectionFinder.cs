@@ -24,8 +24,7 @@ public class ExitDirectionFinder : MonoBehaviour
     public Vector3 ExitDirection => exitDirection.Value;
     
     #if UNITY_EDITOR
-    public bool IsSelected { get; private set; }
-    private readonly Color[] debugColors = new Color[NUM_POINTS];
+    private bool shouldDrawGizmos;
     #endif
     
     [BurstCompile]
@@ -169,7 +168,7 @@ public class ExitDirectionFinder : MonoBehaviour
         MainJob = CalculateAverageDirection.Schedule(exitDirection, points, pointBackfaceHits, transform.position, countBackfaceHits);
         
 #if UNITY_EDITOR
-        if (IsSelected)
+        if (shouldDrawGizmos)
         {
             double time = Time.realtimeSinceStartupAsDouble;
             MainJob.Complete();
@@ -177,15 +176,36 @@ public class ExitDirectionFinder : MonoBehaviour
             {
                 Debug.Log((Time.realtimeSinceStartupAsDouble - time) * 1000.0);
             }
-
-            for (int i = 0; i < NUM_POINTS; i++)
+            
+            // Hits
+            if (showBalls)
             {
-                debugColors[i] = overlapHits[i].instanceID != 0
-                    ? Color.magenta
-                    : new Color((float)pointBackfaceHits[i] / ClippingUtils.NUM_CASTS, 0.0f, 0.0f, 1.0f);
+                for (int i = 0; i < NUM_POINTS; i++)
+                {
+                    GizmoAnywhere.SubmitRequest(new GizmoAnywhere.GizmoDrawRequest
+                    {
+                        owner = this.transform, criteria = GizmoAnywhere.DrawCriteria.SELECTED_EXCLUSIVE, shape = GizmoAnywhere.Shape.SPHERE,
+                        position = points[i], radius = 0.05f, ragdollRelative = GizmoAnywhere.RagdollRelative.TRUE,
+                        color = overlapHits[i].instanceID != 0
+                            ? Color.magenta
+                            : new Color((float)pointBackfaceHits[i] / ClippingUtils.NUM_CASTS, 0.0f, 0.0f, 1.0f)
+                    });
+                }
             }
             
-            IsSelected = false;
+            // Exit direction
+            for (int i = 0; i < 10; i++)
+            {
+                GizmoAnywhere.SubmitRequest(new GizmoAnywhere.GizmoDrawRequest
+                {
+                    owner = this.transform, criteria = GizmoAnywhere.DrawCriteria.SELECTED_EXCLUSIVE, shape = GizmoAnywhere.Shape.SPHERE,
+                    position = transform.position + Vector3.Lerp(Vector3.zero, ExitDirection, i / 10.0f),
+                    radius = Mathf.Sqrt((i + 1) / 9.0f) * 0.2f, ragdollRelative = GizmoAnywhere.RagdollRelative.TRUE,
+                    color = Color.green
+                });
+            }
+
+            shouldDrawGizmos = false;
         }
 #endif
 
@@ -212,39 +232,17 @@ public class ExitDirectionFinder : MonoBehaviour
 #if UNITY_EDITOR
     private void OnDrawGizmosSelected()
     {
-        // Specifically only render if this object is highlighted
         if (Selection.activeGameObject == this.gameObject)
         {
-            IsSelected = true;
-
-            if (rawPoints == null)
-            {
-                SetRawPoints();
-            }
+            shouldDrawGizmos = true;
+            
             if (!Application.isPlaying)
             {
-                ScheduleJobs();
-            }
-            MainJob.Complete();
-
-            if (showBalls)
-            {
-                Vector3[] points = new Vector3[NUM_POINTS];
-                transform.TransformPoints(rawPoints, points);
-
-                for (int i = 0; i < NUM_POINTS; i++)
+                if (rawPoints == null)
                 {
-                    Gizmos.color = debugColors[i];
-                    Gizmos.DrawSphere(points[i], 0.05f);
+                    SetRawPoints();
                 }
-            }
-            
-            Gizmos.color = Color.green;
-            for (int i = 0; i < 10; i++)
-            {
-                Gizmos.DrawSphere(
-                    transform.position + Vector3.Lerp(Vector3.zero, ExitDirection, i / 10.0f),
-                    Mathf.Sqrt((i + 1) / 9.0f) * 0.2f);
+                ScheduleJobs();
             }
         }
     }

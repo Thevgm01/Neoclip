@@ -28,7 +28,34 @@ public static class GenericUtils
 		    array[r] = tmp;
 	    }
     }
+	
+    public static bool IsChildOf(Transform child, Transform parent)
+    {
+	    Transform temp = child;
+	    while (temp != null && temp != parent)
+	    {
+		    temp = temp.parent;
+	    }
+	    return temp == parent;
+    }
 
+    public static bool IsChildOfAny(Transform child, Transform[] parents)
+    {
+	    Transform temp = child;
+	    while (temp != null)
+	    {
+		    foreach (Transform parent in parents)
+		    {
+			    if (temp == parent)
+			    {
+				    return true;
+			    }
+		    }
+		    temp = temp.parent;
+	    }
+	    return false;
+    }
+    
     public static void CopyConfigurableJointValues(ConfigurableJoint source, ConfigurableJoint target)
     {
 	    target.connectedBody = source.connectedBody;
