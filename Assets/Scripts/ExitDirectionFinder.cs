@@ -250,7 +250,7 @@ public class ExitDirectionFinder : MonoBehaviour
     }
 #endif
     
-    public void Init()
+    public void Awake()
     {
         SetRawPoints();
     }

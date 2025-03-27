@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 [DefaultExecutionOrder(-999)]
 public class GizmoQueue : MonoBehaviour
@@ -41,7 +42,7 @@ public class GizmoQueue : MonoBehaviour
         public bool ragdollRelative;
     }
     
-    [SerializeField] private RagdollAverages ragdollAverages;
+    [SerializeField] private RagdollHelper ragdollHelper;
     
     private static List<GizmoDrawRequest> fixedUpdateRequests = new ();
     
@@ -111,7 +112,7 @@ public class GizmoQueue : MonoBehaviour
         Vector3 ragdollRelativePosition = default;
         if (Application.isPlaying)
         {
-            ragdollRelativePosition = ragdollAverages.AverageLinearVelocity * (Time.time - Time.fixedTime);
+            ragdollRelativePosition = ragdollHelper.AverageLinearVelocity * (Time.time - Time.fixedTime);
         }
 
         foreach (GizmoDrawRequest request in fixedUpdateRequests)

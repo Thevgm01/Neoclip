@@ -1,11 +1,12 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Serialization;
 
-public class NeoclipCameraController : NeoclipCharacterComponent
+public class NeoclipCameraController : MonoBehaviour
 {
     private enum LookMode { UP, FREE }
     
-    [SerializeField] private RagdollAverages ragdollAverages = null;
+    [SerializeField] private RagdollHelper ragdollHelper = null;
     
     [Space]
     [SerializeField] private float followSpeed = 5.0f;
@@ -56,7 +57,7 @@ public class NeoclipCameraController : NeoclipCharacterComponent
         }
     }
     
-    public override void Init()
+    public void Awake()
     {
         manualCameraAngles = transform.rotation.eulerAngles;
         
@@ -66,9 +67,9 @@ public class NeoclipCameraController : NeoclipCharacterComponent
         desiredRotation = currentRotation;
     }
 
-    public override void Tick()
+    public void LateUpdate()
     {
-        desiredPosition = ragdollAverages.AveragePosition;
+        desiredPosition = ragdollHelper.AveragePosition;
         currentPosition = Vector3.Lerp(currentPosition, desiredPosition, GenericUtils.ExpT(followSpeed));
 
         currentRotation = Quaternion.Slerp(currentRotation, desiredRotation, GenericUtils.ExpT(rotationSpeed));

@@ -1,11 +1,12 @@
 using System;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public class PanicEstimator : MonoBehaviour
 {
     [SerializeField] private Animator animator;
-    [SerializeField] private RagdollAverages ragdollAverages;
+    [SerializeField] private RagdollHelper ragdollHelper;
     [SerializeField] private float sphereCastRadius = 1.0f;
     [SerializeField] private LayerMask sphereCastLayers;
     [SerializeField] private int steps = 10;
@@ -19,18 +20,13 @@ public class PanicEstimator : MonoBehaviour
     {
         panicID = Animator.StringToHash("Panic");
     }
-
-    private void Update()
-    {
-        transform.position = ragdollAverages.AveragePosition;
-    }
     
     public float EstimateTimeToHit()
     {
         using (new IgnoreBackfacesTemporary())
         {
-            Vector3 position = ragdollAverages.AveragePosition;
-            Vector3 velocity = ragdollAverages.AverageLinearVelocity;
+            Vector3 position = ragdollHelper.AveragePosition;
+            Vector3 velocity = ragdollHelper.AverageLinearVelocity;
             float stepDeltaTime = panicAtImpactTime.keys[^1].time / steps;
             float timeToHit = -1.0f;
             
@@ -63,8 +59,8 @@ public class PanicEstimator : MonoBehaviour
             animator.SetFloat(
                 panicID,
                 Mathf.Max(
-                    panicAtImpactTime.Evaluate(timeToHit) * panicMultAtSpeed.Evaluate(ragdollAverages.AverageLinearVelocity.magnitude),
-                    panicAtAngularVelocity.Evaluate(ragdollAverages.AverageAngularVelocity.magnitude)));
+                    panicAtImpactTime.Evaluate(timeToHit) * panicMultAtSpeed.Evaluate(ragdollHelper.AverageLinearVelocity.magnitude),
+                    panicAtAngularVelocity.Evaluate(ragdollHelper.AverageAngularVelocity.magnitude)));
 
             return timeToHit;
         }

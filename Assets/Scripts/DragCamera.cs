@@ -1,9 +1,11 @@
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.Serialization;
 
-public class DragCamera : NeoclipCharacterComponent
+[RequireComponent(typeof(Camera))]
+public class DragCamera : MonoBehaviour
 {
-    [SerializeField] private RagdollAverages ragdollAverages;
+    [SerializeField] private RagdollHelper ragdollHelper;
     [SerializeField] private ComputeShader computeShader;
     [SerializeField] private float minSpeedForDrag = 1.0f;
     
@@ -19,7 +21,7 @@ public class DragCamera : NeoclipCharacterComponent
     private int[] pixelHits;
     private bool hasData;
     
-    public override void Init()
+    public void Awake()
     {
         dragCamera = GetComponent<Camera>();
         dragCamera.enabled = false;
@@ -34,26 +36,26 @@ public class DragCamera : NeoclipCharacterComponent
         
         // Set shader parameters
         computeKernel = computeShader.FindKernel("CSMain");
-        hitBuffer = new ComputeBuffer(ragdollAverages.NumBones, sizeof(int));
+        hitBuffer = new ComputeBuffer(ragdollHelper.NumBones, sizeof(int));
         computeShader.SetTexture(computeKernel, Shader.PropertyToID("InputTexture"), dragCamera.targetTexture);
         computeShader.SetBuffer(computeKernel, Shader.PropertyToID("ColorCounts"), hitBuffer);
 
-        pixelHits = new int[ragdollAverages.NumBones];
+        pixelHits = new int[ragdollHelper.NumBones];
     }
 
     private void MoveCamera()
     {
-        Quaternion rotation = Quaternion.LookRotation(-ragdollAverages.AverageLinearVelocity.normalized);
+        Quaternion rotation = Quaternion.LookRotation(-ragdollHelper.AverageLinearVelocity.normalized);
             
         transform.SetPositionAndRotation(
-            ragdollAverages.AveragePosition + rotation * new Vector3(0, 0, -dragCamera.orthographicSize), 
+            ragdollHelper.AveragePosition + rotation * new Vector3(0, 0, -dragCamera.orthographicSize), 
             rotation);
     }
 
     private void CalculateHitsPerColor()
     {
         // Create a buffer for color counts
-        hitBuffer.SetData(new int[ragdollAverages.NumBones]);
+        hitBuffer.SetData(new int[ragdollHelper.NumBones]);
 
         // Dispatch the compute shader
         int threadGroupsX = Mathf.CeilToInt(renderTextureDimensions.x / 8.0f);
@@ -72,7 +74,7 @@ public class DragCamera : NeoclipCharacterComponent
     
     public bool TryUpdateSurfaceAreas(float[] surfaceAreas)
     {
-        if (ragdollAverages.AverageLinearVelocity.sqrMagnitude >= minSpeedForDrag * minSpeedForDrag)
+        if (ragdollHelper.AverageLinearVelocity.sqrMagnitude >= minSpeedForDrag * minSpeedForDrag)
         {
             MoveCamera();
             RenderPipeline.SubmitRenderRequest(dragCamera, renderRequest);
@@ -81,7 +83,7 @@ public class DragCamera : NeoclipCharacterComponent
         
         if (hasData)
         {
-            for (int i = 0; i < ragdollAverages.NumBones; i++)
+            for (int i = 0; i < ragdollHelper.NumBones; i++)
             {
                 surfaceAreas[i] = pixelHits[i] * areaPerPixel;
             }

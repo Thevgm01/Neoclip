@@ -1,10 +1,11 @@
 using Unity.Jobs;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Serialization;
 
 public class NeoclipCharacterController : MonoBehaviour
 {
-    [SerializeField] private RagdollAverages ragdollAverages;
+    [SerializeField] private RagdollHelper ragdollHelper;
     [SerializeField] private DragCamera dragCamera;
     [SerializeField] private NeoclipCameraController cameraController;
     [SerializeField] private ActiveRagdoll activeRagdoll;
@@ -35,13 +36,8 @@ public class NeoclipCharacterController : MonoBehaviour
     
     private void Awake()
     {
-        ragdollAverages.Init();
-        dragCamera.Init();
-        cameraController.Init();
-        exitDirectionFinder.Init();
-        
-        boneSurfaceAreas = new float[ragdollAverages.NumBones];
-        boneClipStates = new bool[ragdollAverages.NumBones];
+        boneSurfaceAreas = new float[ragdollHelper.NumBones];
+        boneClipStates = new bool[ragdollHelper.NumBones];
         
         Cursor.visible = false;
         Cursor.lockState = CursorLockMode.Locked;
@@ -78,10 +74,10 @@ public class NeoclipCharacterController : MonoBehaviour
         bool anyBoneClipping = false;
         if (noclipInput || wasAnyClippingLastFrame)
         {
-            for (int i = 0; i < ragdollAverages.NumBones; i++)
+            for (int i = 0; i < ragdollHelper.NumBones; i++)
             {
                 boneClipStates[i] = ClippingUtils.CheckOrCastCollider(
-                    ragdollAverages.GetCollider(i),
+                    ragdollHelper.GetCollider(i),
                     noclipValidationCheckLayers.value,
                     shapecastValidationCheckLayers.value);
                 anyBoneClipping = anyBoneClipping || boneClipStates[i];
@@ -96,13 +92,13 @@ public class NeoclipCharacterController : MonoBehaviour
         Vector3 exitDirection = exitDirectionFinder.ExitDirection;
         if (anyBoneClipping)
         {
-            exitDirectionFinder.transform.position = ragdollAverages.AveragePosition;
+            exitDirectionFinder.transform.position = ragdollHelper.AveragePosition;
             exitDirectionFinder.ScheduleJobs();
         }
         
-        for (int i = 0; i < ragdollAverages.NumBones; i++)
+        for (int i = 0; i < ragdollHelper.NumBones; i++)
         {
-            Rigidbody rigidbody = ragdollAverages.GetRigidbody(i);
+            Rigidbody rigidbody = ragdollHelper.GetRigidbody(i);
             
             if (noclipInput && !wasAnyClippingLastFrame)
             {
@@ -163,13 +159,8 @@ public class NeoclipCharacterController : MonoBehaviour
         // Make the spheres look better in motion
         if (wasAnyClippingLastFrame)
         {
-            exitDirectionFinder.transform.position = ragdollAverages.AveragePosition;
+            exitDirectionFinder.transform.position = ragdollHelper.AveragePosition;
         }
 #endif
-    }
-    
-    private void LateUpdate()
-    {
-        cameraController.Tick();
     }
 }
