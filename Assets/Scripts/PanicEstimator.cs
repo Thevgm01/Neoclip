@@ -15,25 +15,6 @@ public class PanicEstimator : MonoBehaviour
     
     private int panicID;
     
-#if UNITY_EDITOR
-    private void OnDrawGizmosSelected()
-    {
-        Gizmos.color = Color.cyan;
-        if (Application.isPlaying)
-        {
-            float timeToHit = EstimateTimeToHit();
-            if (Selection.activeGameObject == this.gameObject)
-            {
-                Debug.Log(timeToHit);
-            }
-        }
-        else
-        {
-            Gizmos.DrawWireSphere(transform.position, sphereCastRadius);
-        }
-    }
-#endif
-    
     private void Awake()
     {
         panicID = Animator.StringToHash("Panic");
@@ -48,8 +29,12 @@ public class PanicEstimator : MonoBehaviour
             float stepDeltaTime = panicAtImpactTime.keys[^1].time / steps;
             float timeToHit = -1.0f;
             
-            //Gizmos.DrawWireSphere(position, sphereCastRadius);
-            
+            GizmoQueue.SubmitRequest(new GizmoQueue.GizmoDrawRequest
+            {
+                owner = transform, criteria = GizmoQueue.DrawCriteria.SELECTED_ANY, shape = GizmoQueue.Shape.WIRE_SPHERE,
+                position = position, color = Color.cyan, radius = sphereCastRadius
+            });
+                        
             for (int i = 0; i < steps; i++)
             {
                 float velocityMagnitude = velocity.magnitude;
@@ -57,13 +42,20 @@ public class PanicEstimator : MonoBehaviour
                 if (Physics.SphereCast(position, sphereCastRadius, velocityNormalized,
                         out RaycastHit hit, velocityMagnitude, sphereCastLayers.value))
                 {
-                    //Gizmos.color = Color.red;
-                    //Gizmos.DrawWireSphere(position + velocityNormalized * hit.distance, sphereCastRadius);
+                    GizmoQueue.SubmitRequest(new GizmoQueue.GizmoDrawRequest
+                    {
+                        owner = transform, criteria = GizmoQueue.DrawCriteria.SELECTED_ANY, shape = GizmoQueue.Shape.WIRE_SPHERE,
+                        position = position + velocityNormalized * hit.distance, color = Color.red, radius = sphereCastRadius
+                    });
                     timeToHit = i * stepDeltaTime + hit.distance / velocityMagnitude;
                     break;
                 }
                 
-                //Gizmos.DrawWireSphere(position + velocity, sphereCastRadius);
+                GizmoQueue.SubmitRequest(new GizmoQueue.GizmoDrawRequest
+                {
+                    owner = transform, criteria = GizmoQueue.DrawCriteria.SELECTED_ANY, shape = GizmoQueue.Shape.WIRE_SPHERE,
+                    position = position + velocity, color = Color.cyan, radius = sphereCastRadius
+                });
                 
                 position += velocity * stepDeltaTime;
                 velocity += Physics.gravity * stepDeltaTime;
