@@ -16,7 +16,7 @@ public class PanicEstimator : MonoBehaviour
     private int panicID;
     
 #if UNITY_EDITOR
-    private void OnDrawGizmos()
+    private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.cyan;
         if (Application.isPlaying)
@@ -39,7 +39,7 @@ public class PanicEstimator : MonoBehaviour
         panicID = Animator.StringToHash("Panic");
     }
     
-    private float EstimateTimeToHit()
+    public float EstimateTimeToHit()
     {
         using (new IgnoreBackfacesTemporary())
         {
@@ -48,7 +48,7 @@ public class PanicEstimator : MonoBehaviour
             float stepDeltaTime = panicAtImpactTime.keys[^1].time / steps;
             float timeToHit = -1.0f;
             
-            Gizmos.DrawWireSphere(position, sphereCastRadius);
+            //Gizmos.DrawWireSphere(position, sphereCastRadius);
             
             for (int i = 0; i < steps; i++)
             {
@@ -57,13 +57,13 @@ public class PanicEstimator : MonoBehaviour
                 if (Physics.SphereCast(position, sphereCastRadius, velocityNormalized,
                         out RaycastHit hit, velocityMagnitude, sphereCastLayers.value))
                 {
-                    Gizmos.color = Color.red;
-                    Gizmos.DrawWireSphere(position + velocityNormalized * hit.distance, sphereCastRadius);
+                    //Gizmos.color = Color.red;
+                    //Gizmos.DrawWireSphere(position + velocityNormalized * hit.distance, sphereCastRadius);
                     timeToHit = i * stepDeltaTime + hit.distance / velocityMagnitude;
                     break;
                 }
                 
-                Gizmos.DrawWireSphere(position + velocity, sphereCastRadius);
+                //Gizmos.DrawWireSphere(position + velocity, sphereCastRadius);
                 
                 position += velocity * stepDeltaTime;
                 velocity += Physics.gravity * stepDeltaTime;

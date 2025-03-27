@@ -51703,6 +51703,7 @@ MonoBehaviour:
   cameraController: {fileID: 330585548}
   activeRagdoll: {fileID: 2107269551}
   exitDirectionFinder: {fileID: 687353705}
+  panicEstimator: {fileID: 1772433200}
   applyGravity: 1
   maxMoveSpeed: 5
   moveAcceleration: 5

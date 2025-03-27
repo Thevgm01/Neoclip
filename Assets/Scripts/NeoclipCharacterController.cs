@@ -9,6 +9,7 @@ public class NeoclipCharacterController : MonoBehaviour
     [SerializeField] private NeoclipCameraController cameraController;
     [SerializeField] private ActiveRagdoll activeRagdoll;
     [SerializeField] private ExitDirectionFinder exitDirectionFinder;
+    [SerializeField] private PanicEstimator panicEstimator;
     
     [Space]
     [SerializeField] private bool applyGravity = true;
@@ -69,6 +70,8 @@ public class NeoclipCharacterController : MonoBehaviour
     private void FixedUpdate()
     {
         Vector3 movement = cameraController.GetCameraRelativeMoveVector(moveInput) * moveAcceleration;
+
+        panicEstimator.EstimateTimeToHit();
         
         bool shouldApplyDrag = dragCamera.TryUpdateSurfaceAreas(boneSurfaceAreas);
         
