@@ -14,9 +14,10 @@ public class NeoclipCharacterController : MonoBehaviour
     [SerializeField] private bool applyGravity = true;
     [SerializeField] private float maxMoveSpeed = 5.0f;
     [SerializeField] private float moveAcceleration = 1.0f;
-    [Tooltip("Don't collide with these layers while noclipping")]
-    [SerializeField] private LayerMask noclipLayers;
-    [SerializeField] private LayerMask shapecastLayers;
+    [SerializeField] private LayerNumber defaultLayer;
+    [SerializeField] private LayerNumber noclipLayer;
+    [SerializeField] private LayerMask noclipValidationCheckLayers;
+    [SerializeField] private LayerMask shapecastValidationCheckLayers;
 
     [Space]
     [SerializeField] private InputActionReference mouseMoveAction;
@@ -26,8 +27,6 @@ public class NeoclipCharacterController : MonoBehaviour
     private void SetNoclipInput(InputAction.CallbackContext context) => noclipInput = context.ReadValueAsButton();
     private Vector2 moveInput;
     private bool noclipInput;
-    
-    private int defaultIgnoreLayers;
     
     private float[] boneSurfaceAreas;
     private bool[] boneClipStates;
@@ -40,7 +39,6 @@ public class NeoclipCharacterController : MonoBehaviour
         cameraController.Init();
         exitDirectionFinder.Init();
         
-        defaultIgnoreLayers = ragdollAverages.GetCollider(0).excludeLayers.value;
         boneSurfaceAreas = new float[ragdollAverages.NumBones];
         boneClipStates = new bool[ragdollAverages.NumBones];
         
@@ -81,8 +79,8 @@ public class NeoclipCharacterController : MonoBehaviour
             {
                 boneClipStates[i] = ClippingUtils.CheckOrCastCollider(
                     ragdollAverages.GetCollider(i),
-                    noclipLayers.value,
-                    shapecastLayers.value);
+                    noclipValidationCheckLayers.value,
+                    shapecastValidationCheckLayers.value);
                 anyBoneClipping = anyBoneClipping || boneClipStates[i];
             }
         }
@@ -102,15 +100,14 @@ public class NeoclipCharacterController : MonoBehaviour
         for (int i = 0; i < ragdollAverages.NumBones; i++)
         {
             Rigidbody rigidbody = ragdollAverages.GetRigidbody(i);
-            Collider collider = ragdollAverages.GetCollider(i);
             
             if (noclipInput && !wasAnyClippingLastFrame)
             {
-                collider.excludeLayers = defaultIgnoreLayers ^ noclipLayers.value;
+                rigidbody.gameObject.layer = noclipLayer.value;
             }
             else if (!noclipInput && !anyBoneClipping)
             {
-                collider.excludeLayers = defaultIgnoreLayers;
+                rigidbody.gameObject.layer = defaultLayer.value;
             }
             
             Vector3 force = Vector3.zero;

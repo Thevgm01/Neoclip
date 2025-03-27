@@ -17,8 +17,7 @@ public class RagdollBuilder : MonoBehaviour
     public PhysicsMaterial physicsMaterial;
     public ConfigurableJoint defaultJoint;
     public LayerNumber defaultLayer;
-    public LayerMask defaultExcludeLayers;
-    
+        
     private UnityEngine.Object lastSelectedObject = null; // Double-clicking won't select the mirror
     private UnityEngine.Object mirrorBoneObject = null;
     
@@ -142,7 +141,6 @@ public class RagdollBuilder : MonoBehaviour
                     Undo.RecordObject(collider, $"Set colliders");
                     collider.enabled = true;
                     collider.sharedMaterial = physicsMaterial;
-                    collider.excludeLayers = defaultExcludeLayers;
                     collider.isTrigger = false;
 
                     for (int j = 1; j < colliders.Length; j++)
