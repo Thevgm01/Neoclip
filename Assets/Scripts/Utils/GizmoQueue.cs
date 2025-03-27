@@ -15,7 +15,7 @@ public class GizmoQueue : MonoBehaviour
         SELECTED_ANY,
         SELECTED_EXCLUSIVE
     }
-
+    
     public enum Shape
     {
         NULL,
@@ -24,43 +24,24 @@ public class GizmoQueue : MonoBehaviour
         SPHERE,
         WIRE_SPHERE,
     }
-
+    
     public struct GizmoDrawRequest
     {
         public Transform owner;
         public DrawCriteria criteria;
         public Shape shape;
         public Color color;
-        
-        private Transform _relativeTo;
-        private Vector3 _relativeToOriginalPosition;
-        public Transform relativeTo
-        {
-            get => _relativeTo;
-            set
-            {
-                _relativeTo = value;
-                if (value != null)
-                {
-                    _relativeToOriginalPosition = value.position;
-                }
-            }
-        }
-        
-        private Vector3 _position;
-        public Vector3 position
-        {
-            get => _relativeTo != null ? _position + _relativeTo.position - _relativeToOriginalPosition : _position;
-            set => _position = value;
-        }
-
+        public Vector3 position;
         public Vector3 size;
         public float radius
         {
             get => size.x;
             set => size.x = value;
         }
+        public bool ragdollRelative;
     }
+    
+    [SerializeField] private RagdollAverages ragdollAverages;
     
     private static List<GizmoDrawRequest> fixedUpdateRequests = new ();
     
@@ -90,9 +71,9 @@ public class GizmoQueue : MonoBehaviour
             if (request.criteria == default) request.criteria = lastRequest.criteria;
             if (request.shape == default) request.shape = lastRequest.shape;
             if (request.color == default) request.color = lastRequest.color;
-            if (request.relativeTo == null) request.relativeTo = lastRequest.relativeTo;
             if (request.position == default) request.position = lastRequest.position;
             if (request.size == default) request.size = lastRequest.size;
+            if (request.ragdollRelative == false) request.ragdollRelative = lastRequest.ragdollRelative;
             
             fixedUpdateRequests.Add(request);
         }
@@ -127,6 +108,12 @@ public class GizmoQueue : MonoBehaviour
     
     private void OnDrawGizmos()
     {
+        Vector3 ragdollRelativePosition = default;
+        if (Application.isPlaying)
+        {
+            ragdollRelativePosition = ragdollAverages.AverageLinearVelocity * (Time.time - Time.fixedTime);
+        }
+
         foreach (GizmoDrawRequest request in fixedUpdateRequests)
         {
             if (request.criteria == DrawCriteria.SELECTED_EXCLUSIVE && Selection.activeTransform != request.owner ||
@@ -137,15 +124,17 @@ public class GizmoQueue : MonoBehaviour
             {
                 Gizmos.color = request.color;
             }
-            
-            Debug.Log(request.position);
+
+            Vector3 position = request.ragdollRelative
+                ? request.position + ragdollRelativePosition
+                : request.position;
             
             switch (request.shape)
             {
-                case Shape.CUBE: Gizmos.DrawCube(request.position, request.size); break;
-                case Shape.WIRE_CUBE: Gizmos.DrawWireCube(request.position, request.size); break;
-                case Shape.SPHERE: Gizmos.DrawSphere(request.position, request.radius); break;
-                case Shape.WIRE_SPHERE: Gizmos.DrawWireSphere(request.position, request.radius); break;
+                case Shape.CUBE: Gizmos.DrawCube(position, request.size); break;
+                case Shape.WIRE_CUBE: Gizmos.DrawWireCube(position, request.size); break;
+                case Shape.SPHERE: Gizmos.DrawSphere(position, request.radius); break;
+                case Shape.WIRE_SPHERE: Gizmos.DrawWireSphere(position, request.radius); break;
             }
         }
     }

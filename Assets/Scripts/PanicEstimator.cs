@@ -36,8 +36,8 @@ public class PanicEstimator : MonoBehaviour
             
             GizmoQueue.SubmitRequest(new GizmoQueue.GizmoDrawRequest
             {
-                owner = transform, relativeTo = transform, criteria = GizmoQueue.DrawCriteria.SELECTED_ANY, shape = GizmoQueue.Shape.WIRE_SPHERE,
-                position = position, color = Color.cyan, radius = sphereCastRadius
+                owner = transform, criteria = GizmoQueue.DrawCriteria.SELECTED_ANY, shape = GizmoQueue.Shape.WIRE_SPHERE,
+                position = position, color = Color.cyan, radius = sphereCastRadius, ragdollRelative = true
             });
             
             for (int i = 0; i < steps; i++)
