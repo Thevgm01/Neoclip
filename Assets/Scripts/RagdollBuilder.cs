@@ -186,7 +186,7 @@ public class RagdollBuilder : MonoBehaviour
                         newJoint.axis = Vector3.back;
                         SetElbowParameters(newJoint);
                     }
-                    else if (nameLower.Contains("spine1"))
+                    else if (nameLower.Contains("spine"))
                     {
                         newJoint.angularXDrive = new JointDrive()
                         {

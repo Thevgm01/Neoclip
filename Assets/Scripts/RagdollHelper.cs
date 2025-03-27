@@ -25,6 +25,16 @@ public class RagdollHelper : MonoBehaviour
     public Vector3 AveragePosition { get; private set; }
     public Vector3 AverageLinearVelocity { get; private set; }
     public Vector3 AverageAngularVelocity { get; private set; }
+
+    [Serializable]
+    private struct PhysicsIgnoreCollisionPair
+    {
+        public Collider a;
+        public Collider b;
+    }
+    
+    [SerializeField] [Tooltip("Adjacent bones are already ignored, use this to add extras.")]
+    private PhysicsIgnoreCollisionPair[] additionalPhysicsIgnorePairs;
     
     private void Awake()
     {
@@ -46,6 +56,12 @@ public class RagdollHelper : MonoBehaviour
             
             transforms[i] = rigidbody.transform;
             colliders[i] = rigidbody.GetComponent<Collider>();
+        }
+        
+        for (int i = 0; i < additionalPhysicsIgnorePairs.Length; i++)
+        {
+            PhysicsIgnoreCollisionPair pair = additionalPhysicsIgnorePairs[i];
+            Physics.IgnoreCollision(pair.a, pair.b);
         }
     }
 
