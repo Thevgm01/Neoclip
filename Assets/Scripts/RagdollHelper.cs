@@ -5,18 +5,22 @@ public class RagdollHelper : MonoBehaviour
 {
     public float TotalMass { get; private set; }
     public int NumBones { get; private set; }
+    public int NumJoints { get; private set; }
 
     private Rigidbody[] rigidbodies;
     private Transform[] transforms;
     private Collider[] colliders;
+    private ConfigurableJoint[] joints;
 
     public Rigidbody[] Rigidbodies => (Rigidbody[])rigidbodies.Clone();
     public Transform[] Transforms => (Transform[])transforms.Clone();
     public Collider[] Colliders => (Collider[])colliders.Clone();
+    public ConfigurableJoint[] Joints => (ConfigurableJoint[])joints.Clone();
     
     public Rigidbody GetRigidbody(int index) => rigidbodies[index];
     public Transform GetTransform(int index) => transforms[index];
     public Collider GetCollider(int index) => colliders[index];
+    public ConfigurableJoint GetJoint(int index) => joints[index];
     
     public Vector3 AveragePosition { get; private set; }
     public Vector3 AverageLinearVelocity { get; private set; }
@@ -25,12 +29,15 @@ public class RagdollHelper : MonoBehaviour
     private void Awake()
     {
         DestroyImmediate(GetComponent<ConfigurableJoint>());
-        DestroyImmediate(GetComponent<Rigidbody>());
+        DestroyImmediate(GetComponent<Rigidbody>()); // Must come second because Rigidbody depends on ConfigurableJoint
         
         rigidbodies = GetComponentsInChildren<Rigidbody>();
         NumBones = rigidbodies.Length;
         transforms = new Transform[NumBones];
         colliders = new Collider[NumBones];
+        
+        joints = GetComponentsInChildren<ConfigurableJoint>();
+        NumJoints = joints.Length;
         
         for (int i = 0; i < NumBones; i++)
         {
@@ -38,7 +45,7 @@ public class RagdollHelper : MonoBehaviour
             TotalMass += rigidbody.mass;
             
             transforms[i] = rigidbody.transform;
-            colliders[i] = rigidbody.GetComponent<Collider>();;
+            colliders[i] = rigidbody.GetComponent<Collider>();
         }
     }
 

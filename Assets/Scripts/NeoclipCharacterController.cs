@@ -11,7 +11,8 @@ public class NeoclipCharacterController : MonoBehaviour
     [SerializeField] private ActiveRagdoll activeRagdoll;
     [SerializeField] private ExitDirectionFinder exitDirectionFinder;
     [SerializeField] private PanicEstimator panicEstimator;
-    
+    [SerializeField] private Animator animator;
+        
     [Space]
     [SerializeField] private bool applyGravity = true;
     [SerializeField] private float maxMoveSpeed = 5.0f;
@@ -25,11 +26,45 @@ public class NeoclipCharacterController : MonoBehaviour
     [SerializeField] private InputActionReference mouseMoveAction;
     [SerializeField] private InputActionReference moveAction;
     [SerializeField] private InputActionReference noclipAction;
-    private void SetMoveInput(InputAction.CallbackContext context) => moveInput = context.ReadValue<Vector2>();
-    private void SetNoclipInput(InputAction.CallbackContext context) => noclipInput = context.ReadValueAsButton();
+    [SerializeField] private InputActionReference bounceAction;
     private Vector2 moveInput;
     private bool noclipInput;
-    
+    private void SetMoveInput(InputAction.CallbackContext context) => moveInput = context.ReadValue<Vector2>();
+    private void SetNoclipInput(InputAction.CallbackContext context) => noclipInput = context.ReadValueAsButton();
+    private void SetBounceInput(InputAction.CallbackContext context)
+    {
+        bool enabled = context.ReadValueAsButton();
+        
+        if (enabled)
+        {
+            for (int i = 0; i < ragdollHelper.NumBones; i++)
+            {
+                Collider collider = ragdollHelper.GetCollider(i);
+                collider.material.bounciness = 1.0f;
+                collider.material.bounceCombine = PhysicsMaterialCombine.Maximum;
+            }
+            
+            for (int i = 0; i < ragdollHelper.NumJoints; i++)
+            {
+                ConfigurableJoint joint = ragdollHelper.GetJoint(i);
+                joint.angularXDrive = new JointDrive
+                {
+                    positionSpring = joint.angularXDrive.positionSpring * 2000.0f,
+                    positionDamper = joint.angularXDrive.positionDamper * 5000.0f,
+                    maximumForce = joint.angularXDrive.maximumForce,
+                    useAcceleration = joint.angularXDrive.useAcceleration
+                };
+                joint.angularYZDrive = new JointDrive
+                {
+                    positionSpring = joint.angularYZDrive.positionSpring * 2000.0f,
+                    positionDamper = joint.angularYZDrive.positionDamper * 5000.0f,
+                    maximumForce = joint.angularYZDrive.maximumForce,
+                    useAcceleration = joint.angularYZDrive.useAcceleration
+                };
+            }
+        }
+    }
+
     private float[] boneSurfaceAreas;
     private bool[] boneClipStates;
     private bool wasAnyClippingLastFrame = false;
@@ -51,6 +86,8 @@ public class NeoclipCharacterController : MonoBehaviour
         moveAction.action.canceled += SetMoveInput;
         noclipAction.action.performed += SetNoclipInput;
         noclipAction.action.canceled += SetNoclipInput;
+        bounceAction.action.performed += SetBounceInput;
+        bounceAction.action.canceled += SetBounceInput;
     }
 
     private void OnDisable()
@@ -61,6 +98,8 @@ public class NeoclipCharacterController : MonoBehaviour
         moveAction.action.canceled -= SetMoveInput;
         noclipAction.action.performed -= SetNoclipInput;
         noclipAction.action.canceled -= SetNoclipInput;
+        bounceAction.action.performed -= SetBounceInput;
+        bounceAction.action.canceled -= SetBounceInput;
     }
     
     private void FixedUpdate()
@@ -83,7 +122,7 @@ public class NeoclipCharacterController : MonoBehaviour
                 anyBoneClipping = anyBoneClipping || boneClipStates[i];
             }
         }
-
+        
         if (!exitDirectionFinder.MainJob.IsCompleted)
         {
             Debug.LogWarning("NeoclipCharacterController.FixedUpdate(): Had to wait for exitDirectionJob to complete!");
