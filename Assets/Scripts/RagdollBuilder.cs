@@ -174,17 +174,17 @@ public class RagdollBuilder : MonoBehaviour
                     
                     if (nameLower.Contains("leftleg") || nameLower.Contains("rightleg"))
                     {
-                        SetElbowParameters(newJoint);
+                        //SetElbowParameters(newJoint);
                     }
                     else if (nameLower.Contains("leftforearm"))
                     {
                         newJoint.axis = Vector3.forward;
-                        SetElbowParameters(newJoint);
+                        //SetElbowParameters(newJoint);
                     }
                     else if (nameLower.Contains("rightforearm"))
                     {
                         newJoint.axis = Vector3.back;
-                        SetElbowParameters(newJoint);
+                        //SetElbowParameters(newJoint);
                     }
                     else if (nameLower.Contains("spine"))
                     {
