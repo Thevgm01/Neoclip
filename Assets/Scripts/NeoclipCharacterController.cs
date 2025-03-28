@@ -150,9 +150,18 @@ public class NeoclipCharacterController : MonoBehaviour
         
         if (!exitDirectionFinder.MainJob.IsCompleted)
         {
-            Debug.LogWarning("NeoclipCharacterController.FixedUpdate(): Had to wait for exitDirectionJob to complete!");
+            double startTime = Time.realtimeSinceStartupAsDouble;
+            exitDirectionFinder.MainJob.Complete();
+            float timeDiffTruncated = (int)((Time.realtimeSinceStartupAsDouble - startTime) * 100) / 100.0f;
+            if (timeDiffTruncated > 0.0f)
+            {
+                Debug.LogWarning($"NeoclipCharacterController.FixedUpdate(): Had to wait {timeDiffTruncated}ms for exitDirectionJob to complete!");
+            }
         }
-        exitDirectionFinder.MainJob.Complete();
+        else
+        {
+            exitDirectionFinder.MainJob.Complete();
+        }
         Vector3 exitDirection = exitDirectionFinder.ExitDirection;
         if (anyBoneClipping)
         {
