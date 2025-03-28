@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public class RagdollHelper : MonoBehaviour
 {
@@ -33,14 +34,15 @@ public class RagdollHelper : MonoBehaviour
         public Collider b;
     }
     
+#if  UNITY_EDITOR
+    [FormerlySerializedAs("jointOverrideValues")] [SerializeField] private JointRotationValues jointRotationValues;
+#endif
+    
     [SerializeField] [Tooltip("Adjacent bones are already ignored, use this to add extras.")]
     private PhysicsIgnoreCollisionPair[] additionalPhysicsIgnorePairs;
     
     private void Awake()
     {
-        DestroyImmediate(GetComponent<ConfigurableJoint>());
-        DestroyImmediate(GetComponent<Rigidbody>()); // Must come second because Rigidbody depends on ConfigurableJoint
-        
         rigidbodies = GetComponentsInChildren<Rigidbody>();
         NumBones = rigidbodies.Length;
         transforms = new Transform[NumBones];
@@ -63,6 +65,8 @@ public class RagdollHelper : MonoBehaviour
             PhysicsIgnoreCollisionPair pair = additionalPhysicsIgnorePairs[i];
             Physics.IgnoreCollision(pair.a, pair.b);
         }
+        
+        Debug.Log($"Ragdoll mass is {TotalMass} kg.");
     }
 
     private void Update()
@@ -90,5 +94,12 @@ public class RagdollHelper : MonoBehaviour
         AveragePosition /= TotalMass;
         AverageLinearVelocity /= NumBones;
         AverageAngularVelocity /= NumBones;
+        
+#if UNITY_EDITOR
+        foreach (ConfigurableJoint joint in joints)
+        {
+            jointRotationValues.Override(joint);
+        }
+#endif
     }
 }

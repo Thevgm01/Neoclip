@@ -15,7 +15,6 @@ public class RagdollBuilder : MonoBehaviour
     public float initialMassMult = 1.0f;
     public Material dragMeshMaterial;
     public PhysicsMaterial physicsMaterial;
-    public ConfigurableJoint defaultJoint;
     public LayerNumber defaultLayer;
         
     private UnityEngine.Object lastSelectedObject = null; // Double-clicking won't select the mirror
@@ -90,18 +89,6 @@ public class RagdollBuilder : MonoBehaviour
             mirrorBoneObject = null;
         }
     }
-
-    private void SetElbowParameters(ConfigurableJoint joint)
-    {
-        SoftJointLimit jointLimit = new SoftJointLimit();
-        jointLimit.limit = 150.0f;
-
-        joint.angularXMotion = ConfigurableJointMotion.Limited;
-        joint.angularYMotion = ConfigurableJointMotion.Locked;
-        joint.angularZMotion = ConfigurableJointMotion.Locked;
-
-        joint.highAngularXLimit = jointLimit;
-    }
     
     public void BuildRagdoll()
     {
@@ -115,11 +102,6 @@ public class RagdollBuilder : MonoBehaviour
             {
                 Rigidbody rigidbody = rigidbodies[i];
                 GameObject gameObject = rigidbody.gameObject;
-
-                if (gameObject == this.gameObject)
-                {
-                    continue;
-                }
                 
                 gameObject.layer = defaultLayer.value;
                 
@@ -167,42 +149,11 @@ public class RagdollBuilder : MonoBehaviour
                 if (parentRigidbody && parentRigidbody.gameObject != this.gameObject)
                 {
                     ConfigurableJoint newJoint = Undo.AddComponent<ConfigurableJoint>(gameObject);
-                    GenericUtils.CopyConfigurableJointValues(defaultJoint, newJoint);
                     
                     newJoint.connectedBody = parentRigidbody;
-                    string nameLower = gameObject.name.ToLower();
-                    
-                    if (nameLower.Contains("leftleg") || nameLower.Contains("rightleg"))
-                    {
-                        //SetElbowParameters(newJoint);
-                    }
-                    else if (nameLower.Contains("leftforearm"))
-                    {
-                        newJoint.axis = Vector3.forward;
-                        //SetElbowParameters(newJoint);
-                    }
-                    else if (nameLower.Contains("rightforearm"))
-                    {
-                        newJoint.axis = Vector3.back;
-                        //SetElbowParameters(newJoint);
-                    }
-                    else if (nameLower.Contains("spine"))
-                    {
-                        newJoint.angularXDrive = new JointDrive()
-                        {
-                            positionSpring = newJoint.angularXDrive.positionSpring * 3.0f,
-                            positionDamper = newJoint.angularXDrive.positionDamper * 3.0f,
-                            maximumForce = newJoint.angularXDrive.maximumForce,
-                            useAcceleration = newJoint.angularXDrive.useAcceleration
-                        };
-                        newJoint.angularYZDrive = new JointDrive()
-                        {
-                            positionSpring = newJoint.angularYZDrive.positionSpring * 3.0f,
-                            positionDamper = newJoint.angularYZDrive.positionDamper * 3.0f,
-                            maximumForce = newJoint.angularXDrive.maximumForce,
-                            useAcceleration = newJoint.angularYZDrive.useAcceleration
-                        };
-                    }
+                    newJoint.xMotion = ConfigurableJointMotion.Locked;
+                    newJoint.yMotion = ConfigurableJointMotion.Locked;
+                    newJoint.zMotion = ConfigurableJointMotion.Locked;
                 }
 
                 // Create and add the DragMesh
