@@ -162,15 +162,23 @@ public static class ColliderUtils
             case CapsuleCollider capsuleCollider:
 	            for (int i = 0; i < vertices.Length; i++)
 	            {
-		            if (oldMesh.vertices[i].y > 0)
+		            Vector3 vertex =
+			            capsuleCollider.radius * 2.0f * (oldMesh.vertices[i] + Mathf.Sign(oldMesh.vertices[i].y) * Vector3.down) +
+			            Mathf.Sign(oldMesh.vertices[i].y) * capsuleCollider.height * 0.5f * Vector3.up;
+					
+		            // Shuffle the coordinates around based on the capsule's direction
+		            switch (capsuleCollider.direction)
 		            {
-			            vertices[i] = capsuleCollider.radius * 2.0f * (oldMesh.vertices[i] + Vector3.down) + 
-			                          Vector3.up * capsuleCollider.height / 2.0f + capsuleCollider.center;
+			            case 0:
+				            vertices[i] = new Vector3(vertex.y, vertex.z, vertex.x) + capsuleCollider.center;
+				            break;
+			            case 1:
+				            vertices[i] = new Vector3(vertex.x, vertex.y, vertex.z) + capsuleCollider.center;
+				            break;
+			            case 2:
+				            vertices[i] = new Vector3(vertex.z, vertex.x, vertex.y) + capsuleCollider.center;
+				            break;
 		            }
-		            else
-		            {
-			            vertices[i] = capsuleCollider.radius * 2.0f * (oldMesh.vertices[i] + Vector3.up) +
-			                          Vector3.down * capsuleCollider.height / 2.0f + capsuleCollider.center;		            }
 	            }
 	            break;
             case SphereCollider sphereCollider:
