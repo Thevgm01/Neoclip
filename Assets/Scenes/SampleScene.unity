@@ -48692,8 +48692,22 @@ MonoBehaviour:
     rotationDriveMode: 1
     positionSpring: 100
     positionDamper: 10
-    maximumForce: 10000
+    maximumForce: 1e+24
     useAcceleration: 0
+  - jointsToOverride:
+    - {fileID: 7816430064958080320}
+    - {fileID: 7281004789041730563}
+    - {fileID: 6285725668928583492}
+    - {fileID: 7609611823616312837}
+    - {fileID: 8544519440053323232}
+    - {fileID: 2965598499931853126}
+    - {fileID: 6504577975484246827}
+    - {fileID: 7632958268160955531}
+    rotationDriveMode: 1
+    positionSpring: 100000
+    positionDamper: 2500
+    maximumForce: 1e+24
+    useAcceleration: 1
   additionalPhysicsIgnorePairs:
   - main: {fileID: 7537949277230187908}
     ignores:
