@@ -55,6 +55,15 @@ public static class GenericUtils
 	    }
 	    return false;
     }
+
+    public static T GetOrAddComponent<T>(this GameObject gameObject) where T : Component
+    {
+	    if (gameObject.TryGetComponent(out T component))
+	    {
+		    return component;
+	    }
+	    return gameObject.AddComponent<T>();
+    }
     
     public static void CopyConfigurableJointValues(ConfigurableJoint source, ConfigurableJoint target)
     {
