@@ -30,8 +30,8 @@ public class RagdollHelper : MonoBehaviour
     [Serializable]
     private struct PhysicsIgnoreCollisionPair
     {
-        public Collider a;
-        public Collider b;
+        public Collider main;
+        public Collider[] ignores;
     }
     
 #if  UNITY_EDITOR
@@ -62,8 +62,10 @@ public class RagdollHelper : MonoBehaviour
         
         for (int i = 0; i < additionalPhysicsIgnorePairs.Length; i++)
         {
-            PhysicsIgnoreCollisionPair pair = additionalPhysicsIgnorePairs[i];
-            Physics.IgnoreCollision(pair.a, pair.b);
+            foreach (Collider collider in additionalPhysicsIgnorePairs[i].ignores)
+            {
+                Physics.IgnoreCollision(additionalPhysicsIgnorePairs[i].main, collider);
+            }
         }
         
         Debug.Log($"Ragdoll mass is {TotalMass} kg.");
