@@ -1,4 +1,5 @@
 using Unity.Jobs;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Serialization;
@@ -23,15 +24,21 @@ public class NeoclipCharacterController : MonoBehaviour
     [SerializeField] private LayerMask shapecastValidationCheckLayers;
 
     [Space]
-    [SerializeField] private InputActionReference mouseMoveAction;
+    [SerializeField] private InputActionReference mouseLookAction;
     [SerializeField] private InputActionReference moveAction;
     [SerializeField] private InputActionReference noclipAction;
     [SerializeField] private InputActionReference bounceAction;
+    [SerializeField] private InputActionReference leftclickAction;
+    [SerializeField] private InputActionReference escapeAction;
     private Vector2 moveInput;
     private bool noclipInput;
-    private void SetMoveInput(InputAction.CallbackContext context) => moveInput = context.ReadValue<Vector2>();
-    private void SetNoclipInput(InputAction.CallbackContext context) => noclipInput = context.ReadValueAsButton();
-    private void SetBounceInput(InputAction.CallbackContext context)
+    private bool mouseIsInside = false;
+    private void OnMoveInput(InputAction.CallbackContext context) => moveInput = context.ReadValue<Vector2>();
+    private void OnNoclipInput(InputAction.CallbackContext context)
+    {
+        noclipInput = context.ReadValueAsButton();
+    }
+    private void OnBounceInput(InputAction.CallbackContext context)
     {
         bool enabled = context.ReadValueAsButton();
         
@@ -64,7 +71,37 @@ public class NeoclipCharacterController : MonoBehaviour
             }
         }
     }
-
+    
+    private void OnLeftclickInput(InputAction.CallbackContext context)
+    {
+        if (!mouseIsInside)
+        {
+            moveAction.action.performed += OnMoveInput; moveAction.action.canceled += OnMoveInput;
+            noclipAction.action.performed += OnNoclipInput; noclipAction.action.canceled += OnNoclipInput;
+            bounceAction.action.performed += OnBounceInput; bounceAction.action.canceled += OnBounceInput;
+            cameraController.BindMouseLook(mouseLookAction, true);
+            mouseIsInside = true;
+        }
+    }
+    
+    private void OnEscapeInput(InputAction.CallbackContext context)
+    {
+        if (mouseIsInside)
+        {
+            moveAction.action.performed -= OnMoveInput; moveAction.action.canceled -= OnMoveInput;
+            noclipAction.action.performed -= OnNoclipInput; noclipAction.action.canceled -= OnNoclipInput;
+            bounceAction.action.performed -= OnBounceInput; bounceAction.action.canceled -= OnBounceInput;
+            cameraController.BindMouseLook(mouseLookAction, false);
+            mouseIsInside = false;
+        }
+#if UNITY_EDITOR
+        else
+        {
+            EditorApplication.isPaused = true;
+        }
+#endif
+    }
+    
     private float[] boneSurfaceAreas;
     private bool[] boneClipStates;
     private bool wasAnyClippingLastFrame = false;
@@ -80,26 +117,14 @@ public class NeoclipCharacterController : MonoBehaviour
     
     private void OnEnable()
     {
-        mouseMoveAction.action.performed += cameraController.ApplyMouseInput;
-        //mouseMoveAction.action.canceled += cameraController.ApplyMouseInput;
-        moveAction.action.performed += SetMoveInput;
-        moveAction.action.canceled += SetMoveInput;
-        noclipAction.action.performed += SetNoclipInput;
-        noclipAction.action.canceled += SetNoclipInput;
-        bounceAction.action.performed += SetBounceInput;
-        bounceAction.action.canceled += SetBounceInput;
+        leftclickAction.action.performed += OnLeftclickInput;
+        escapeAction.action.performed += OnEscapeInput;
     }
-
+    
     private void OnDisable()
     {
-        mouseMoveAction.action.performed -= cameraController.ApplyMouseInput;
-        //mouseMoveAction.action.canceled -= cameraController.ApplyMouseInput;
-        moveAction.action.performed -= SetMoveInput;
-        moveAction.action.canceled -= SetMoveInput;
-        noclipAction.action.performed -= SetNoclipInput;
-        noclipAction.action.canceled -= SetNoclipInput;
-        bounceAction.action.performed -= SetBounceInput;
-        bounceAction.action.canceled -= SetBounceInput;
+        leftclickAction.action.performed -= OnLeftclickInput;
+        escapeAction.action.performed -= OnEscapeInput;
     }
     
     private void FixedUpdate()

@@ -17,6 +17,8 @@ public class NeoclipCameraController : MonoBehaviour
     [SerializeField] private float rotationSpeed = 30.0f;
     [SerializeField] [Range(0, 1)] private float skewStrength = 0.5f;
 
+    private bool mouseLooking = false;
+    
     private Vector3 manualCameraAngles = Vector3.zero;
     
     private Vector3 currentPosition = Vector3.zero;
@@ -24,6 +26,13 @@ public class NeoclipCameraController : MonoBehaviour
     private Quaternion currentRotation = Quaternion.identity;
     private Quaternion desiredRotation = Quaternion.identity;
 
+    public void BindMouseLook(InputActionReference mouseLookAction, bool value)
+    {
+        if (value && !mouseLooking) mouseLookAction.action.performed += ApplyMouseInput;
+        else if (!value && mouseLooking) mouseLookAction.action.performed -= ApplyMouseInput;
+        mouseLooking = value;
+    }
+    
     public Vector3 GetCameraRelativeMoveVector(Vector2 moveInput)
     {
         switch (lookMode)
@@ -38,7 +47,7 @@ public class NeoclipCameraController : MonoBehaviour
         }
     }
 
-    public void ApplyMouseInput(InputAction.CallbackContext context)
+    private void ApplyMouseInput(InputAction.CallbackContext context)
     {
         Vector2 delta = context.ReadValue<Vector2>() * mouseSensitivity;
         
@@ -57,7 +66,7 @@ public class NeoclipCameraController : MonoBehaviour
         }
     }
     
-    public void Awake()
+    private void Awake()
     {
         manualCameraAngles = transform.rotation.eulerAngles;
         
@@ -67,7 +76,7 @@ public class NeoclipCameraController : MonoBehaviour
         desiredRotation = currentRotation;
     }
 
-    public void LateUpdate()
+    private void LateUpdate()
     {
         desiredPosition = ragdollHelper.AveragePosition;
         currentPosition = Vector3.Lerp(currentPosition, desiredPosition, GenericUtils.ExpT(followSpeed));
