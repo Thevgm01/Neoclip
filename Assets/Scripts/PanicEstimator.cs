@@ -41,7 +41,7 @@ public class PanicEstimator : MonoBehaviour
                 float velocityMagnitude = velocity.magnitude;
                 Vector3 velocityNormalized = velocity / velocityMagnitude;
                 if (Physics.SphereCast(position, sphereCastRadius, velocityNormalized,
-                        out RaycastHit hit, velocityMagnitude, sphereCastLayers.value))
+                        out RaycastHit hit, velocityMagnitude * stepDeltaTime, sphereCastLayers.value))
                 {
                     GizmoAnywhere.RepeatRequest(new GizmoAnywhere.GizmoDrawRequest
                         { position = position + velocityNormalized * hit.distance, color = Color.red });
@@ -49,11 +49,11 @@ public class PanicEstimator : MonoBehaviour
                     break;
                 }
                 
-                GizmoAnywhere.RepeatRequest(new GizmoAnywhere.GizmoDrawRequest
-                    { position = position + velocity, color = Color.cyan });
-                
                 position += velocity * stepDeltaTime;
                 velocity += Physics.gravity * stepDeltaTime;
+                
+                GizmoAnywhere.RepeatRequest(new GizmoAnywhere.GizmoDrawRequest
+                    { position = position, color = Color.cyan });
             }
             
             animator.SetFloat(
@@ -61,7 +61,7 @@ public class PanicEstimator : MonoBehaviour
                 Mathf.Max(
                     panicAtImpactTime.Evaluate(timeToHit) * panicMultAtSpeed.Evaluate(ragdollHelper.AverageLinearVelocity.magnitude),
                     panicAtAngularVelocity.Evaluate(ragdollHelper.AverageAngularVelocity.magnitude)));
-
+            
             return timeToHit;
         }
     }
