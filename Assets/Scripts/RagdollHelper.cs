@@ -35,7 +35,7 @@ public class RagdollHelper : MonoBehaviour
     }
     
 #if  UNITY_EDITOR
-    [FormerlySerializedAs("jointOverrideValues")] [SerializeField] private JointRotationValues jointRotationValues;
+    [SerializeField] private JointRotationValues[] jointRotationValues;
 #endif
     
     [SerializeField] [Tooltip("Adjacent bones are already ignored, use this to add extras.")]
@@ -96,9 +96,13 @@ public class RagdollHelper : MonoBehaviour
         AverageAngularVelocity /= NumBones;
         
 #if UNITY_EDITOR
-        foreach (ConfigurableJoint joint in joints)
+        foreach (JointRotationValues values in jointRotationValues)
         {
-            jointRotationValues.Override(joint);
+            ConfigurableJoint[] jointsToOverride = values.jointsToOverride.Length > 0 ? values.jointsToOverride : this.joints;
+            foreach (ConfigurableJoint joint in jointsToOverride)
+            {
+                values.Override(joint);
+            }
         }
 #endif
     }

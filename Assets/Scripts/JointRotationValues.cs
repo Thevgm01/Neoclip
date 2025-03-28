@@ -4,6 +4,8 @@ using UnityEngine;
 [Serializable]
 public class JointRotationValues
 {
+    public ConfigurableJoint[] jointsToOverride;
+    
     public RotationDriveMode rotationDriveMode;
     public float positionSpring = 0.0f;
     public float positionDamper = 0.0f;
