@@ -16,6 +16,7 @@ public class NeoclipCharacterController : MonoBehaviour
         
     [Space]
     [SerializeField] private bool applyGravity = true;
+    [SerializeField] private float angularSlowdown = 0.1f;
     [SerializeField] private float maxMoveSpeed = 5.0f;
     [SerializeField] private float moveAcceleration = 1.0f;
     [SerializeField] private LayerNumber defaultLayer;
@@ -221,6 +222,11 @@ public class NeoclipCharacterController : MonoBehaviour
             
             rigidbody.AddForce(force, ForceMode.Force);
             rigidbody.AddForce(acceleration, ForceMode.Acceleration);
+            
+            if (angularSlowdown > 0.0f)
+            {
+                rigidbody.angularVelocity = Vector3.RotateTowards(rigidbody.angularVelocity, Vector3.zero, 0.0f, angularSlowdown);
+            }
         }
         
         wasAnyClippingLastFrame = anyBoneClipping;
