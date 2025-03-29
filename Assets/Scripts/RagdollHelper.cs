@@ -100,10 +100,14 @@ public class RagdollHelper : MonoBehaviour
 #if UNITY_EDITOR
         foreach (JointRotationValues values in jointRotationValues)
         {
-            ConfigurableJoint[] jointsToOverride = values.jointsToOverride.Length > 0 ? values.jointsToOverride : this.joints;
-            foreach (ConfigurableJoint joint in jointsToOverride)
+            if (values.enabled)
             {
-                values.Override(joint);
+                ConfigurableJoint[] jointsToOverride =
+                    values.jointsToOverride.Length > 0 ? values.jointsToOverride : this.joints;
+                foreach (ConfigurableJoint joint in jointsToOverride)
+                {
+                    values.Override(joint);
+                }
             }
         }
 #endif

@@ -4,6 +4,8 @@ using UnityEngine;
 [Serializable]
 public class JointRotationValues
 {
+    public bool enabled = true;
+    
     public ConfigurableJoint[] jointsToOverride;
     
     public RotationDriveMode rotationDriveMode;

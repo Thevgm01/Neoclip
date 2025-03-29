@@ -48688,13 +48688,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   jointRotationValues:
-  - jointsToOverride: []
+  - enabled: 1
+    jointsToOverride: []
     rotationDriveMode: 1
     positionSpring: 100
     positionDamper: 10
     maximumForce: 1e+24
     useAcceleration: 0
-  - jointsToOverride:
+  - enabled: 0
+    jointsToOverride:
     - {fileID: 7816430064958080320}
     - {fileID: 7281004789041730563}
     - {fileID: 6285725668928583492}
@@ -48708,6 +48710,16 @@ MonoBehaviour:
     positionDamper: 2500
     maximumForce: 1e+24
     useAcceleration: 1
+  - enabled: 1
+    jointsToOverride:
+    - {fileID: 1491201754901098362}
+    - {fileID: 6292251943141489230}
+    - {fileID: 5020538441653053304}
+    rotationDriveMode: 1
+    positionSpring: 200
+    positionDamper: 20
+    maximumForce: 1e+24
+    useAcceleration: 0
   additionalPhysicsIgnorePairs:
   - main: {fileID: 7537949277230187908}
     ignores:
