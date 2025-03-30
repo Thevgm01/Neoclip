@@ -47764,7 +47764,7 @@ MonoBehaviour:
   panicEstimator: {fileID: 2107269552}
   animator: {fileID: 1772433199}
   applyGravity: 1
-  angularSlowdown: 0.1
+  angularSlowdown: 0
   maxMoveSpeed: 5
   moveAcceleration: 5
   defaultLayer:
