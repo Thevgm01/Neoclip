@@ -14,8 +14,8 @@ TagManager:
   - UI
   - Character Default
   - Character Noclip
-  - 
-  - Default IgnoreBackfaceCheck
+  - Backfaces
+  - IgnoreBackfaceCheck
   - 
   - 
   - 
