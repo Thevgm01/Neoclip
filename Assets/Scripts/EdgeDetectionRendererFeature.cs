@@ -100,7 +100,8 @@ public class EdgeDetectionRendererFeature : ScriptableRendererFeature
         }
 
         scriptablePass.Setup(settings, material);
-
+        scriptablePass.ConfigureInput(ScriptableRenderPassInput.Color | ScriptableRenderPassInput.Depth | ScriptableRenderPassInput.Normal);
+        
         renderer.EnqueuePass(scriptablePass);
     }
 }
