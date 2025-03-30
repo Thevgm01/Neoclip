@@ -231,15 +231,4 @@ public class NeoclipCharacterController : MonoBehaviour
         
         wasAnyClippingLastFrame = anyBoneClipping;
     }
-
-    private void Update()
-    {
-#if UNITY_EDITOR
-        // Make the spheres look better in motion
-        if (wasAnyClippingLastFrame)
-        {
-            exitDirectionFinder.transform.position = ragdollHelper.AveragePosition;
-        }
-#endif
-    }
 }
