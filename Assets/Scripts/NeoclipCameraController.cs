@@ -92,6 +92,8 @@ public class NeoclipCameraController : MonoBehaviour
             Shader.SetGlobalInteger("_NeoclipZWrite", 0);
             
             Shader.SetGlobalInteger("_NeoclipAlphaToMask", 0);
+            
+            Shader.SetGlobalInteger("_NeoclipIsClipping", 1);
         }
         
         else
@@ -110,6 +112,8 @@ public class NeoclipCameraController : MonoBehaviour
             Shader.SetGlobalInteger("_NeoclipZWrite", 1);
             
             Shader.SetGlobalInteger("_NeoclipAlphaToMask", 1);
+            
+            Shader.SetGlobalInteger("_NeoclipIsClipping", 0);
         }
     }
     

@@ -19,7 +19,6 @@ Shader "Unlit/STest"
         LOD 100
         Pass
         {
-            
             CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag
@@ -39,28 +38,36 @@ Shader "Unlit/STest"
                 float2 uv : TEXCOORD0;
                 UNITY_FOG_COORDS(1)
                 float4 vertex : SV_POSITION;
+                float3 worldSpacePosition : POSITION_WS;
             };
 
             sampler2D _MainTex;
             float4 _MainTex_ST;
             float4 _BaseColor;
-            float WTF;
-
+            int _NeoclipIsClipping;
+            
             v2f vert (appdata v)
             {
                 v2f o;
                 o.vertex = UnityObjectToClipPos(v.vertex);
+                o.worldSpacePosition = mul(v.vertex, unity_ObjectToWorld);
                 o.uv = TRANSFORM_TEX(v.uv, _MainTex);
                 UNITY_TRANSFER_FOG(o,o.vertex);
                 return o;
             }
-
+            
             fixed4 frag (v2f i) : SV_Target
             {
                 // sample the texture
                 fixed4 col = tex2D(_MainTex, i.uv) * _BaseColor;
                 // apply fog
                 UNITY_APPLY_FOG(i.fogCoord, col);
+                
+                if (_NeoclipIsClipping)
+                {
+                    float cameraDistance = distance(_WorldSpaceCameraPos, i.worldSpacePosition);
+                    col.a = min(2.0 / cameraDistance, 0.5);
+                }
                 return col;
             }
             ENDCG
