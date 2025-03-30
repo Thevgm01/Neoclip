@@ -46,7 +46,7 @@ public class ActiveRagdoll : MonoBehaviour
         foreach (TreeNode<BonePair> leafNode in bonePairTree.Leaves())
         {
             TreeNode<BonePair> node = leafNode;
-            while (node != null && node.value.DrivenBone.GetComponent<Rigidbody>() == null)
+            while (node != null && node.value.RagdollBone.GetComponent<Rigidbody>() == null)
             {
                 basicBonePairs.Add(node.value);
                 node = node.parent;

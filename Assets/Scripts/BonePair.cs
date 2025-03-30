@@ -3,15 +3,15 @@ using UnityEngine;
 public class BonePair
 {
     public Transform AnimatedBone { get; }
-    public Transform DrivenBone { get; }
+    public Transform RagdollBone { get; }
         
-    public BonePair(Transform animatedBone, Transform drivenBone)
+    public BonePair(Transform animatedBone, Transform ragdollBone)
     {
         this.AnimatedBone = animatedBone;
-        this.DrivenBone = drivenBone;
+        this.RagdollBone = ragdollBone;
     }
         
-    public BonePair(BonePair other) : this(other.AnimatedBone, other.DrivenBone) {}
+    public BonePair(BonePair other) : this(other.AnimatedBone, other.RagdollBone) {}
         
     public override string ToString()
     {
@@ -21,15 +21,15 @@ public class BonePair
     public override bool Equals(object obj)
     {
         BonePair other = obj as BonePair;
-        return other != null && other.AnimatedBone == AnimatedBone && other.DrivenBone == DrivenBone;
+        return other != null && other.AnimatedBone == AnimatedBone && other.RagdollBone == RagdollBone;
     }
 
     public override int GetHashCode()
     {
-        return AnimatedBone.GetHashCode() ^ DrivenBone.GetHashCode();
+        return AnimatedBone.GetHashCode() ^ RagdollBone.GetHashCode();
     }
         
-    public virtual void SetRotation() => DrivenBone.localRotation = AnimatedBone.localRotation;
+    public virtual void SetRotation() => RagdollBone.localRotation = AnimatedBone.localRotation;
 }
 
 public class JointBonePair : BonePair
@@ -48,7 +48,7 @@ public class JointBonePair : BonePair
         var up = Vector3.Cross(forward, joint.axis).normalized;
         Quaternion worldToJointSpace = Quaternion.LookRotation(forward, up);
         jointToWorldSpace = Quaternion.Inverse(worldToJointSpace);
-        worldToStartSpace = DrivenBone.localRotation * worldToJointSpace;
+        worldToStartSpace = RagdollBone.localRotation * worldToJointSpace;
     }
 
     public override void SetRotation() =>
