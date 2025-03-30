@@ -151,4 +151,9 @@ public class NeoclipCameraController : MonoBehaviour
             wasClipping = isClipping;
         }
     }
+    
+    private void OnDestroy()
+    {
+        SetClipParameters(false);
+    }
 }
