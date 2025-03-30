@@ -29381,7 +29381,7 @@ GameObject:
   - component: {fileID: 721747842}
   - component: {fileID: 721747841}
   m_Layer: 0
-  m_Name: BottomCollider
+  m_Name: VoidCollider
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

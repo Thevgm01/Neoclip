@@ -15,6 +15,9 @@ public static class ClippingUtils
         Vector3.forward, Vector3.right, Vector3.back, Vector3.left,
         Vector3.down
     };
+
+    private static int voidColliderInstanceID;
+    public static void SetVoidCollider(Collider collider) => voidColliderInstanceID = collider.GetInstanceID();
     
     // Should automatically account for the ray not hitting anything, because the normal will be (0, 0, 0) and the dot product will thus be 0
     public static bool IsFrontface(this RaycastHit hit, Vector3 direction) => Vector3.Dot(hit.normal, direction) < DOT_THRESHOLD;
@@ -31,7 +34,7 @@ public static class ClippingUtils
         for (int i = 0; i < CastDirections.Length; i++)
         {
             if (Physics.Raycast(origin, CastDirections[i], out RaycastHit hit, MAX_DISTANCE, shapeCastLayerMask) &&
-                hit.IsBackface(CastDirections[i]) && ++backfaceHits >= MINIMUM_BACKFACES_TO_BE_INSIDE)
+                hit.IsBackface(CastDirections[i]) && ++backfaceHits >= MINIMUM_BACKFACES_TO_BE_INSIDE || hit.colliderInstanceID == voidColliderInstanceID)
             {
                 return true;
             }
@@ -56,7 +59,7 @@ public static class ClippingUtils
         for (int i = 0; i < CastDirections.Length; i++)
         {
             if (Physics.BoxCast(origin, halfExtents, CastDirections[i], out RaycastHit hit, orientation, MAX_DISTANCE, shapeCastLayerMask) &&
-                hit.IsBackface(CastDirections[i]) && ++backfaceHits >= MINIMUM_BACKFACES_TO_BE_INSIDE)
+                hit.IsBackface(CastDirections[i]) && ++backfaceHits >= MINIMUM_BACKFACES_TO_BE_INSIDE || hit.colliderInstanceID == voidColliderInstanceID)
             {
                 return true;
             }
@@ -83,7 +86,7 @@ public static class ClippingUtils
         for (int i = 0; i < CastDirections.Length; i++)
         {
             if (Physics.CapsuleCast(point1, point2, capsuleCollider.radius, CastDirections[i], out RaycastHit hit, MAX_DISTANCE, shapeCastLayerMask) &&
-                hit.IsBackface(CastDirections[i]) && ++backfaceHits >= MINIMUM_BACKFACES_TO_BE_INSIDE)
+                hit.IsBackface(CastDirections[i]) && ++backfaceHits >= MINIMUM_BACKFACES_TO_BE_INSIDE || hit.colliderInstanceID == voidColliderInstanceID)
             {
                 return true;
             }
@@ -105,7 +108,7 @@ public static class ClippingUtils
         for (int i = 0; i < CastDirections.Length; i++)
         {
             if (Physics.SphereCast(origin, sphereCollider.radius, CastDirections[i], out RaycastHit hit, MAX_DISTANCE, shapeCastLayerMask) &&
-                hit.IsBackface(CastDirections[i]) && ++backfaceHits >= MINIMUM_BACKFACES_TO_BE_INSIDE)
+                hit.IsBackface(CastDirections[i]) && ++backfaceHits >= MINIMUM_BACKFACES_TO_BE_INSIDE || hit.colliderInstanceID == voidColliderInstanceID)
             {
                 return true;
             }
