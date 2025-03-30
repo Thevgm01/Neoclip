@@ -49,13 +49,16 @@ public class CityBackfaceifier : MonoBehaviour
     
     void Awake()
     {
-        GameObject clone = Instantiate(city, city.transform.parent);
-        clone.transform.SetSiblingIndex(city.transform.GetSiblingIndex() + 1);
-        
-        materialUpdateDictionary = new Dictionary<Material, Material>();
-        
-        Recurse(clone.transform);
-        
+        if (this.enabled)
+        {
+            GameObject clone = Instantiate(city, city.transform.parent);
+            clone.transform.SetSiblingIndex(city.transform.GetSiblingIndex() + 1);
+
+            materialUpdateDictionary = new Dictionary<Material, Material>();
+
+            Recurse(clone.transform);
+        }
+
         Destroy(this);
     }
 }
