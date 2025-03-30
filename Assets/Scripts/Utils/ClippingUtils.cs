@@ -19,7 +19,27 @@ public static class ClippingUtils
     // Should automatically account for the ray not hitting anything, because the normal will be (0, 0, 0) and the dot product will thus be 0
     public static bool IsFrontface(this RaycastHit hit, Vector3 direction) => Vector3.Dot(hit.normal, direction) < DOT_THRESHOLD;
     public static bool IsBackface(this RaycastHit hit, Vector3 direction) => Vector3.Dot(hit.normal, direction) > DOT_THRESHOLD;
+
+    public static bool CheckOrCastRay(Vector3 origin, float radius, int shapeCheckLayerMask, int shapeCastLayerMask)
+    {
+        if (Physics.CheckSphere(origin, Mathf.Max(radius, 0.00001f), shapeCastLayerMask))
+        {
+            return true;
+        }
         
+        int backfaceHits = 0;
+        for (int i = 0; i < CastDirections.Length; i++)
+        {
+            if (Physics.Raycast(origin, CastDirections[i], out RaycastHit hit, MAX_DISTANCE, shapeCastLayerMask) &&
+                hit.IsBackface(CastDirections[i]) && ++backfaceHits >= MINIMUM_BACKFACES_TO_BE_INSIDE)
+            {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
     public static bool CheckOrCastBox(BoxCollider boxCollider, int shapeCheckLayerMask, int shapeCastLayerMask)
     {
         Transform boxTransform = boxCollider.transform;

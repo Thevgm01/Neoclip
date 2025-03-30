@@ -7,8 +7,10 @@ public class NeoclipCameraController : MonoBehaviour
     private enum LookMode { UP, FREE }
     
     [SerializeField] private RagdollHelper ragdollHelper = null;
-    
+
     [Space]
+    [SerializeField] private LayerNumber checkLayer;
+    [SerializeField] private LayerNumber castLayer;
     [SerializeField] private float followSpeed = 5.0f;
     [SerializeField] private float followDistance = 3.0f;
     [Space]
@@ -17,6 +19,8 @@ public class NeoclipCameraController : MonoBehaviour
     [SerializeField] private float rotationSpeed = 30.0f;
     [SerializeField] [Range(0, 1)] private float skewStrength = 0.5f;
 
+    private Camera camera;
+    private bool wasClipping = false;
     private bool mouseLooking = false;
     
     private Vector3 manualCameraAngles = Vector3.zero;
@@ -65,9 +69,26 @@ public class NeoclipCameraController : MonoBehaviour
                 break;
         }
     }
+
+    private void SetClipParameters(bool isClipping)
+    {
+        if (isClipping)
+        {
+            camera.clearFlags = CameraClearFlags.SolidColor;
+            camera.backgroundColor = Color.black;
+            Shader.SetGlobalInteger("_NeoclipCullMode", (int)UnityEngine.Rendering.CullMode.Off);
+        }
+        else
+        {
+            camera.clearFlags = CameraClearFlags.Skybox;
+            Shader.SetGlobalInteger("_NeoclipCullMode", (int)UnityEngine.Rendering.CullMode.Back);
+        }
+    }
     
     private void Awake()
     {
+        camera = GetComponent<Camera>();
+        SetClipParameters(wasClipping);
         manualCameraAngles = transform.rotation.eulerAngles;
         
         currentPosition = transform.position;
@@ -75,7 +96,7 @@ public class NeoclipCameraController : MonoBehaviour
         currentRotation = transform.rotation;
         desiredRotation = currentRotation;
     }
-
+    
     private void LateUpdate()
     {
         desiredPosition = ragdollHelper.AveragePosition;
@@ -94,5 +115,12 @@ public class NeoclipCameraController : MonoBehaviour
         //Quaternion skewedRotation = Quaternion.Slerp(currentRotation, skew, skewStrength);
 
         transform.SetPositionAndRotation(offsetPosition, currentRotation);
+
+        bool isClipping = ClippingUtils.CheckOrCastRay(offsetPosition, 0.0f, checkLayer.value, castLayer.value);
+        if (isClipping != wasClipping)
+        {
+            SetClipParameters(isClipping);
+            wasClipping = isClipping;
+        }
     }
 }
