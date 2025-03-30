@@ -11,7 +11,11 @@ Shader "Unlit/STest"
     SubShader
     {
         Cull [_NeoclipCullMode]
-        Tags { "RenderType"="Opaque" }
+        Blend [_NeoclipBlendTarget] [_NeoclipBlendSourceFactor], [_NeoclipBlendDestinationFactor] [_NeoclipBlendDestinationAlpha]
+        ZTest [_NeoclipZTest]
+        ZWrite [_NeoclipZWrite]
+        AlphaToMask [_NeoclipAlphaToMask]
+        
         LOD 100
         Pass
         {

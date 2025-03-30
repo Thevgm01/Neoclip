@@ -69,19 +69,47 @@ public class NeoclipCameraController : MonoBehaviour
                 break;
         }
     }
-
+    
+    // The enum in UnityEngine.ShaderGraph is marked as internal, so I'm replicating it here
+    private enum ZTest { Less, Greater, LEqual, GEqual, Equal, NotEqual, Always }
+    
     private void SetClipParameters(bool isClipping)
     {
         if (isClipping)
         {
             camera.clearFlags = CameraClearFlags.SolidColor;
             camera.backgroundColor = Color.black;
+            
             Shader.SetGlobalInteger("_NeoclipCullMode", (int)UnityEngine.Rendering.CullMode.Off);
+            
+            Shader.SetGlobalInteger("_NeoclipBlendTarget", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            Shader.SetGlobalInteger("_NeoclipBlendSourceFactor", (int)UnityEngine.Rendering.BlendMode.One);
+            Shader.SetGlobalInteger("_NeoclipBlendDestinationFactor", (int)UnityEngine.Rendering.BlendMode.One);
+            Shader.SetGlobalInteger("_NeoclipBlendDestinationAlpha", (int)UnityEngine.Rendering.BlendMode.One);
+            
+            Shader.SetGlobalInteger("_NeoclipZTest", (int)ZTest.Always);
+            
+            Shader.SetGlobalInteger("_NeoclipZWrite", 0);
+            
+            Shader.SetGlobalInteger("_NeoclipAlphaToMask", 0);
         }
+        
         else
         {
             camera.clearFlags = CameraClearFlags.Skybox;
+            
             Shader.SetGlobalInteger("_NeoclipCullMode", (int)UnityEngine.Rendering.CullMode.Back);
+            
+            Shader.SetGlobalInteger("_NeoclipBlendTarget", (int)UnityEngine.Rendering.BlendMode.One);
+            Shader.SetGlobalInteger("_NeoclipBlendSourceFactor", (int)UnityEngine.Rendering.BlendMode.Zero);
+            Shader.SetGlobalInteger("_NeoclipBlendDestinationFactor", (int)UnityEngine.Rendering.BlendMode.Zero);
+            Shader.SetGlobalInteger("_NeoclipBlendDestinationAlpha", (int)UnityEngine.Rendering.BlendMode.Zero);
+            
+            Shader.SetGlobalInteger("_NeoclipZTest", (int)ZTest.LEqual);
+            
+            Shader.SetGlobalInteger("_NeoclipZWrite", 1);
+            
+            Shader.SetGlobalInteger("_NeoclipAlphaToMask", 1);
         }
     }
     
