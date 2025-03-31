@@ -6,7 +6,7 @@ public static class ClippingUtils
 {
     public const float MAX_DISTANCE = 100.0f;
     public const float DOT_THRESHOLD = 0.0f;
-    public const int MINIMUM_BACKFACES_TO_BE_INSIDE = 3;
+    public const int MINIMUM_BACKFACES_TO_BE_INSIDE = 2;
 
     public const int NUM_CASTS = 6;
     public static readonly Vector3[] CastDirections =
