@@ -17,8 +17,8 @@ public class NeoclipCameraController : MonoBehaviour
     [SerializeField] private Vector2 mouseSensitivity = Vector2.one;
     [SerializeField] private float rotationSpeed = 30.0f;
     [SerializeField] [Range(0, 1)] private float skewStrength = 0.5f;
-
-    public Action OnMove;
+    
+    public event Action OnMove;
     
     private bool wasClipping = false;
     private bool mouseLooking = false;

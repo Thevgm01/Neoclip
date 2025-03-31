@@ -42,8 +42,8 @@ public class NeoclipCharacterController : MonoBehaviour
     private int noclipBufferFrames;
     private int animPanicID;
     
-    public Action OnNoclipStarted;
-    public Action OnNoclipStopped;
+    public event Action OnNoclipStarted;
+    public event Action OnNoclipStopped;
         
     private void OnMoveInput(InputAction.CallbackContext context) => moveInput = context.ReadValue<Vector2>();
     private void OnNoclipInput(InputAction.CallbackContext context)
