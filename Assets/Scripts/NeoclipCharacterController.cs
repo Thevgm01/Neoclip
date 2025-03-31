@@ -177,27 +177,29 @@ public class NeoclipCharacterController : MonoBehaviour
         
         // Test all bones to see if they're actively clipping
         bool anyBoneClipping = false;
+        bool anyBoneRayHit = false;
         bool allBonesClipping = true;
         if (desiredNoclipState || noclipBufferFrames > 0)
         {
             for (int i = 0; i < ragdollHelper.NumBones; i++)
             {
                 boneClipStates[i] = ClippingUtils.CheckColliderOrCastRaysDetailed(ragdollHelper.GetCollider(i));
-                bool isClipping = (boneClipStates[i] & ClippingUtils.ClipState.IsClipping) > 0;
-                anyBoneClipping = anyBoneClipping || isClipping;
-                allBonesClipping = allBonesClipping && isClipping;
+                anyBoneClipping = anyBoneClipping || (boneClipStates[i] & ClippingUtils.ClipState.IsClipping) > 0;
+                anyBoneRayHit = anyBoneRayHit || (boneClipStates[i] & ClippingUtils.ClipState.RayBackfaceMask) > 0;
+                allBonesClipping = allBonesClipping && (boneClipStates[i] & ClippingUtils.ClipState.IsClipping) > 0;
             }
         }
         
-        Debug.Log(boneClipStates[0]);
+        //Debug.Log(boneClipStates[0]);
         
         // Determine if we're "skating" along the ground, which we don't want
         float antiSkateVelocityDot = Vector3.Dot(ragdollHelper.AverageLinearVelocity, -Physics.gravity.normalized);
-        bool antiSkate = !desiredNoclipState && anyBoneClipping && !allBonesClipping && antiSkateVelocityDot > 0.0f && antiSkateVelocityDot < antiSkateVelocityThreshold;
+        bool antiSkate = !desiredNoclipState && anyBoneClipping && !anyBoneRayHit && !allBonesClipping && antiSkateVelocityDot > 0.0f && antiSkateVelocityDot < antiSkateVelocityThreshold;
         if (antiSkate)
         {
             Debug.Log("NeoclipCharacterController.FixedUpdate: Anti-skating mechanism triggered.");
             anyBoneClipping = false;
+            anyBoneRayHit = false;
             allBonesClipping = false;
             for (int i = 0; i < ragdollHelper.NumBones; i++)
             {
