@@ -24471,10 +24471,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ragdollHelper: {fileID: 2895484376115965014}
-  checkLayer:
-    value: 0
-  castLayer:
-    value: 9
   followSpeed: 10
   followDistance: 3
   lookMode: 0
@@ -47823,7 +47819,7 @@ MonoBehaviour:
   cameraController: {fileID: 330585548}
   activeRagdoll: {fileID: 2107269551}
   exitDirectionFinder: {fileID: 687353705}
-  panicEstimator: {fileID: 2107269552}
+  impactTimeEstimator: {fileID: 2107269552}
   animator: {fileID: 1772433199}
   applyGravity: 1
   secondsToStayClipping: 0.2
@@ -47834,71 +47830,6 @@ MonoBehaviour:
     value: 6
   noclipLayer:
     value: 7
-  noclipValidationCheckLayers:
-    serializedVersion: 2
-    m_Bits: 513
-  shapecastValidationCheckLayers:
-    serializedVersion: 2
-    m_Bits: 1
-  mouseLookAction: {fileID: -5630151704836100654, guid: 052faaac586de48259a63d0c4782560b, type: 3}
-  moveAction: {fileID: -1680190386980627800, guid: 052faaac586de48259a63d0c4782560b, type: 3}
-  noclipAction: {fileID: 1120369429361536294, guid: 052faaac586de48259a63d0c4782560b, type: 3}
-  bounceAction: {fileID: 8718687413382427619, guid: 052faaac586de48259a63d0c4782560b, type: 3}
-  leftclickAction: {fileID: 3001919216989983466, guid: 052faaac586de48259a63d0c4782560b, type: 3}
-  escapeAction: {fileID: 7727032971491509709, guid: 052faaac586de48259a63d0c4782560b, type: 3}
---- !u!4 &2107269549
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2107269547}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 17.11, y: 120.62, z: -4.33}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 1772433198}
-  - {fileID: 59713681}
-  - {fileID: 687353706}
-  - {fileID: 1361785009}
-  - {fileID: 330585546}
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2107269551
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2107269547}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 32bef968d2e72c54b86329b493c60a1e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  driverSkeleton: {fileID: 1093905707}
-  ragdollSkeleton: {fileID: 709733589}
---- !u!114 &2107269552
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2107269547}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9770ee88cd0f75944ab65bc3d39d1478, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  animator: {fileID: 1772433199}
-  ragdollHelper: {fileID: 2895484376115965014}
-  sphereCastRadius: 1
-  sphereCastLayers:
-    serializedVersion: 2
-    m_Bits: 513
-  steps: 5
   panicAtImpactTime:
     serializedVersion: 2
     m_Curve:
@@ -47980,6 +47911,62 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+  mouseLookAction: {fileID: -5630151704836100654, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  moveAction: {fileID: -1680190386980627800, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  noclipAction: {fileID: 1120369429361536294, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  bounceAction: {fileID: 8718687413382427619, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  leftclickAction: {fileID: 3001919216989983466, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  escapeAction: {fileID: 7727032971491509709, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+--- !u!4 &2107269549
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2107269547}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 17.11, y: 120.62, z: -4.33}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1772433198}
+  - {fileID: 59713681}
+  - {fileID: 687353706}
+  - {fileID: 1361785009}
+  - {fileID: 330585546}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2107269551
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2107269547}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 32bef968d2e72c54b86329b493c60a1e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  driverSkeleton: {fileID: 1093905707}
+  ragdollSkeleton: {fileID: 709733589}
+--- !u!114 &2107269552
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2107269547}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9770ee88cd0f75944ab65bc3d39d1478, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ragdollHelper: {fileID: 2895484376115965014}
+  sphereCastRadius: 1
+  timeToLookAhead: 5
+  steps: 5
 --- !u!114 &2107269553
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -48839,8 +48826,8 @@ MonoBehaviour:
   - enabled: 1
     jointsToOverride: []
     rotationDriveMode: 1
-    positionSpring: 100
-    positionDamper: 10
+    positionSpring: 200
+    positionDamper: 20
     maximumForce: 1e+24
     useAcceleration: 0
   - enabled: 0
@@ -48864,8 +48851,8 @@ MonoBehaviour:
     - {fileID: 6292251943141489230}
     - {fileID: 5020538441653053304}
     rotationDriveMode: 1
-    positionSpring: 200
-    positionDamper: 20
+    positionSpring: 400
+    positionDamper: 40
     maximumForce: 1e+24
     useAcceleration: 0
   additionalPhysicsIgnorePairs:

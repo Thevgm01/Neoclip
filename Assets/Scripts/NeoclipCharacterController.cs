@@ -11,7 +11,7 @@ public class NeoclipCharacterController : MonoBehaviour
     [SerializeField] private NeoclipCameraController cameraController;
     [SerializeField] private ActiveRagdoll activeRagdoll;
     [SerializeField] private ExitDirectionFinder exitDirectionFinder;
-    [SerializeField] private PanicEstimator panicEstimator;
+    [SerializeField] private ImpactTimeEstimator impactTimeEstimator;
     [SerializeField] private Animator animator;
         
     [Space]
@@ -22,6 +22,9 @@ public class NeoclipCharacterController : MonoBehaviour
     [SerializeField] private float moveAcceleration = 1.0f;
     [SerializeField] private LayerNumber defaultLayer;
     [SerializeField] private LayerNumber noclipLayer;
+    [SerializeField] private AnimationCurve panicAtImpactTime;
+    [SerializeField] private AnimationCurve panicMultAtSpeed;
+    [SerializeField] private AnimationCurve panicAtAngularVelocity;
     
     [Space]
     [SerializeField] private InputActionReference mouseLookAction;
@@ -37,6 +40,7 @@ public class NeoclipCharacterController : MonoBehaviour
     private float[] boneSurfaceAreas;
     private bool[] boneClipStates;
     private int noclipBufferFrames;
+    private int animPanicID;
     
     private void OnMoveInput(InputAction.CallbackContext context) => moveInput = context.ReadValue<Vector2>();
     private void OnNoclipInput(InputAction.CallbackContext context)
@@ -111,6 +115,7 @@ public class NeoclipCharacterController : MonoBehaviour
     {
         boneSurfaceAreas = new float[ragdollHelper.NumBones];
         boneClipStates = new bool[ragdollHelper.NumBones];
+        animPanicID = Animator.StringToHash("Panic");
         
         Cursor.visible = false;
         Cursor.lockState = CursorLockMode.Locked;
@@ -132,9 +137,13 @@ public class NeoclipCharacterController : MonoBehaviour
     {
         Vector3 movement = cameraController.GetCameraRelativeMoveVector(moveInput) * moveAcceleration;
 
-        Vector3 velocityNormalized = ragdollHelper.AverageLinearVelocity.normalized;
+        float velocityMagnitude = ragdollHelper.AverageLinearVelocity.magnitude;
+        Vector3 velocityNormalized = ragdollHelper.AverageLinearVelocity / velocityMagnitude;
         
-        panicEstimator.EstimateTimeToHit();
+        // Set the animator's panic value based on the time to impact
+        animator.SetFloat(animPanicID, Mathf.Max(
+            panicAtImpactTime.Evaluate(impactTimeEstimator.Estimate()) * panicMultAtSpeed.Evaluate(velocityMagnitude),
+            panicAtAngularVelocity.Evaluate(ragdollHelper.AverageAngularVelocity.magnitude)));
         
         // Grab the last frame's drag data
         bool shouldApplyDrag = dragCamera.TryUpdateSurfaceAreas(boneSurfaceAreas);
