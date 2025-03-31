@@ -9,6 +9,7 @@ public class ClipspaceShaderPropertySetter : MonoBehaviour
     [SerializeField] private NeoclipCharacterController characterController;
     [SerializeField] private NeoclipCameraController cameraController;
     [SerializeField] private Camera camera;
+    [SerializeField] private bool waitForRagdollToExit;
 
     private bool areClippingParametersSet = false;
     private bool characterClipping = false;
@@ -61,7 +62,7 @@ public class ClipspaceShaderPropertySetter : MonoBehaviour
     {
         characterClipping = false;
 
-        if (!cameraWasClipping)
+        if (!cameraWasClipping && waitForRagdollToExit)
         {
             SetShaderParameters(false);
         }
@@ -75,7 +76,7 @@ public class ClipspaceShaderPropertySetter : MonoBehaviour
         {
             SetShaderParameters(true);
         }
-        else if (!isClipping && cameraWasClipping && !characterClipping)
+        else if (!isClipping && cameraWasClipping || characterClipping && waitForRagdollToExit)
         {
             SetShaderParameters(false);
         }
