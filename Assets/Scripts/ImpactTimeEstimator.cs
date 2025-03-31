@@ -50,7 +50,7 @@ public class ImpactTimeEstimator : MonoBehaviour
             position += velocity * stepDeltaTime;
             
             // Don't apply gravity while clipping: a crude shortcut
-            if (!ClippingUtils.CheckPointOrCastRays(position, sphereCastRadius))
+            if (!ClippingUtils.CheckOrCastRays(position, sphereCastRadius))
             {
                 velocity += Physics.gravity * stepDeltaTime;
                 GizmoAnywhere.RepeatRequest(new GizmoAnywhere.GizmoDrawRequest { position = position, color = Color.cyan });

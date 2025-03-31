@@ -2,7 +2,6 @@ using System;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.Serialization;
 
 public class NeoclipCharacterController : MonoBehaviour
 {
@@ -39,7 +38,7 @@ public class NeoclipCharacterController : MonoBehaviour
     private bool mouseIsInside = false;
     
     private float[] boneSurfaceAreas;
-    private bool[] boneClipStates;
+    private ClippingUtils.ClipState[] boneClipStates;
     private int noclipBufferFrames;
     private int animPanicID;
     
@@ -121,7 +120,7 @@ public class NeoclipCharacterController : MonoBehaviour
     private void Awake()
     {
         boneSurfaceAreas = new float[ragdollHelper.NumBones];
-        boneClipStates = new bool[ragdollHelper.NumBones];
+        boneClipStates = new ClippingUtils.ClipState[ragdollHelper.NumBones];
         animPanicID = Animator.StringToHash("Panic");
 
         OnNoclipStarted += SetNoclipLayers;
@@ -183,11 +182,14 @@ public class NeoclipCharacterController : MonoBehaviour
         {
             for (int i = 0; i < ragdollHelper.NumBones; i++)
             {
-                boneClipStates[i] = ClippingUtils.CheckColliderOrCastRays(ragdollHelper.GetCollider(i));
-                anyBoneClipping = anyBoneClipping || boneClipStates[i];
-                allBonesClipping = allBonesClipping && boneClipStates[i];
+                boneClipStates[i] = ClippingUtils.CheckColliderOrCastRaysDetailed(ragdollHelper.GetCollider(i));
+                bool isClipping = (boneClipStates[i] & ClippingUtils.ClipState.IsClipping) > 0;
+                anyBoneClipping = anyBoneClipping || isClipping;
+                allBonesClipping = allBonesClipping && isClipping;
             }
         }
+        
+        Debug.Log(boneClipStates[0]);
         
         // Determine if we're "skating" along the ground, which we don't want
         float antiSkateVelocityDot = Vector3.Dot(ragdollHelper.AverageLinearVelocity, -Physics.gravity.normalized);
@@ -199,7 +201,7 @@ public class NeoclipCharacterController : MonoBehaviour
             allBonesClipping = false;
             for (int i = 0; i < ragdollHelper.NumBones; i++)
             {
-                boneClipStates[i] = false;
+                boneClipStates[i] = ClippingUtils.ClipState.None;
             }
             noclipBufferFrames = 0;
         }
@@ -236,7 +238,7 @@ public class NeoclipCharacterController : MonoBehaviour
             Vector3 force = Vector3.zero;
             Vector3 acceleration = Vector3.zero;
             
-            if (!boneClipStates[i]) // This bone is in open space
+            if ((boneClipStates[i] & ClippingUtils.ClipState.IsClipping) == 0) // This bone is in open space
             {
                 acceleration += applyGravity ? Physics.gravity : Vector3.zero;
             }
@@ -249,7 +251,7 @@ public class NeoclipCharacterController : MonoBehaviour
             
             if (shouldApplyDrag)
             {
-                float density = boneClipStates[i]
+                float density = (boneClipStates[i] & ClippingUtils.ClipState.IsClipping) > 0
                     ? Constants.Density.CLIPSPACE
                     : Constants.Density.AIR;
 

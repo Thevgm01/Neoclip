@@ -4,6 +4,22 @@ using UnityEngine;
 
 public static class ClippingUtils
 {
+    [Flags]
+    public enum ClipState
+    {
+        None = 0,
+        OneHit = 1,
+        TwoHit = 2,
+        ThreeHit = 3,
+        FourHit = 4,
+        FiveHit = 5,
+        SixHit = 6,
+        RayBackfaceMask = 7, // First 3 bits used for the number of backface hits
+        DidOverlap = 8,
+        IsClipping = 16,
+        RayHitVoid = 32
+    }
+    
     public const float MAX_DISTANCE = 100.0f;
     public const float DOT_THRESHOLD = 0.0f;
     public const int MINIMUM_BACKFACES_TO_BE_INSIDE = 2;
@@ -36,6 +52,32 @@ public static class ClippingUtils
     public static bool HitBackface(this RaycastHit hit, Vector3 direction) => Vector3.Dot(hit.normal, direction) > DOT_THRESHOLD;
     public static bool HitVoid(this RaycastHit hit) => hit.colliderInstanceID == VoidColliderInstanceID;
 
+    public static ClipState CastRaysDetailed(Vector3 origin)
+    {
+        ClipState result = new ClipState();
+        for (int i = 0; i < CastDirections.Length; i++)
+        {
+            if (Physics.Raycast(origin, CastDirections[i], out RaycastHit hit, MAX_DISTANCE, ShapeCastLayerMask))
+            {
+                if (hit.HitBackface(CastDirections[i]))
+                {
+                    result++; // Add 1 to the total number of ray backface hits
+                    
+                    if ((int)(result & ClipState.RayBackfaceMask) >= MINIMUM_BACKFACES_TO_BE_INSIDE)
+                    {
+                        result |= ClipState.IsClipping;
+                    }
+                }
+                
+                if (hit.HitVoid())
+                {
+                    result |= ClipState.IsClipping | ClipState.RayHitVoid;
+                }
+            }
+        }
+        return result;
+    }
+    
     public static bool CastRays(Vector3 origin)
     {
         int backfaceHits = 0;
@@ -50,8 +92,19 @@ public static class ClippingUtils
 
         return false;
     }
+
+    public static ClipState CheckOrCastRaysDetailed(Vector3 origin, float radius)
+    {
+        ClipState result = new ClipState();
+        if (Physics.CheckSphere(origin, Mathf.Max(radius, 0.00001f), ShapeCheckLayerMask))
+        {
+            result |= ClipState.DidOverlap | ClipState.IsClipping;
+        }
+
+        return result | CastRaysDetailed(origin);
+    }
     
-    public static bool CheckPointOrCastRays(Vector3 origin, float radius)
+    public static bool CheckOrCastRays(Vector3 origin, float radius)
     {
         if (Physics.CheckSphere(origin, Mathf.Max(radius, 0.00001f), ShapeCheckLayerMask))
         {
@@ -135,6 +188,37 @@ public static class ClippingUtils
         return false;
     }
 
+    public static ClipState CheckColliderOrCastRaysDetailed(Collider collider)
+    {
+        switch (collider)
+        {
+            case BoxCollider boxCollider:
+                Transform boxTransform = boxCollider.transform;
+                Vector3 boxOrigin = boxTransform.TransformPoint(boxCollider.center);
+                return (Physics.CheckBox(boxOrigin, boxCollider.size * 0.5f, boxTransform.rotation, ShapeCheckLayerMask)
+                    ? ClipState.DidOverlap | ClipState.IsClipping
+                    : ClipState.None) | CastRaysDetailed(boxOrigin);
+            
+            case CapsuleCollider capsuleCollider:
+                Transform capsuleTransform = capsuleCollider.transform;
+                Vector3 capsuleOrigin = capsuleTransform.TransformPoint(capsuleCollider.center);
+                Vector3 axis = capsuleTransform.TransformDirection(capsuleCollider.height * 0.5f * capsuleCollider.GetAxis());
+                return (Physics.CheckCapsule(capsuleOrigin + axis, capsuleOrigin - axis, capsuleCollider.radius, ShapeCheckLayerMask)
+                    ? ClipState.DidOverlap | ClipState.IsClipping
+                    : ClipState.None) | CastRaysDetailed(capsuleOrigin);
+            
+            case SphereCollider sphereCollider:
+                Transform sphereTransform = sphereCollider.transform;
+                Vector3 sphereOrigin = sphereTransform.TransformPoint(sphereCollider.center);
+                return (Physics.CheckSphere(sphereOrigin, sphereCollider.radius, ShapeCheckLayerMask)
+                    ? ClipState.DidOverlap | ClipState.IsClipping
+                    : ClipState.None) | CastRaysDetailed(sphereOrigin);
+            
+            default:
+                throw new ArgumentOutOfRangeException(nameof(collider), collider, null);
+        }
+    }
+    
     public static bool CheckColliderOrCastRays(Collider collider)
     {
         switch (collider)
@@ -143,15 +227,18 @@ public static class ClippingUtils
                 Transform boxTransform = boxCollider.transform;
                 Vector3 boxOrigin = boxTransform.TransformPoint(boxCollider.center);
                 return Physics.CheckBox(boxOrigin, boxCollider.size * 0.5f, boxTransform.rotation, ShapeCheckLayerMask) || CastRays(boxOrigin);
+            
             case CapsuleCollider capsuleCollider:
                 Transform capsuleTransform = capsuleCollider.transform;
                 Vector3 capsuleOrigin = capsuleTransform.TransformPoint(capsuleCollider.center);
                 Vector3 axis = capsuleTransform.TransformDirection(capsuleCollider.height * 0.5f * capsuleCollider.GetAxis());
                 return Physics.CheckCapsule(capsuleOrigin + axis, capsuleOrigin - axis, capsuleCollider.radius, ShapeCheckLayerMask) || CastRays(capsuleOrigin);
+            
             case SphereCollider sphereCollider:
                 Transform sphereTransform = sphereCollider.transform;
                 Vector3 sphereOrigin = sphereTransform.TransformPoint(sphereCollider.center);
                 return Physics.CheckSphere(sphereOrigin, sphereCollider.radius, ShapeCheckLayerMask) || CastRays(sphereOrigin);
+            
             default:
                 throw new ArgumentOutOfRangeException(nameof(collider), collider, null);
         }
