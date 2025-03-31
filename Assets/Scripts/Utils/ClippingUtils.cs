@@ -8,7 +8,7 @@ public static class ClippingUtils
     public enum ClipState
     {
         None = 0,
-        OneHit = 1,
+        OneHit = 1, // All these "nHit" numbers are mostly there to make it print pretty
         TwoHit = 2,
         ThreeHit = 3,
         FourHit = 4,
@@ -95,13 +95,9 @@ public static class ClippingUtils
 
     public static ClipState CheckOrCastRaysDetailed(Vector3 origin, float radius)
     {
-        ClipState result = new ClipState();
-        if (Physics.CheckSphere(origin, Mathf.Max(radius, 0.00001f), ShapeCheckLayerMask))
-        {
-            result |= ClipState.DidOverlap | ClipState.IsClipping;
-        }
-
-        return result | CastRaysDetailed(origin);
+        return (Physics.CheckSphere(origin, Mathf.Max(radius, 0.00001f), ShapeCheckLayerMask)
+            ? ClipState.DidOverlap | ClipState.IsClipping
+            : ClipState.None) | CastRaysDetailed(origin);
     }
     
     public static bool CheckOrCastRays(Vector3 origin, float radius)
