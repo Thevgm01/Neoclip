@@ -8,16 +8,13 @@ using UnityEngine;
 
 public class ExitDirectionFinder : MonoBehaviour
 {
-    private const float CHECK_RADIUS = 20.0f;
-    private const float CHECK_SPACING = 2.0f;
     private const int NUM_POINTS = 2048;
     
     private static Vector3[] rawPoints;
     
-    [SerializeField] private LayerMask layerMask;
     [SerializeField] private bool showBalls = true;
     [SerializeField] private bool printJobTime = true;
-
+    
     public JobHandle MainJob { get; private set; }
     
     private NativeReference<Vector3> exitDirection = new (Vector3.zero, Allocator.Persistent);
@@ -73,14 +70,16 @@ public class ExitDirectionFinder : MonoBehaviour
         private NativeArray<byte> pointBackfaceHits;
         [ReadOnly] private NativeArray<ColliderHit> overlapHits;
         [ReadOnly] private NativeArray<RaycastHit> rayHits;
+        [ReadOnly] private int voidColliderInstanceID;
               
         public static JobHandle ScheduleBatch(NativeArray<byte> pointBackfaceHits, NativeArray<ColliderHit> overlapHits,
-                NativeArray<RaycastHit> rayHits, int minCommandsPerJob, JobHandle dependsOn = default) =>
+                NativeArray<RaycastHit> rayHits, int voidColliderInstanceID, int minCommandsPerJob, JobHandle dependsOn = default) =>
             new CountBackfaceHits
             {
                 pointBackfaceHits = pointBackfaceHits,
                 overlapHits = overlapHits,
-                rayHits = rayHits
+                rayHits = rayHits,
+                voidColliderInstanceID = voidColliderInstanceID
             }.ScheduleParallel(pointBackfaceHits.Length, minCommandsPerJob, dependsOn);
         
         public void Execute(int index)
@@ -93,10 +92,13 @@ public class ExitDirectionFinder : MonoBehaviour
             {
                 for (int i = 0; i < ClippingUtils.NUM_CASTS; i++)
                 {
+                    if (rayHits[index * ClippingUtils.NUM_CASTS + i].colliderInstanceID == voidColliderInstanceID)
+                    {
+                        pointBackfaceHits[index] = ClippingUtils.NUM_CASTS;
+                        return;
+                    }
                     pointBackfaceHits[index] +=
-                        rayHits[index * ClippingUtils.NUM_CASTS + i].IsBackface(ClippingUtils.CastDirections[i])
-                            ? (byte)1
-                            : (byte)0;
+                        (byte)(rayHits[index * ClippingUtils.NUM_CASTS + i].HitBackface(ClippingUtils.CastDirections[i]) ? 1 : 0);
                 }
             }
         }
@@ -152,7 +154,7 @@ public class ExitDirectionFinder : MonoBehaviour
 
         QueryParameters queryParameters = new QueryParameters
         {
-            layerMask = layerMask.value,
+            layerMask = ClippingUtils.ShapeCastLayerMask,
             hitMultipleFaces = false,
             hitTriggers = QueryTriggerInteraction.UseGlobal,
             hitBackfaces = true
@@ -164,7 +166,7 @@ public class ExitDirectionFinder : MonoBehaviour
         JobHandle raycasts = RaycastCommand.ScheduleBatch(rayCommands, rayHits, 1, 1, createCommands);
         JobHandle physicsChecks = JobHandle.CombineDependencies(overlapSpheres, raycasts);
         
-        JobHandle countBackfaceHits = CountBackfaceHits.ScheduleBatch(pointBackfaceHits, overlapHits, rayHits, 1, physicsChecks);
+        JobHandle countBackfaceHits = CountBackfaceHits.ScheduleBatch(pointBackfaceHits, overlapHits, rayHits, ClippingUtils.VoidColliderInstanceID, 1, physicsChecks);
         
         MainJob = CalculateAverageDirection.Schedule(exitDirection, points, pointBackfaceHits, transform.position, countBackfaceHits);
         
@@ -201,7 +203,7 @@ public class ExitDirectionFinder : MonoBehaviour
                 {
                     owner = this.transform, criteria = GizmoAnywhere.DrawCriteria.SELECTED_EXCLUSIVE, shape = GizmoAnywhere.Shape.SPHERE,
                     position = transform.position + Vector3.Lerp(Vector3.zero, exitDirection.Value, i / 10.0f),
-                    radius = Mathf.Sqrt((i + 1) / 9.0f) * 0.2f, ragdollRelative = GizmoAnywhere.RagdollRelative.TRUE,
+                    radius = Mathf.Sqrt((i + 1) / 10.0f) * 0.2f, ragdollRelative = GizmoAnywhere.RagdollRelative.TRUE,
                     color = Color.green
                 });
             }
