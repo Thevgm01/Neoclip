@@ -53,9 +53,13 @@ public class ImpactTimeEstimator : MonoBehaviour
             if (!ClippingUtils.CheckOrCastRay(position, sphereCastRadius))
             {
                 velocity += Physics.gravity * stepDeltaTime;
+                GizmoAnywhere.RepeatRequest(new GizmoAnywhere.GizmoDrawRequest { position = position, color = Color.cyan });
             }
+            else
+            {
+                GizmoAnywhere.RepeatRequest(new GizmoAnywhere.GizmoDrawRequest { position = position, color = Color.blue });
 
-            GizmoAnywhere.RepeatRequest(new GizmoAnywhere.GizmoDrawRequest { position = position, color = Color.cyan });
+            }
         }
         
         return timeToHit;
