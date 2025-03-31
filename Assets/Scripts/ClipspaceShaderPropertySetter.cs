@@ -26,17 +26,8 @@ public class ClipspaceShaderPropertySetter : MonoBehaviour
     private void SetShaderParameters(ClipspaceShaderProperties properties)
     {
         //Debug.Log("ClipspaceShaderPropertySetter.SetShaderParameters: Setting parameters.");
-
-        if (properties == normalProperties)
-        {
-            camera.clearFlags = CameraClearFlags.Skybox;
-        }
-        else if (properties == clippingProperties)
-        {
-            camera.clearFlags = CameraClearFlags.Color;
-            camera.backgroundColor = Color.black;
-        }
-        
+        camera.clearFlags = properties.clearFlags;
+        camera.backgroundColor = properties.backgroundColor;
         Shader.SetGlobalInteger(cullModeID, (int)properties.cullMode);
         Shader.SetGlobalInteger(blendTargetID, (int)properties.blendTarget);
         Shader.SetGlobalInteger(blendSourceFactorID, (int)properties.blendSourceFactor);

@@ -6,6 +6,8 @@ public class ClipspaceShaderProperties : ScriptableObject
     // The enum in UnityEngine.ShaderGraph is marked as internal, so I'm replicating it here
     public enum ZTest { Less, Greater, LEqual, GEqual, Equal, NotEqual, Always }
     
+    public CameraClearFlags clearFlags;
+    public Color backgroundColor;
     public UnityEngine.Rendering.CullMode cullMode;
     public UnityEngine.Rendering.BlendMode blendTarget;
     public UnityEngine.Rendering.BlendMode blendSourceFactor;

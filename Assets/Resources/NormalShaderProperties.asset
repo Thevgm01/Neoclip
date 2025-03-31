@@ -12,6 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0f42c930ee8e92f4d8e87e073bb01878, type: 3}
   m_Name: NormalShaderProperties
   m_EditorClassIdentifier: 
+  clearFlags: 1
+  backgroundColor: {r: 0, g: 0, b: 0, a: 0}
   cullMode: 2
   blendTarget: 1
   blendSourceFactor: 0
