@@ -16,6 +16,7 @@ public class NeoclipCharacterController : MonoBehaviour
         
     [Space]
     [SerializeField] private bool applyGravity = true;
+    [SerializeField] private float secondsToStayClipping = 0.2f;
     [SerializeField] private float angularSlowdown = 0.1f;
     [SerializeField] private float maxMoveSpeed = 5.0f;
     [SerializeField] private float moveAcceleration = 1.0f;
@@ -32,12 +33,17 @@ public class NeoclipCharacterController : MonoBehaviour
     [SerializeField] private InputActionReference leftclickAction;
     [SerializeField] private InputActionReference escapeAction;
     private Vector2 moveInput;
-    private bool noclipInput;
+    private bool desiredNoclipState;
     private bool mouseIsInside = false;
+    
+    private float[] boneSurfaceAreas;
+    private bool[] boneClipStates;
+    private int noclipBufferFrames;
+    
     private void OnMoveInput(InputAction.CallbackContext context) => moveInput = context.ReadValue<Vector2>();
     private void OnNoclipInput(InputAction.CallbackContext context)
     {
-        noclipInput = context.ReadValueAsButton();
+        desiredNoclipState = context.ReadValueAsButton();
     }
     private void OnBounceInput(InputAction.CallbackContext context)
     {
@@ -103,10 +109,6 @@ public class NeoclipCharacterController : MonoBehaviour
 #endif
     }
     
-    private float[] boneSurfaceAreas;
-    private bool[] boneClipStates;
-    private bool wasAnyClippingLastFrame = false;
-    
     private void Awake()
     {
         boneSurfaceAreas = new float[ragdollHelper.NumBones];
@@ -132,23 +134,15 @@ public class NeoclipCharacterController : MonoBehaviour
     {
         Vector3 movement = cameraController.GetCameraRelativeMoveVector(moveInput) * moveAcceleration;
 
+        Vector3 velocityNormalized = ragdollHelper.AverageLinearVelocity.normalized;
+        
         panicEstimator.EstimateTimeToHit();
         
+        // Grab the last frame's drag data
         bool shouldApplyDrag = dragCamera.TryUpdateSurfaceAreas(boneSurfaceAreas);
         
-        bool anyBoneClipping = false;
-        if (noclipInput || wasAnyClippingLastFrame)
-        {
-            for (int i = 0; i < ragdollHelper.NumBones; i++)
-            {
-                boneClipStates[i] = ClippingUtils.CheckOrCastCollider(
-                    ragdollHelper.GetCollider(i),
-                    noclipValidationCheckLayers.value,
-                    shapecastValidationCheckLayers.value);
-                anyBoneClipping = anyBoneClipping || boneClipStates[i];
-            }
-        }
-        
+        // Grab last frame's exit direction data
+        Vector3 exitDirection;
         if (!exitDirectionFinder.MainJob.IsCompleted)
         {
             double startTime = Time.realtimeSinceStartupAsDouble;
@@ -163,22 +157,43 @@ public class NeoclipCharacterController : MonoBehaviour
         {
             exitDirectionFinder.MainJob.Complete();
         }
-        Vector3 exitDirection = exitDirectionFinder.ExitDirection;
+        exitDirection = exitDirectionFinder.GetExitDirection();
+        
+        // Test all bones to see if they're actively clipping
+        bool anyBoneClipping = false;
+        if (desiredNoclipState || noclipBufferFrames > 0)
+        {
+            for (int i = 0; i < ragdollHelper.NumBones; i++)
+            {
+                boneClipStates[i] = ClippingUtils.CheckOrCastCollider(
+                    ragdollHelper.GetCollider(i),
+                    noclipValidationCheckLayers.value,
+                    shapecastValidationCheckLayers.value);
+                anyBoneClipping = anyBoneClipping || boneClipStates[i];
+            }
+        }
+        
+        // If we're inside something, calculate the exit direction for next frame
         if (anyBoneClipping)
         {
             exitDirectionFinder.transform.position = ragdollHelper.AveragePosition;
             exitDirectionFinder.ScheduleJobs();
         }
+        else
+        {
+            exitDirectionFinder.ResetExitDirection();
+        }
         
+        // Iterate through all bones
         for (int i = 0; i < ragdollHelper.NumBones; i++)
         {
             Rigidbody rigidbody = ragdollHelper.GetRigidbody(i);
             
-            if (noclipInput && !wasAnyClippingLastFrame)
+            if (desiredNoclipState && noclipBufferFrames == 0) // If we want to noclip and we weren't already noclipping
             {
                 rigidbody.gameObject.layer = noclipLayer.value;
             }
-            else if (!noclipInput && !anyBoneClipping)
+            else if (!desiredNoclipState && noclipBufferFrames == 0) // If we want to stop noclipping and the timer has run out
             {
                 rigidbody.gameObject.layer = defaultLayer.value;
             }
@@ -190,7 +205,7 @@ public class NeoclipCharacterController : MonoBehaviour
             {
                 acceleration += applyGravity ? Physics.gravity : Vector3.zero;
             }
-            else if (!noclipInput) // This bone is clipping (but the button isn't held down)
+            else if (!desiredNoclipState) // This bone is clipping (but the button isn't held down)
             {
                 acceleration -= Physics.gravity * 2.0f;
                 
@@ -209,10 +224,12 @@ public class NeoclipCharacterController : MonoBehaviour
                 float density = boneClipStates[i]
                     ? Constants.Density.CLIPSPACE
                     : Constants.Density.AIR;
+
+                Vector3 projectedVelocity = Vector3.Project(rigidbody.linearVelocity, velocityNormalized);
                 
                 force += 0.5f * 
                          density *
-                         rigidbody.linearVelocity.sqrMagnitude * 
+                         projectedVelocity.sqrMagnitude * 
                          0.7f *
                          boneSurfaceAreas[i] * 
                          dragCamera.transform.forward;
@@ -229,6 +246,14 @@ public class NeoclipCharacterController : MonoBehaviour
             }
         }
         
-        wasAnyClippingLastFrame = anyBoneClipping;
+        // If we're trying to noclip, or already were, then reset the timer
+        if (desiredNoclipState || anyBoneClipping)
+        {
+            noclipBufferFrames = Mathf.CeilToInt(secondsToStayClipping / Time.fixedDeltaTime);
+        }
+        else if (noclipBufferFrames > 0)
+        {
+            noclipBufferFrames--;
+        }
     }
 }

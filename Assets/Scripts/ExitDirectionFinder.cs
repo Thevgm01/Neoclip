@@ -20,9 +20,10 @@ public class ExitDirectionFinder : MonoBehaviour
 
     public JobHandle MainJob { get; private set; }
     
-    private readonly NativeReference<Vector3> exitDirection = new (Vector3.zero, Allocator.Persistent);
-    public Vector3 ExitDirection => exitDirection.Value;
-    
+    private NativeReference<Vector3> exitDirection = new (Vector3.zero, Allocator.Persistent);
+    public Vector3 GetExitDirection() => exitDirection.Value;
+    public Vector3 ResetExitDirection() => exitDirection.Value = Vector3.zero;
+        
     #if UNITY_EDITOR
     private bool shouldDrawGizmos;
     #endif
@@ -199,12 +200,12 @@ public class ExitDirectionFinder : MonoBehaviour
                 GizmoAnywhere.SubmitRequest(new GizmoAnywhere.GizmoDrawRequest
                 {
                     owner = this.transform, criteria = GizmoAnywhere.DrawCriteria.SELECTED_EXCLUSIVE, shape = GizmoAnywhere.Shape.SPHERE,
-                    position = transform.position + Vector3.Lerp(Vector3.zero, ExitDirection, i / 10.0f),
+                    position = transform.position + Vector3.Lerp(Vector3.zero, exitDirection.Value, i / 10.0f),
                     radius = Mathf.Sqrt((i + 1) / 9.0f) * 0.2f, ragdollRelative = GizmoAnywhere.RagdollRelative.TRUE,
                     color = Color.green
                 });
             }
-
+            
             shouldDrawGizmos = false;
         }
 #endif
