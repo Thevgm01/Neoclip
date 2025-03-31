@@ -17,6 +17,8 @@ public class NeoclipCharacterController : MonoBehaviour
     [SerializeField] private bool applyGravity = true;
     [SerializeField] private float secondsToStayClipping = 0.2f;
     [SerializeField] private float angularSlowdown = 0.1f;
+    [SerializeField] private float smallVelocityThreshold = 1.0f;
+    [SerializeField] private float smallVelocityEjectionStrength = 3.0f;
     [SerializeField] private float maxMoveSpeed = 5.0f;
     [SerializeField] private float moveAcceleration = 1.0f;
     [SerializeField] private LayerNumber defaultLayer;
@@ -208,6 +210,13 @@ public class NeoclipCharacterController : MonoBehaviour
         {
             exitDirectionFinder.ResetExitDirection();
         }
+
+        float smallVelocityDot = Vector3.Dot(ragdollHelper.AverageLinearVelocity, -Physics.gravity.normalized);
+        bool smallVelocityEjection = !desiredNoclipState && anyBoneClipping && smallVelocityDot > 0.0f && smallVelocityDot < smallVelocityThreshold;
+        if (smallVelocityEjection)
+        {
+            Debug.Log("Applying ejection force");
+        }
         
         // Iterate through all bones
         for (int i = 0; i < ragdollHelper.NumBones; i++)
@@ -238,13 +247,11 @@ public class NeoclipCharacterController : MonoBehaviour
                 acceleration -= Physics.gravity * 2.0f;
                 
                 acceleration += exitDirection * 20.0f;
-                
-                /*
-                if (anyBoneClipping && Mathf.Abs(rigidbody.linearVelocity.y) < 1.0f)
-                {
-                    acceleration += Vector3.up * 10.0f;
-                }
-                */
+            }
+
+            if (smallVelocityEjection)
+            {
+                acceleration -= Physics.gravity * smallVelocityEjectionStrength;
             }
             
             if (shouldApplyDrag)
