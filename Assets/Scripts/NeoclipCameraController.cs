@@ -9,8 +9,6 @@ public class NeoclipCameraController : MonoBehaviour
     [SerializeField] private RagdollHelper ragdollHelper = null;
 
     [Space]
-    [SerializeField] private LayerNumber checkLayer;
-    [SerializeField] private LayerNumber castLayer;
     [SerializeField] private float followSpeed = 5.0f;
     [SerializeField] private float followDistance = 3.0f;
     [Space]
@@ -148,7 +146,7 @@ public class NeoclipCameraController : MonoBehaviour
 
         transform.SetPositionAndRotation(offsetPosition, currentRotation);
 
-        bool isClipping = ClippingUtils.CheckOrCastRay(offsetPosition, 0.0f, checkLayer.value, castLayer.value);
+        bool isClipping = ClippingUtils.CheckOrCastRay(offsetPosition, 0.0f);
         if (isClipping != wasClipping)
         {
             SetClipParameters(isClipping);

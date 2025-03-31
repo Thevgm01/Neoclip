@@ -16,16 +16,28 @@ public static class ClippingUtils
         Vector3.down
     };
 
-    private static int voidColliderInstanceID;
-    public static void SetVoidCollider(Collider collider) => voidColliderInstanceID = collider.GetInstanceID();
+    private static int _voidColliderInstanceID;
+    public static int ShapeCheckLayerMask { get; private set; }
+    public static int ShapeCastLayerMask { get; private set; }
+
+    public static void SetVoidCollider(Collider collider)
+    {
+        _voidColliderInstanceID = collider.GetInstanceID();
+    }
+
+    public static void SetLayers(int shapeCheckLayerMask, int shapeCastLayerMask)
+    {
+        ShapeCheckLayerMask = shapeCheckLayerMask;
+        ShapeCastLayerMask = shapeCastLayerMask;
+    }
     
     // Should automatically account for the ray not hitting anything, because the normal will be (0, 0, 0) and the dot product will thus be 0
     public static bool IsFrontface(this RaycastHit hit, Vector3 direction) => Vector3.Dot(hit.normal, direction) < DOT_THRESHOLD;
     public static bool IsBackface(this RaycastHit hit, Vector3 direction) => Vector3.Dot(hit.normal, direction) > DOT_THRESHOLD;
 
-    public static bool CheckOrCastRay(Vector3 origin, float radius, int shapeCheckLayerMask, int shapeCastLayerMask)
+    public static bool CheckOrCastRay(Vector3 origin, float radius)
     {
-        if (Physics.CheckSphere(origin, Mathf.Max(radius, 0.00001f), shapeCastLayerMask))
+        if (Physics.CheckSphere(origin, Mathf.Max(radius, 0.00001f), ShapeCheckLayerMask))
         {
             return true;
         }
@@ -33,8 +45,8 @@ public static class ClippingUtils
         int backfaceHits = 0;
         for (int i = 0; i < CastDirections.Length; i++)
         {
-            if (Physics.Raycast(origin, CastDirections[i], out RaycastHit hit, MAX_DISTANCE, shapeCastLayerMask) &&
-                hit.IsBackface(CastDirections[i]) && ++backfaceHits >= MINIMUM_BACKFACES_TO_BE_INSIDE || hit.colliderInstanceID == voidColliderInstanceID)
+            if (Physics.Raycast(origin, CastDirections[i], out RaycastHit hit, MAX_DISTANCE, ShapeCastLayerMask) &&
+                hit.IsBackface(CastDirections[i]) && ++backfaceHits >= MINIMUM_BACKFACES_TO_BE_INSIDE || hit.colliderInstanceID == _voidColliderInstanceID)
             {
                 return true;
             }
@@ -43,14 +55,14 @@ public static class ClippingUtils
         return false;
     }
     
-    public static bool CheckOrCastBox(BoxCollider boxCollider, int shapeCheckLayerMask, int shapeCastLayerMask)
+    public static bool CheckOrCastBox(BoxCollider boxCollider)
     {
         Transform boxTransform = boxCollider.transform;
         Vector3 origin = boxTransform.TransformPoint(boxCollider.center);
         Vector3 halfExtents = boxCollider.size * 0.5f;
         Quaternion orientation = boxTransform.rotation;
 
-        if (Physics.CheckBox(origin, halfExtents, orientation, shapeCheckLayerMask))
+        if (Physics.CheckBox(origin, halfExtents, orientation, ShapeCheckLayerMask))
         {
             return true;
         }
@@ -58,8 +70,8 @@ public static class ClippingUtils
         int backfaceHits = 0;
         for (int i = 0; i < CastDirections.Length; i++)
         {
-            if (Physics.BoxCast(origin, halfExtents, CastDirections[i], out RaycastHit hit, orientation, MAX_DISTANCE, shapeCastLayerMask) &&
-                hit.IsBackface(CastDirections[i]) && ++backfaceHits >= MINIMUM_BACKFACES_TO_BE_INSIDE || hit.colliderInstanceID == voidColliderInstanceID)
+            if (Physics.BoxCast(origin, halfExtents, CastDirections[i], out RaycastHit hit, orientation, MAX_DISTANCE, ShapeCastLayerMask) &&
+                hit.IsBackface(CastDirections[i]) && ++backfaceHits >= MINIMUM_BACKFACES_TO_BE_INSIDE || hit.colliderInstanceID == _voidColliderInstanceID)
             {
                 return true;
             }
@@ -68,7 +80,7 @@ public static class ClippingUtils
         return false;
     }
 
-    public static bool CheckOrCastCapsule(CapsuleCollider capsuleCollider, int shapeCheckLayerMask, int shapeCastLayerMask)
+    public static bool CheckOrCastCapsule(CapsuleCollider capsuleCollider)
     {
         Transform capsuleTransform = capsuleCollider.transform;
             
@@ -77,7 +89,7 @@ public static class ClippingUtils
         Vector3 point1 = origin + axis;
         Vector3 point2 = origin - axis;
         
-        if (Physics.CheckCapsule(point1, point2, capsuleCollider.radius, shapeCheckLayerMask))
+        if (Physics.CheckCapsule(point1, point2, capsuleCollider.radius, ShapeCheckLayerMask))
         {
             return true;
         }
@@ -85,8 +97,8 @@ public static class ClippingUtils
         int backfaceHits = 0;
         for (int i = 0; i < CastDirections.Length; i++)
         {
-            if (Physics.CapsuleCast(point1, point2, capsuleCollider.radius, CastDirections[i], out RaycastHit hit, MAX_DISTANCE, shapeCastLayerMask) &&
-                hit.IsBackface(CastDirections[i]) && ++backfaceHits >= MINIMUM_BACKFACES_TO_BE_INSIDE || hit.colliderInstanceID == voidColliderInstanceID)
+            if (Physics.CapsuleCast(point1, point2, capsuleCollider.radius, CastDirections[i], out RaycastHit hit, MAX_DISTANCE, ShapeCastLayerMask) &&
+                hit.IsBackface(CastDirections[i]) && ++backfaceHits >= MINIMUM_BACKFACES_TO_BE_INSIDE || hit.colliderInstanceID == _voidColliderInstanceID)
             {
                 return true;
             }
@@ -95,11 +107,11 @@ public static class ClippingUtils
         return false;
     }
     
-    public static bool CheckOrCastSphere(SphereCollider sphereCollider, int shapeCheckLayerMask, int shapeCastLayerMask)
+    public static bool CheckOrCastSphere(SphereCollider sphereCollider)
     {
         Vector3 origin = sphereCollider.transform.TransformPoint(sphereCollider.center);
 
-        if (Physics.CheckSphere(origin, sphereCollider.radius, shapeCheckLayerMask))
+        if (Physics.CheckSphere(origin, sphereCollider.radius, ShapeCheckLayerMask))
         {
             return true;
         }
@@ -107,8 +119,8 @@ public static class ClippingUtils
         int backfaceHits = 0;
         for (int i = 0; i < CastDirections.Length; i++)
         {
-            if (Physics.SphereCast(origin, sphereCollider.radius, CastDirections[i], out RaycastHit hit, MAX_DISTANCE, shapeCastLayerMask) &&
-                hit.IsBackface(CastDirections[i]) && ++backfaceHits >= MINIMUM_BACKFACES_TO_BE_INSIDE || hit.colliderInstanceID == voidColliderInstanceID)
+            if (Physics.SphereCast(origin, sphereCollider.radius, CastDirections[i], out RaycastHit hit, MAX_DISTANCE, ShapeCastLayerMask) &&
+                hit.IsBackface(CastDirections[i]) && ++backfaceHits >= MINIMUM_BACKFACES_TO_BE_INSIDE || hit.colliderInstanceID == _voidColliderInstanceID)
             {
                 return true;
             }
@@ -117,16 +129,16 @@ public static class ClippingUtils
         return false;
     }
 
-    public static bool CheckOrCastCollider(Collider collider, int shapeCheckLayerMask, int shapeCastLayerMask)
+    public static bool CheckOrCastCollider(Collider collider)
     {
         switch (collider)
         {
             case BoxCollider boxCollider:
-                return CheckOrCastBox(boxCollider, shapeCheckLayerMask, shapeCastLayerMask);
+                return CheckOrCastBox(boxCollider);
             case CapsuleCollider capsuleCollider:
-                return CheckOrCastCapsule(capsuleCollider, shapeCheckLayerMask, shapeCastLayerMask);
+                return CheckOrCastCapsule(capsuleCollider);
             case SphereCollider sphereCollider:
-                return CheckOrCastSphere(sphereCollider, shapeCheckLayerMask, shapeCastLayerMask);
+                return CheckOrCastSphere(sphereCollider);
             default:
                 throw new ArgumentOutOfRangeException(nameof(collider), collider, null);
         }

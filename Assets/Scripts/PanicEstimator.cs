@@ -8,7 +8,6 @@ public class PanicEstimator : MonoBehaviour
     [SerializeField] private Animator animator;
     [SerializeField] private RagdollHelper ragdollHelper;
     [SerializeField] private float sphereCastRadius = 1.0f;
-    [SerializeField] private LayerMask sphereCastLayers;
     [SerializeField] private int steps = 10;
     [SerializeField] private AnimationCurve panicAtImpactTime;
     [SerializeField] private AnimationCurve panicMultAtSpeed;
@@ -41,7 +40,7 @@ public class PanicEstimator : MonoBehaviour
                 float velocityMagnitude = velocity.magnitude;
                 Vector3 velocityNormalized = velocity / velocityMagnitude;
                 if (Physics.SphereCast(position, sphereCastRadius, velocityNormalized,
-                        out RaycastHit hit, velocityMagnitude * stepDeltaTime, sphereCastLayers.value))
+                        out RaycastHit hit, velocityMagnitude * stepDeltaTime, ClippingUtils.ShapeCastLayerMask))
                 {
                     GizmoAnywhere.RepeatRequest(new GizmoAnywhere.GizmoDrawRequest
                         { position = position + velocityNormalized * hit.distance, color = Color.red });

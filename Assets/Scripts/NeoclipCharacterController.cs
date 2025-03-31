@@ -22,9 +22,7 @@ public class NeoclipCharacterController : MonoBehaviour
     [SerializeField] private float moveAcceleration = 1.0f;
     [SerializeField] private LayerNumber defaultLayer;
     [SerializeField] private LayerNumber noclipLayer;
-    [SerializeField] private LayerMask noclipValidationCheckLayers;
-    [SerializeField] private LayerMask shapecastValidationCheckLayers;
-
+    
     [Space]
     [SerializeField] private InputActionReference mouseLookAction;
     [SerializeField] private InputActionReference moveAction;
@@ -165,10 +163,7 @@ public class NeoclipCharacterController : MonoBehaviour
         {
             for (int i = 0; i < ragdollHelper.NumBones; i++)
             {
-                boneClipStates[i] = ClippingUtils.CheckOrCastCollider(
-                    ragdollHelper.GetCollider(i),
-                    noclipValidationCheckLayers.value,
-                    shapecastValidationCheckLayers.value);
+                boneClipStates[i] = ClippingUtils.CheckOrCastCollider(ragdollHelper.GetCollider(i));
                 anyBoneClipping = anyBoneClipping || boneClipStates[i];
             }
         }
