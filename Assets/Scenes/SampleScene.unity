@@ -44884,11 +44884,6 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 4301814, guid: c925872ce3bfa384589bf34b953d5a65, type: 3}
---- !u!1 &1931661193 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 105464, guid: c925872ce3bfa384589bf34b953d5a65, type: 3}
-  m_PrefabInstance: {fileID: 157560613}
-  m_PrefabAsset: {fileID: 0}
 --- !u!43 &1932259194
 Mesh:
   m_ObjectHideFlags: 0
@@ -47794,7 +47789,6 @@ GameObject:
   - component: {fileID: 2107269548}
   - component: {fileID: 2107269551}
   - component: {fileID: 2107269552}
-  - component: {fileID: 2107269553}
   m_Layer: 0
   m_Name: Character
   m_TagString: Untagged
@@ -47967,22 +47961,6 @@ MonoBehaviour:
   sphereCastRadius: 1
   timeToLookAhead: 5
   steps: 5
---- !u!114 &2107269553
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2107269547}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4e56f88cb6aded54b9e0ded25cbdcd7b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  city: {fileID: 1931661193}
-  layer:
-    value: 0
-  material: {fileID: -876546973899608171, guid: 0ae53ffc02f17a14888844d308ea00c8, type: 3}
 --- !u!64 &2109273405
 MeshCollider:
   m_ObjectHideFlags: 0
