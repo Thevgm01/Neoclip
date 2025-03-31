@@ -19,4 +19,9 @@ public class ClippingUtilsValueSetter : MonoBehaviour
         ClippingUtils.SetLayers(checkLayers.value, castLayers.value);
     }
 #endif
+
+    private void Awake()
+    {
+        Destroy(this.gameObject);
+    }
 }
