@@ -45,6 +45,7 @@ public class GizmoAnywhere : MonoBehaviour
             get => size.x;
             set => size.x = value;
         }
+        public bool isDummy;
     }
 #if UNITY_EDITOR
     [SerializeField] private RagdollHelper ragdollHelper;
@@ -71,7 +72,7 @@ public class GizmoAnywhere : MonoBehaviour
         else requests.Push(request);
 #endif
     }
-
+    
     public static void RepeatRequest(GizmoDrawRequest request)
     {
 #if UNITY_EDITOR
@@ -89,6 +90,7 @@ public class GizmoAnywhere : MonoBehaviour
         if (request.color == default) request.color = lastRequest.color;
         if (request.position == default) request.position = lastRequest.position;
         if (request.size == default) request.size = lastRequest.size;
+        // if (request.isDummy == false) request.isDummy = lastRequest.isDummy
         
         SubmitRequest(request);
 #endif
@@ -109,6 +111,11 @@ public class GizmoAnywhere : MonoBehaviour
             GizmoDrawRequest request = i < fixedUpdateRequests.Count
                 ? fixedUpdateRequests[i]
                 : requests.Pop();
+
+            if (request.isDummy)
+            {
+                continue;
+            }
             
             if (request.color != default)
             {
