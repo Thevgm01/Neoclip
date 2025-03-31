@@ -3,57 +3,49 @@ using UnityEngine;
 
 public class ClipspaceShaderPropertySetter : MonoBehaviour
 {
-    // The enum in UnityEngine.ShaderGraph is marked as internal, so I'm replicating it here
-    private enum ZTest { Less, Greater, LEqual, GEqual, Equal, NotEqual, Always }
-    
     [SerializeField] private NeoclipCharacterController characterController;
     [SerializeField] private NeoclipCameraController cameraController;
     [SerializeField] private Camera camera;
     [SerializeField] private bool waitForRagdollToExit;
-
-    private bool areClippingParametersSet = false;
+    [SerializeField] private ClipspaceShaderProperties normalProperties;
+    [SerializeField] private ClipspaceShaderProperties clippingProperties;
+    
     private bool characterClipping = false;
     private bool cameraWasClipping = false;
     
-    private void SetShaderParameters(bool isClipping)
+    private readonly int cullModeID = Shader.PropertyToID("_NeoclipCullMode");
+    private readonly int blendTargetID = Shader.PropertyToID("_NeoclipBlendTarget");
+    private readonly int blendSourceFactorID = Shader.PropertyToID("_NeoclipBlendSourceFactor");
+    private readonly int blendDestinationFactorID = Shader.PropertyToID("_NeoclipBlendDestinationFactor");
+    private readonly int blendDestinationAlphaID = Shader.PropertyToID("_NeoclipBlendDestinationAlpha");
+    private readonly int zTestID = Shader.PropertyToID("_NeoclipZTest");
+    private readonly int zWriteID = Shader.PropertyToID("_NeoclipZWrite");
+    private readonly int alphaToMaskID = Shader.PropertyToID("_NeoclipAlphaToMask");
+    private readonly int isClippingID = Shader.PropertyToID("_NeoclipIsClipping");
+    
+    private void SetShaderParameters(ClipspaceShaderProperties properties)
     {
-        if (isClipping && !areClippingParametersSet)
-        {
-            Debug.Log("ClipspaceShaderPropertySetter.SetShaderParameters: Setting clipspace parameters.");
-            
-            camera.clearFlags = CameraClearFlags.SolidColor;
-            camera.backgroundColor = Color.black;
-            
-            Shader.SetGlobalInteger("_NeoclipCullMode", (int)UnityEngine.Rendering.CullMode.Off);
-            Shader.SetGlobalInteger("_NeoclipBlendTarget", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-            Shader.SetGlobalInteger("_NeoclipBlendSourceFactor", (int)UnityEngine.Rendering.BlendMode.One);
-            Shader.SetGlobalInteger("_NeoclipBlendDestinationFactor", (int)UnityEngine.Rendering.BlendMode.One);
-            Shader.SetGlobalInteger("_NeoclipBlendDestinationAlpha", (int)UnityEngine.Rendering.BlendMode.One);
-            Shader.SetGlobalInteger("_NeoclipZTest", (int)ZTest.Always);
-            Shader.SetGlobalInteger("_NeoclipZWrite", 0);
-            Shader.SetGlobalInteger("_NeoclipAlphaToMask", 0);
-            Shader.SetGlobalInteger("_NeoclipIsClipping", 1);
+        //Debug.Log("ClipspaceShaderPropertySetter.SetShaderParameters: Setting parameters.");
 
-            areClippingParametersSet = true;
-        }
-        else if (!isClipping && areClippingParametersSet)
+        if (properties == normalProperties)
         {
-            Debug.Log("ClipspaceShaderPropertySetter.SetShaderParameters: Setting standard parameters.");
-            
             camera.clearFlags = CameraClearFlags.Skybox;
-            
-            Shader.SetGlobalInteger("_NeoclipCullMode", (int)UnityEngine.Rendering.CullMode.Back);
-            Shader.SetGlobalInteger("_NeoclipBlendTarget", (int)UnityEngine.Rendering.BlendMode.One);
-            Shader.SetGlobalInteger("_NeoclipBlendSourceFactor", (int)UnityEngine.Rendering.BlendMode.Zero);
-            Shader.SetGlobalInteger("_NeoclipBlendDestinationFactor", (int)UnityEngine.Rendering.BlendMode.Zero);
-            Shader.SetGlobalInteger("_NeoclipBlendDestinationAlpha", (int)UnityEngine.Rendering.BlendMode.Zero);
-            Shader.SetGlobalInteger("_NeoclipZTest", (int)ZTest.LEqual);
-            Shader.SetGlobalInteger("_NeoclipZWrite", 1);
-            Shader.SetGlobalInteger("_NeoclipAlphaToMask", 1);
-            Shader.SetGlobalInteger("_NeoclipIsClipping", 0);
-
-            areClippingParametersSet = false;
         }
+        else if (properties == clippingProperties)
+        {
+            camera.clearFlags = CameraClearFlags.Color;
+            camera.backgroundColor = Color.black;
+        }
+        
+        Shader.SetGlobalInteger(cullModeID, (int)properties.cullMode);
+        Shader.SetGlobalInteger(blendTargetID, (int)properties.blendTarget);
+        Shader.SetGlobalInteger(blendSourceFactorID, (int)properties.blendSourceFactor);
+        Shader.SetGlobalInteger(blendDestinationFactorID, (int)properties.blendDestinationFactor);
+        Shader.SetGlobalInteger(blendDestinationAlphaID, (int)properties.blendDestinationAlpha);
+        Shader.SetGlobalInteger(zTestID, (int)properties.zTest);
+        Shader.SetGlobalInteger(zWriteID, properties.zWrite ? 1 : 0);
+        Shader.SetGlobalInteger(alphaToMaskID, properties.alphaToMask ? 1 : 0);
+        Shader.SetGlobalInteger(isClippingID, properties.isClipping ? 1 : 0);
     }
     
     private void CharacterStartedNoclipping() => characterClipping = true;
@@ -64,7 +56,7 @@ public class ClipspaceShaderPropertySetter : MonoBehaviour
 
         if (!cameraWasClipping && waitForRagdollToExit)
         {
-            SetShaderParameters(false);
+            SetShaderParameters(normalProperties);
         }
     }
     
@@ -74,11 +66,11 @@ public class ClipspaceShaderPropertySetter : MonoBehaviour
 
         if (isClipping && !cameraWasClipping)
         {
-            SetShaderParameters(true);
+            SetShaderParameters(clippingProperties);
         }
         else if (!isClipping && cameraWasClipping || characterClipping && waitForRagdollToExit)
         {
-            SetShaderParameters(false);
+            SetShaderParameters(normalProperties);
         }
 
         cameraWasClipping = isClipping;
@@ -90,7 +82,7 @@ public class ClipspaceShaderPropertySetter : MonoBehaviour
         characterController.OnNoclipStopped += CharacterStoppedNoclipping;
         cameraController.OnMove += CameraMoved;
         
-        SetShaderParameters(false);
+        SetShaderParameters(normalProperties);
     }
 
     private void OnDisable()
@@ -99,11 +91,6 @@ public class ClipspaceShaderPropertySetter : MonoBehaviour
         characterController.OnNoclipStopped -= CharacterStoppedNoclipping;
         cameraController.OnMove -= CameraMoved;
         
-        SetShaderParameters(false);
-    }
-
-    private void OnDestroy()
-    {
-        SetShaderParameters(false);
+        SetShaderParameters(normalProperties);
     }
 }

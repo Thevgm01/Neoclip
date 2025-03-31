@@ -47977,6 +47977,9 @@ MonoBehaviour:
   characterController: {fileID: 2107269548}
   cameraController: {fileID: 330585548}
   camera: {fileID: 330585545}
+  waitForRagdollToExit: 0
+  normalProperties: {fileID: 11400000, guid: 47fddfc9d3ca8f54485ad0480c9b0cef, type: 2}
+  clippingProperties: {fileID: 11400000, guid: 1a49bf53ea1fe78409b914eb70639851, type: 2}
 --- !u!64 &2109273405
 MeshCollider:
   m_ObjectHideFlags: 0
