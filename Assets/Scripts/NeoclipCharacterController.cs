@@ -2,6 +2,7 @@ using System;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Serialization;
 
 public class NeoclipCharacterController : MonoBehaviour
 {
@@ -17,8 +18,7 @@ public class NeoclipCharacterController : MonoBehaviour
     [SerializeField] private bool applyGravity = true;
     [SerializeField] private float secondsToStayClipping = 0.2f;
     [SerializeField] private float angularSlowdown = 0.1f;
-    [SerializeField] private float smallVelocityThreshold = 1.0f;
-    [SerializeField] private float smallVelocityEjectionStrength = 3.0f;
+    [SerializeField] private float antiSkateVelocityThreshold = 0.2f;
     [SerializeField] private float maxMoveSpeed = 5.0f;
     [SerializeField] private float moveAcceleration = 1.0f;
     [SerializeField] private LayerNumber defaultLayer;
@@ -189,6 +189,21 @@ public class NeoclipCharacterController : MonoBehaviour
             }
         }
         
+        // Determine if we're "skating" along the ground, which we don't want
+        float antiSkateVelocityDot = Vector3.Dot(ragdollHelper.AverageLinearVelocity, -Physics.gravity.normalized);
+        bool antiSkate = !desiredNoclipState && anyBoneClipping && !allBonesClipping && antiSkateVelocityDot > 0.0f && antiSkateVelocityDot < antiSkateVelocityThreshold;
+        if (antiSkate)
+        {
+            Debug.Log("NeoclipCharacterController.FixedUpdate: Anti-skating mechanism triggered.");
+            anyBoneClipping = false;
+            allBonesClipping = false;
+            for (int i = 0; i < ragdollHelper.NumBones; i++)
+            {
+                boneClipStates[i] = false;
+            }
+            noclipBufferFrames = 0;
+        }
+        
         // Fire events
         if (noclipBufferFrames == 0)
         {
@@ -212,30 +227,11 @@ public class NeoclipCharacterController : MonoBehaviour
         {
             exitDirectionFinder.ResetExitDirection();
         }
-
-        float smallVelocityDot = Vector3.Dot(ragdollHelper.AverageLinearVelocity, -Physics.gravity.normalized);
-        bool smallVelocityEjection = !desiredNoclipState && anyBoneClipping && smallVelocityDot > 0.0f && smallVelocityDot < smallVelocityThreshold;
-        if (smallVelocityEjection)
-        {
-            Debug.Log("Applying ejection force");
-        }
         
         // Iterate through all bones
         for (int i = 0; i < ragdollHelper.NumBones; i++)
         {
             Rigidbody rigidbody = ragdollHelper.GetRigidbody(i);
-
-            if (noclipBufferFrames == 0)
-            {
-                if (desiredNoclipState) // If we want to noclip and we weren't already noclipping
-                {
-                    rigidbody.gameObject.layer = noclipLayer.value;
-                }
-                else // If we want to stop noclipping and the timer has run out
-                {
-                    rigidbody.gameObject.layer = defaultLayer.value;
-                }
-            }
             
             Vector3 force = Vector3.zero;
             Vector3 acceleration = Vector3.zero;
@@ -249,11 +245,6 @@ public class NeoclipCharacterController : MonoBehaviour
                 acceleration -= Physics.gravity * 2.0f;
                 
                 acceleration += exitDirection * 20.0f;
-            }
-
-            if (smallVelocityEjection)
-            {
-                acceleration -= Physics.gravity * smallVelocityEjectionStrength;
             }
             
             if (shouldApplyDrag)
