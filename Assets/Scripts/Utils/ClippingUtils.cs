@@ -36,13 +36,8 @@ public static class ClippingUtils
     public static bool HitBackface(this RaycastHit hit, Vector3 direction) => Vector3.Dot(hit.normal, direction) > DOT_THRESHOLD;
     public static bool HitVoid(this RaycastHit hit) => hit.colliderInstanceID == VoidColliderInstanceID;
 
-    public static bool CheckOrCastRay(Vector3 origin, float radius)
+    public static bool CastRays(Vector3 origin)
     {
-        if (Physics.CheckSphere(origin, Mathf.Max(radius, 0.00001f), ShapeCheckLayerMask))
-        {
-            return true;
-        }
-        
         int backfaceHits = 0;
         for (int i = 0; i < CastDirections.Length; i++)
         {
@@ -52,11 +47,21 @@ public static class ClippingUtils
                 return true;
             }
         }
-        
+
         return false;
     }
     
-    public static bool CheckOrCastBox(BoxCollider boxCollider)
+    public static bool CheckPointOrCastRays(Vector3 origin, float radius)
+    {
+        if (Physics.CheckSphere(origin, Mathf.Max(radius, 0.00001f), ShapeCheckLayerMask))
+        {
+            return true;
+        }
+        
+        return CastRays(origin);
+    }
+    
+    public static bool CheckOrCastBoxes(BoxCollider boxCollider)
     {
         Transform boxTransform = boxCollider.transform;
         Vector3 origin = boxTransform.TransformPoint(boxCollider.center);
@@ -81,7 +86,7 @@ public static class ClippingUtils
         return false;
     }
 
-    public static bool CheckOrCastCapsule(CapsuleCollider capsuleCollider)
+    public static bool CheckOrCastCapsules(CapsuleCollider capsuleCollider)
     {
         Transform capsuleTransform = capsuleCollider.transform;
             
@@ -108,7 +113,7 @@ public static class ClippingUtils
         return false;
     }
     
-    public static bool CheckOrCastSphere(SphereCollider sphereCollider)
+    public static bool CheckOrCastSpheres(SphereCollider sphereCollider)
     {
         Vector3 origin = sphereCollider.transform.TransformPoint(sphereCollider.center);
 
@@ -130,16 +135,38 @@ public static class ClippingUtils
         return false;
     }
 
-    public static bool CheckOrCastCollider(Collider collider)
+    public static bool CheckColliderOrCastRays(Collider collider)
     {
         switch (collider)
         {
             case BoxCollider boxCollider:
-                return CheckOrCastBox(boxCollider);
+                Transform boxTransform = boxCollider.transform;
+                Vector3 boxOrigin = boxTransform.TransformPoint(boxCollider.center);
+                return Physics.CheckBox(boxOrigin, boxCollider.size * 0.5f, boxTransform.rotation, ShapeCheckLayerMask) || CastRays(boxOrigin);
             case CapsuleCollider capsuleCollider:
-                return CheckOrCastCapsule(capsuleCollider);
+                Transform capsuleTransform = capsuleCollider.transform;
+                Vector3 capsuleOrigin = capsuleTransform.TransformPoint(capsuleCollider.center);
+                Vector3 axis = capsuleTransform.TransformDirection(capsuleCollider.height * 0.5f * capsuleCollider.GetAxis());
+                return Physics.CheckCapsule(capsuleOrigin + axis, capsuleOrigin - axis, capsuleCollider.radius, ShapeCheckLayerMask) || CastRays(capsuleOrigin);
             case SphereCollider sphereCollider:
-                return CheckOrCastSphere(sphereCollider);
+                Transform sphereTransform = sphereCollider.transform;
+                Vector3 sphereOrigin = sphereTransform.TransformPoint(sphereCollider.center);
+                return Physics.CheckSphere(sphereOrigin, sphereCollider.radius, ShapeCheckLayerMask) || CastRays(sphereOrigin);
+            default:
+                throw new ArgumentOutOfRangeException(nameof(collider), collider, null);
+        }
+    }
+    
+    public static bool CheckOrCastColliders(Collider collider)
+    {
+        switch (collider)
+        {
+            case BoxCollider boxCollider:
+                return CheckOrCastBoxes(boxCollider);
+            case CapsuleCollider capsuleCollider:
+                return CheckOrCastCapsules(capsuleCollider);
+            case SphereCollider sphereCollider:
+                return CheckOrCastSpheres(sphereCollider);
             default:
                 throw new ArgumentOutOfRangeException(nameof(collider), collider, null);
         }

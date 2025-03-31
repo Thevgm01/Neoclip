@@ -178,12 +178,14 @@ public class NeoclipCharacterController : MonoBehaviour
         
         // Test all bones to see if they're actively clipping
         bool anyBoneClipping = false;
+        bool allBonesClipping = true;
         if (desiredNoclipState || noclipBufferFrames > 0)
         {
             for (int i = 0; i < ragdollHelper.NumBones; i++)
             {
-                boneClipStates[i] = ClippingUtils.CheckOrCastCollider(ragdollHelper.GetCollider(i));
+                boneClipStates[i] = ClippingUtils.CheckColliderOrCastRays(ragdollHelper.GetCollider(i));
                 anyBoneClipping = anyBoneClipping || boneClipStates[i];
+                allBonesClipping = allBonesClipping && boneClipStates[i];
             }
         }
         

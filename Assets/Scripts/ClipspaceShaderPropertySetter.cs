@@ -53,7 +53,7 @@ public class ClipspaceShaderPropertySetter : MonoBehaviour
     
     private void CameraMoved()
     {
-        bool isClipping = ClippingUtils.CheckOrCastRay(cameraController.transform.position, 0.0f);
+        bool isClipping = ClippingUtils.CheckPointOrCastRays(cameraController.transform.position, 0.0f);
 
         if (isClipping && !cameraWasClipping)
         {
