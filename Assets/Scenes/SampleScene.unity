@@ -28697,9 +28697,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 92705d2fc7695da45bc85a3ccf634667, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  layerMask:
-    serializedVersion: 2
-    m_Bits: 513
   showBalls: 1
   printJobTime: 1
 --- !u!4 &687353706
@@ -47849,6 +47846,8 @@ MonoBehaviour:
   applyGravity: 1
   secondsToStayClipping: 0.2
   angularSlowdown: 0
+  smallVelocityThreshold: 1
+  smallVelocityEjectionStrength: 3
   maxMoveSpeed: 5
   moveAcceleration: 5
   defaultLayer:
@@ -47871,19 +47870,28 @@ MonoBehaviour:
       time: 0
       value: 1
       inSlope: -0.0022345118
-      outSlope: -0.0017643598
-      tangentMode: 1
+      outSlope: 0
+      tangentMode: 65
       weightedMode: 2
       inWeight: 0
-      outWeight: 0.49863106
+      outWeight: 0.4134214
+    - serializedVersion: 3
+      time: 2
+      value: 1
+      inSlope: -0
+      outSlope: -0.49882507
+      tangentMode: 69
+      weightedMode: 3
+      inWeight: 0.26997423
+      outWeight: 0.3573778
     - serializedVersion: 3
       time: 4
       value: 0.0023498535
-      inSlope: -0.5320848
+      inSlope: -0.49882507
       outSlope: 0
-      tangentMode: 1
+      tangentMode: 5
       weightedMode: 1
-      inWeight: 0.39033216
+      inWeight: 0.42840394
       outWeight: 0
     m_PreInfinity: 2
     m_PostInfinity: 2
