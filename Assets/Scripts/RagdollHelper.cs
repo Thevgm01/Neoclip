@@ -9,15 +9,18 @@ public class RagdollHelper : MonoBehaviour
     public int NumJoints { get; private set; }
 
     private Rigidbody[] rigidbodies;
+    private GameObject[] gameObjects;
     private Transform[] transforms;
     private Collider[] colliders;
     private ConfigurableJoint[] joints;
 
+    public GameObject[] BameObjects => (GameObject[])gameObjects.Clone();
     public Rigidbody[] Rigidbodies => (Rigidbody[])rigidbodies.Clone();
     public Transform[] Transforms => (Transform[])transforms.Clone();
     public Collider[] Colliders => (Collider[])colliders.Clone();
     public ConfigurableJoint[] Joints => (ConfigurableJoint[])joints.Clone();
     
+    public GameObject GetGameObject(int index) => gameObjects[index];
     public Rigidbody GetRigidbody(int index) => rigidbodies[index];
     public Transform GetTransform(int index) => transforms[index];
     public Collider GetCollider(int index) => colliders[index];
@@ -45,6 +48,7 @@ public class RagdollHelper : MonoBehaviour
     {
         rigidbodies = GetComponentsInChildren<Rigidbody>();
         NumBones = rigidbodies.Length;
+        gameObjects = new GameObject[NumBones];
         transforms = new Transform[NumBones];
         colliders = new Collider[NumBones];
         
@@ -56,6 +60,7 @@ public class RagdollHelper : MonoBehaviour
             Rigidbody rigidbody = rigidbodies[i];
             TotalMass += rigidbody.mass;
             
+            gameObjects[i] = rigidbody.gameObject;
             transforms[i] = rigidbody.transform;
             colliders[i] = rigidbody.GetComponent<Collider>();
         }
@@ -70,7 +75,7 @@ public class RagdollHelper : MonoBehaviour
         
         Debug.Log($"Ragdoll mass is {TotalMass} kg.");
     }
-
+    
     private void Update()
     {
         AveragePosition = Vector3.zero;
@@ -111,5 +116,13 @@ public class RagdollHelper : MonoBehaviour
             }
         }
 #endif
+    }
+
+    public void SetLayers(int layer)
+    {
+        for (int i = 0; i < NumBones; i++)
+        {
+            gameObjects[i].layer = layer;
+        }
     }
 }

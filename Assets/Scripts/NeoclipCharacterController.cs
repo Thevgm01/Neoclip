@@ -1,8 +1,7 @@
-using Unity.Jobs;
+using System;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.Serialization;
 
 public class NeoclipCharacterController : MonoBehaviour
 {
@@ -42,6 +41,9 @@ public class NeoclipCharacterController : MonoBehaviour
     private int noclipBufferFrames;
     private int animPanicID;
     
+    public Action OnNoclipStarted;
+    public Action OnNoclipStopped;
+        
     private void OnMoveInput(InputAction.CallbackContext context) => moveInput = context.ReadValue<Vector2>();
     private void OnNoclipInput(InputAction.CallbackContext context)
     {
@@ -111,11 +113,17 @@ public class NeoclipCharacterController : MonoBehaviour
 #endif
     }
     
+    private void SetNoclipLayers() => ragdollHelper.SetLayers(noclipLayer.value);
+    private void SetDefaultLayers() => ragdollHelper.SetLayers(defaultLayer.value);
+    
     private void Awake()
     {
         boneSurfaceAreas = new float[ragdollHelper.NumBones];
         boneClipStates = new bool[ragdollHelper.NumBones];
         animPanicID = Animator.StringToHash("Panic");
+
+        OnNoclipStarted += SetNoclipLayers;
+        OnNoclipStopped += SetDefaultLayers;
         
         Cursor.visible = false;
         Cursor.lockState = CursorLockMode.Locked;
@@ -177,6 +185,19 @@ public class NeoclipCharacterController : MonoBehaviour
             }
         }
         
+        // Fire events
+        if (noclipBufferFrames == 0)
+        {
+            if (desiredNoclipState) // If we want to noclip and we weren't already noclipping
+            {
+                OnNoclipStarted?.Invoke();
+            }
+            else // If we want to stop noclipping and the timer has run out
+            {
+                OnNoclipStopped?.Invoke();
+            }
+        }
+        
         // If we're inside something, calculate the exit direction for next frame
         if (anyBoneClipping)
         {
@@ -192,14 +213,17 @@ public class NeoclipCharacterController : MonoBehaviour
         for (int i = 0; i < ragdollHelper.NumBones; i++)
         {
             Rigidbody rigidbody = ragdollHelper.GetRigidbody(i);
-            
-            if (desiredNoclipState && noclipBufferFrames == 0) // If we want to noclip and we weren't already noclipping
+
+            if (noclipBufferFrames == 0)
             {
-                rigidbody.gameObject.layer = noclipLayer.value;
-            }
-            else if (!desiredNoclipState && noclipBufferFrames == 0) // If we want to stop noclipping and the timer has run out
-            {
-                rigidbody.gameObject.layer = defaultLayer.value;
+                if (desiredNoclipState) // If we want to noclip and we weren't already noclipping
+                {
+                    rigidbody.gameObject.layer = noclipLayer.value;
+                }
+                else // If we want to stop noclipping and the timer has run out
+                {
+                    rigidbody.gameObject.layer = defaultLayer.value;
+                }
             }
             
             Vector3 force = Vector3.zero;
