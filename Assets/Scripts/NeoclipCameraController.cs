@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Serialization;
@@ -17,7 +18,8 @@ public class NeoclipCameraController : MonoBehaviour
     [SerializeField] private float rotationSpeed = 30.0f;
     [SerializeField] [Range(0, 1)] private float skewStrength = 0.5f;
 
-    private Camera camera;
+    public Action OnMove;
+    
     private bool wasClipping = false;
     private bool mouseLooking = false;
     
@@ -68,57 +70,8 @@ public class NeoclipCameraController : MonoBehaviour
         }
     }
     
-    // The enum in UnityEngine.ShaderGraph is marked as internal, so I'm replicating it here
-    private enum ZTest { Less, Greater, LEqual, GEqual, Equal, NotEqual, Always }
-    
-    private void SetClipParameters(bool isClipping)
-    {
-        if (isClipping)
-        {
-            camera.clearFlags = CameraClearFlags.SolidColor;
-            camera.backgroundColor = Color.black;
-            
-            Shader.SetGlobalInteger("_NeoclipCullMode", (int)UnityEngine.Rendering.CullMode.Off);
-            
-            Shader.SetGlobalInteger("_NeoclipBlendTarget", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-            Shader.SetGlobalInteger("_NeoclipBlendSourceFactor", (int)UnityEngine.Rendering.BlendMode.One);
-            Shader.SetGlobalInteger("_NeoclipBlendDestinationFactor", (int)UnityEngine.Rendering.BlendMode.One);
-            Shader.SetGlobalInteger("_NeoclipBlendDestinationAlpha", (int)UnityEngine.Rendering.BlendMode.One);
-            
-            Shader.SetGlobalInteger("_NeoclipZTest", (int)ZTest.Always);
-            
-            Shader.SetGlobalInteger("_NeoclipZWrite", 0);
-            
-            Shader.SetGlobalInteger("_NeoclipAlphaToMask", 0);
-            
-            Shader.SetGlobalInteger("_NeoclipIsClipping", 1);
-        }
-        
-        else
-        {
-            camera.clearFlags = CameraClearFlags.Skybox;
-            
-            Shader.SetGlobalInteger("_NeoclipCullMode", (int)UnityEngine.Rendering.CullMode.Back);
-            
-            Shader.SetGlobalInteger("_NeoclipBlendTarget", (int)UnityEngine.Rendering.BlendMode.One);
-            Shader.SetGlobalInteger("_NeoclipBlendSourceFactor", (int)UnityEngine.Rendering.BlendMode.Zero);
-            Shader.SetGlobalInteger("_NeoclipBlendDestinationFactor", (int)UnityEngine.Rendering.BlendMode.Zero);
-            Shader.SetGlobalInteger("_NeoclipBlendDestinationAlpha", (int)UnityEngine.Rendering.BlendMode.Zero);
-            
-            Shader.SetGlobalInteger("_NeoclipZTest", (int)ZTest.LEqual);
-            
-            Shader.SetGlobalInteger("_NeoclipZWrite", 1);
-            
-            Shader.SetGlobalInteger("_NeoclipAlphaToMask", 1);
-            
-            Shader.SetGlobalInteger("_NeoclipIsClipping", 0);
-        }
-    }
-    
     private void Awake()
     {
-        camera = GetComponent<Camera>();
-        SetClipParameters(wasClipping);
         manualCameraAngles = transform.rotation.eulerAngles;
         
         currentPosition = transform.position;
@@ -145,17 +98,6 @@ public class NeoclipCameraController : MonoBehaviour
         //Quaternion skewedRotation = Quaternion.Slerp(currentRotation, skew, skewStrength);
 
         transform.SetPositionAndRotation(offsetPosition, currentRotation);
-
-        bool isClipping = ClippingUtils.CheckOrCastRay(offsetPosition, 0.0f);
-        if (isClipping != wasClipping)
-        {
-            SetClipParameters(isClipping);
-            wasClipping = isClipping;
-        }
-    }
-    
-    private void OnDestroy()
-    {
-        SetClipParameters(false);
+        OnMove?.Invoke();
     }
 }

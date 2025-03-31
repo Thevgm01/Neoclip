@@ -24357,7 +24357,7 @@ Camera:
   m_GameObject: {fileID: 330585543}
   m_Enabled: 1
   serializedVersion: 2
-  m_ClearFlags: 2
+  m_ClearFlags: 1
   m_BackGroundColor: {r: 0, g: 0, b: 0, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
@@ -47789,6 +47789,7 @@ GameObject:
   - component: {fileID: 2107269548}
   - component: {fileID: 2107269551}
   - component: {fileID: 2107269552}
+  - component: {fileID: 2107269553}
   m_Layer: 0
   m_Name: Character
   m_TagString: Untagged
@@ -47961,6 +47962,21 @@ MonoBehaviour:
   sphereCastRadius: 1
   timeToLookAhead: 5
   steps: 5
+--- !u!114 &2107269553
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2107269547}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f63c3e209a5ee4742a1d07e8fb8fabeb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  characterController: {fileID: 2107269548}
+  cameraController: {fileID: 330585548}
+  camera: {fileID: 330585545}
 --- !u!64 &2109273405
 MeshCollider:
   m_ObjectHideFlags: 0
