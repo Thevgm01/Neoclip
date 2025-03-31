@@ -6,6 +6,7 @@ using UnityEngine.Serialization;
 public class ImpactTimeEstimator : MonoBehaviour
 {
     [SerializeField] private RagdollHelper ragdollHelper;
+    [SerializeField] private LayerMask sphereCastLayers;
     [SerializeField] private float sphereCastRadius = 1.0f;
     [SerializeField] private float timeToLookAhead = 5.0f;
     [SerializeField] private int steps = 10;
@@ -38,7 +39,7 @@ public class ImpactTimeEstimator : MonoBehaviour
             using (new IgnoreBackfacesTemporary())
             {
                 if (Physics.SphereCast(position, sphereCastRadius, velocityNormalized,
-                        out RaycastHit hit, velocityMagnitude * stepDeltaTime, ClippingUtils.ShapeCastLayerMask))
+                        out RaycastHit hit, velocityMagnitude * stepDeltaTime, sphereCastLayers.value))
                 {
                     GizmoAnywhere.RepeatRequest(new GizmoAnywhere.GizmoDrawRequest
                         { position = position + velocityNormalized * hit.distance, color = Color.red });

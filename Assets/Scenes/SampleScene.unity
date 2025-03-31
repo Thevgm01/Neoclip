@@ -29403,7 +29403,7 @@ GameObject:
   - component: {fileID: 721747839}
   - component: {fileID: 721747842}
   - component: {fileID: 721747841}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: VoidCollider
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -46175,10 +46175,10 @@ MonoBehaviour:
   voidCollider: {fileID: 721747839}
   checkLayers:
     serializedVersion: 2
-    m_Bits: 513
+    m_Bits: 1537
   castLayers:
     serializedVersion: 2
-    m_Bits: 1
+    m_Bits: 1025
 --- !u!4 &2000531241
 Transform:
   m_ObjectHideFlags: 0
@@ -47846,8 +47846,7 @@ MonoBehaviour:
   applyGravity: 1
   secondsToStayClipping: 0.2
   angularSlowdown: 0
-  smallVelocityThreshold: 1
-  smallVelocityEjectionStrength: 3
+  antiSkateVelocityThreshold: 0.2
   maxMoveSpeed: 5
   moveAcceleration: 5
   defaultLayer:
@@ -47997,6 +47996,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ragdollHelper: {fileID: 2895484376115965014}
+  sphereCastLayers:
+    serializedVersion: 2
+    m_Bits: 513
   sphereCastRadius: 1
   timeToLookAhead: 5
   steps: 5
