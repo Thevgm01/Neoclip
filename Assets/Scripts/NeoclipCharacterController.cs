@@ -250,20 +250,9 @@ public class NeoclipCharacterController : MonoBehaviour
                     ? clippingForces // This bone is clipping (and the button is held down)
                     : ejectingForces; // This bone is clipping (but the button isn't held down)
             
-            if (forces.gravity.enabled)
-            {
-                rigidbody.AddForce(Physics.gravity * forces.gravity.mult, forces.gravity.forceMode);
-            }
-
-            if (forces.movement.enabled)
-            {
-                rigidbody.AddForce(movement * forces.movement.mult, forces.movement.forceMode);
-            }
-            
-            if (forces.exitDirection.enabled)
-            {
-                rigidbody.AddForce(exitDirection * forces.exitDirection.mult, forces.exitDirection.forceMode);
-            }
+            forces.ApplyGravity(rigidbody);
+            forces.ApplyMovement(rigidbody, movement);
+            forces.ApplyExitDirection(rigidbody, exitDirection);
             
             if (shouldApplyDrag)
             {

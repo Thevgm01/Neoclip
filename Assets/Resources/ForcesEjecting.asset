@@ -13,12 +13,18 @@ MonoBehaviour:
   m_Name: ForcesEjecting
   m_EditorClassIdentifier: 
   density: 20000
+  customDensity: 0
   gravity:
     enabled: 1
-    mult: -2
+    mult: -1
+    forceMode: 5
+  movement:
+    enabled: 1
+    mult: 1
+    forceMode: 5
   exitDirection:
     enabled: 1
+    mult: 10
+    forceMode: 5
     normalize: 0
-    mult: 1
     rotationDelta: 0
-  movementMult: 1

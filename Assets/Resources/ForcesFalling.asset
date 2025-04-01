@@ -17,9 +17,14 @@ MonoBehaviour:
   gravity:
     enabled: 1
     mult: 1
+    forceMode: 5
+  movement:
+    enabled: 1
+    mult: 1
+    forceMode: 5
   exitDirection:
     enabled: 0
     mult: 1
+    forceMode: 5
     normalize: 0
     rotationDelta: 0
-  movementMult: 1
