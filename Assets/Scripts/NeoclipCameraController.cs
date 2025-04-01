@@ -8,11 +8,15 @@ public class NeoclipCameraController : MonoBehaviour
     private enum LookMode { UP, FREE }
     
     [SerializeField] private RagdollHelper ragdollHelper = null;
-
+    [SerializeField] private NeoclipCharacterController characterController = null;
+    
     [Space]
     [SerializeField] private float followSpeed = 5.0f;
     [SerializeField] private float followDistance = 3.0f;
+    
     [Space]
+    [SerializeField] private bool spherecastWhenCharacterNotClipping = true;
+    [SerializeField] private float spherecastRadius = 0.025f;
     [SerializeField] private LookMode lookMode = LookMode.UP;
     [SerializeField] private Vector2 mouseSensitivity = Vector2.one;
     [SerializeField] private float rotationSpeed = 30.0f;
@@ -20,7 +24,6 @@ public class NeoclipCameraController : MonoBehaviour
     
     public event Action OnMove;
     
-    private bool wasClipping = false;
     private bool mouseLooking = false;
     
     private Vector3 manualCameraAngles = Vector3.zero;
@@ -87,7 +90,16 @@ public class NeoclipCameraController : MonoBehaviour
 
         currentRotation = Quaternion.Slerp(currentRotation, desiredRotation, GenericUtils.ExpT(rotationSpeed));
 
-        Vector3 offsetPosition = currentPosition + currentRotation * new Vector3(0, 0, -followDistance);
+        Vector3 offsetDirection = currentRotation * Vector3.back;
+        float offsetDistance = followDistance;
+        if (spherecastWhenCharacterNotClipping && !characterController.IsClipping)
+        {
+            if (Physics.SphereCast(currentPosition, spherecastRadius, offsetDirection, out RaycastHit hit, offsetDistance, ClippingUtils.ShapeCheckLayerMask))
+            {
+                offsetDistance = hit.distance;
+            }
+        }
+        Vector3 offsetPosition = currentPosition + offsetDirection * offsetDistance;
         //Vector3 dirToTarget = (desiredPosition - offsetPosition).normalized;
         //Quaternion skew = Quaternion.LookRotation(
         //    dirToTarget, 

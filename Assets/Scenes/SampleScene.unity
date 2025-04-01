@@ -43506,8 +43506,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ragdollHelper: {fileID: 2895484376115965014}
+  characterController: {fileID: 2107269548}
   followSpeed: 10
   followDistance: 3
+  spherecastWhenCharacterNotClipping: 1
+  spherecastRadius: 0.025
   lookMode: 0
   mouseSensitivity: {x: 0.2, y: 0.2}
   rotationSpeed: 50

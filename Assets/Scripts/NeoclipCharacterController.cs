@@ -44,6 +44,7 @@ public class NeoclipCharacterController : MonoBehaviour
     
     public event Action OnNoclipStarted;
     public event Action OnNoclipStopped;
+    public bool IsClipping { get; private set; }
         
     private void OnMoveInput(InputAction.CallbackContext context) => moveInput = context.ReadValue<Vector2>();
     private void OnNoclipInput(InputAction.CallbackContext context)
@@ -214,10 +215,12 @@ public class NeoclipCharacterController : MonoBehaviour
             if (desiredNoclipState) // If we want to noclip and we weren't already noclipping
             {
                 OnNoclipStarted?.Invoke();
+                IsClipping = true;
             }
             else // If we want to stop noclipping and the timer has run out
             {
                 OnNoclipStopped?.Invoke();
+                IsClipping = false;
             }
         }
         

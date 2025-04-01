@@ -52,7 +52,7 @@ public class DragCamera : MonoBehaviour
             rotation);
     }
 
-    private void CalculateHitsPerColor()
+    private void DispatchComputeShader()
     {
         // Create a buffer for color counts
         hitBuffer.SetData(new int[ragdollHelper.NumBones]);
@@ -78,7 +78,7 @@ public class DragCamera : MonoBehaviour
         {
             MoveCamera();
             RenderPipeline.SubmitRenderRequest(dragCamera, renderRequest);
-            CalculateHitsPerColor();
+            DispatchComputeShader();
         }
         
         if (hasData)
