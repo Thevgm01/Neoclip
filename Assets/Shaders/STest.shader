@@ -11,7 +11,8 @@ Shader "Unlit/STest"
     SubShader
     {
         Cull [_NeoclipCullMode]
-        Blend [_NeoclipBlendTarget] [_NeoclipBlendSourceFactor], [_NeoclipBlendDestinationFactor] [_NeoclipBlendDestinationAlpha]
+        Blend [_NeoclipBlendSourceFactor] [_NeoclipBlendDestinationFactor]
+        BlendOp [_NeoclipBlendOp]
         ZTest [_NeoclipZTest]
         ZWrite [_NeoclipZWrite]
         AlphaToMask [_NeoclipAlphaToMask]

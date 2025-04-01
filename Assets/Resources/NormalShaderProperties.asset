@@ -15,10 +15,10 @@ MonoBehaviour:
   clearFlags: 1
   backgroundColor: {r: 0, g: 0, b: 0, a: 0}
   cullMode: 2
-  blendTarget: 1
-  blendSourceFactor: 0
-  blendDestinationFactor: 0
-  blendDestinationAlpha: 0
+  blendMode:
+    sourceFactor: 1
+    destinationFactor: 0
+  blendOp: 0
   zTest: 2
   zWrite: 1
   alphaToMask: 1

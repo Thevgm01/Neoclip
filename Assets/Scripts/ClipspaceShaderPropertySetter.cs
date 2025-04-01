@@ -14,10 +14,9 @@ public class ClipspaceShaderPropertySetter : MonoBehaviour
     private bool cameraWasClipping = false;
     
     private readonly int cullModeID = Shader.PropertyToID("_NeoclipCullMode");
-    private readonly int blendTargetID = Shader.PropertyToID("_NeoclipBlendTarget");
     private readonly int blendSourceFactorID = Shader.PropertyToID("_NeoclipBlendSourceFactor");
     private readonly int blendDestinationFactorID = Shader.PropertyToID("_NeoclipBlendDestinationFactor");
-    private readonly int blendDestinationAlphaID = Shader.PropertyToID("_NeoclipBlendDestinationAlpha");
+    private readonly int blendOpID = Shader.PropertyToID("_NeoclipBlendOp");
     private readonly int zTestID = Shader.PropertyToID("_NeoclipZTest");
     private readonly int zWriteID = Shader.PropertyToID("_NeoclipZWrite");
     private readonly int alphaToMaskID = Shader.PropertyToID("_NeoclipAlphaToMask");
@@ -29,10 +28,9 @@ public class ClipspaceShaderPropertySetter : MonoBehaviour
         camera.clearFlags = properties.clearFlags;
         camera.backgroundColor = properties.backgroundColor;
         Shader.SetGlobalInteger(cullModeID, (int)properties.cullMode);
-        Shader.SetGlobalInteger(blendTargetID, (int)properties.blendTarget);
-        Shader.SetGlobalInteger(blendSourceFactorID, (int)properties.blendSourceFactor);
-        Shader.SetGlobalInteger(blendDestinationFactorID, (int)properties.blendDestinationFactor);
-        Shader.SetGlobalInteger(blendDestinationAlphaID, (int)properties.blendDestinationAlpha);
+        Shader.SetGlobalInteger(blendSourceFactorID, (int)properties.blendMode.sourceFactor);
+        Shader.SetGlobalInteger(blendDestinationFactorID, (int)properties.blendMode.destinationFactor);
+        Shader.SetGlobalInteger(blendOpID, (int)properties.blendOp);
         Shader.SetGlobalInteger(zTestID, (int)properties.zTest);
         Shader.SetGlobalInteger(zWriteID, properties.zWrite ? 1 : 0);
         Shader.SetGlobalInteger(alphaToMaskID, properties.alphaToMask ? 1 : 0);
