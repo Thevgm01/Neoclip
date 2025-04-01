@@ -226,8 +226,10 @@ public class NeoclipCharacterController : MonoBehaviour
             }
         }
         
-        // If we're inside something, calculate the exit direction for next frame
-        if (anyBoneClipping)
+        // Calculate the exit direction for next frame if necessary
+        if (anyBoneClipping && desiredNoclipState && clippingForces.exitDirection.enabled ||
+            anyBoneClipping && !desiredNoclipState && ejectingForces.exitDirection.enabled ||
+            !anyBoneClipping && fallingForces.exitDirection.enabled)
         {
             exitDirectionFinder.transform.position = ragdollHelper.AveragePosition;
             exitDirectionFinder.ScheduleJobs();
