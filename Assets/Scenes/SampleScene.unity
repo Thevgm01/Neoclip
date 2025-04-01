@@ -103031,7 +103031,9 @@ MonoBehaviour:
   exitDirectionFinder: {fileID: 687353705}
   impactTimeEstimator: {fileID: 2107269552}
   animator: {fileID: 1772433199}
-  applyGravity: 1
+  fallingForces: {fileID: 11400000, guid: dc4fc64d2ead2c744ba2bf67500213c5, type: 2}
+  clippingForces: {fileID: 11400000, guid: 8369ffcf22e6dad4bbcc5a2e2d24b547, type: 2}
+  ejectingForces: {fileID: 11400000, guid: 32b34aac00be56d47b363543e58f148e, type: 2}
   secondsToStayClipping: 0.2
   angularSlowdown: 0
   antiSkateVelocityThreshold: 0.2

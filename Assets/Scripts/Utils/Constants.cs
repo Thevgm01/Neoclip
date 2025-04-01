@@ -2,12 +2,13 @@ using UnityEngine;
 
 public static class Constants
 {
-    public static class Density
+    public enum Density
     {
-        public const float WATER = 1000.0f;
-        public const float AIR = 1.204f;
-        public const float CLIPSPACE = 20.0f;
-        public const float MEAT = 1010.0f;
+        Nothing   =        0,
+        Water     =  1000000,
+        Air       =     1204,
+        Clipspace =    20000,
+        Meat      =  1010000
     }
     
     public const float TAU = Mathf.PI * 2.0f;

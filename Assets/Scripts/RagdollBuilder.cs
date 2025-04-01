@@ -143,7 +143,7 @@ public class RagdollBuilder : MonoBehaviour
                 Undo.RecordObject(rigidbody, $"Set rigidbody values");
                 // rigidbody.SetDensity() does NOTHING!!!
                 rigidbody.mass = collider.CalculateVolume() * 
-                                 Constants.Density.MEAT * 
+                                 (float)Constants.Density.Meat / 1000.0f *
                                  initialMassMult;
                 rigidbody.angularDamping = angularDamping;
                 rigidbody.useGravity = false; // We're doing gravity manually

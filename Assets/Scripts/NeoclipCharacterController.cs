@@ -12,9 +12,11 @@ public class NeoclipCharacterController : MonoBehaviour
     [SerializeField] private ExitDirectionFinder exitDirectionFinder;
     [SerializeField] private ImpactTimeEstimator impactTimeEstimator;
     [SerializeField] private Animator animator;
-        
+
     [Space]
-    [SerializeField] private bool applyGravity = true;
+    [SerializeField] private Forces fallingForces;
+    [SerializeField] private Forces clippingForces;
+    [SerializeField] private Forces ejectingForces;
     [SerializeField] private float secondsToStayClipping = 0.2f;
     [SerializeField] private float angularSlowdown = 0.1f;
     [SerializeField] private float antiSkateVelocityThreshold = 0.2f;
@@ -240,37 +242,37 @@ public class NeoclipCharacterController : MonoBehaviour
         {
             Rigidbody rigidbody = ragdollHelper.GetRigidbody(i);
             
+            Forces forces = (boneClipStates[i] & ClippingUtils.ClipState.IsClipping) == 0
+                ? fallingForces // This bone is in open space
+                : desiredNoclipState
+                    ? clippingForces // This bone is clipping (and the button is held down)
+                    : ejectingForces; // This bone is clipping (but the button isn't held down)
+            
             Vector3 force = Vector3.zero;
             Vector3 acceleration = Vector3.zero;
             
-            if ((boneClipStates[i] & ClippingUtils.ClipState.IsClipping) == 0) // This bone is in open space
-            {
-                acceleration += applyGravity ? Physics.gravity : Vector3.zero;
-            }
-            else if (!desiredNoclipState) // This bone is clipping (but the button isn't held down)
-            {
-                acceleration -= Physics.gravity * 2.0f;
-                
-                acceleration += exitDirection * 20.0f;
-            }
+            acceleration += forces.gravity.enabled
+                ? Physics.gravity * forces.gravity.mult
+                : Vector3.zero;
+            acceleration += forces.exitDirection.enabled
+                ? (forces.exitDirection.normalize
+                    ? exitDirection.normalized
+                    : exitDirection) * forces.exitDirection.mult
+                : Vector3.zero;
             
             if (shouldApplyDrag)
             {
-                float density = (boneClipStates[i] & ClippingUtils.ClipState.IsClipping) > 0
-                    ? Constants.Density.CLIPSPACE
-                    : Constants.Density.AIR;
-
                 Vector3 projectedVelocity = Vector3.Project(rigidbody.linearVelocity, velocityNormalized);
                 
                 force += 0.5f * 
-                         density *
+                         (float)forces.density / 1000.0f *
                          projectedVelocity.sqrMagnitude * 
                          0.7f *
                          boneSurfaceAreas[i] * 
-                         dragCamera.transform.forward;
+                         -velocityNormalized;
             }
 
-            acceleration += movement;
+            acceleration += movement * forces.movementMult;
             
             rigidbody.AddForce(force, ForceMode.Force);
             rigidbody.AddForce(acceleration, ForceMode.Acceleration);
