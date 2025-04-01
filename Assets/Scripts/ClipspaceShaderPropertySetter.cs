@@ -84,4 +84,15 @@ public class ClipspaceShaderPropertySetter : MonoBehaviour
         
         SetShaderParameters(normalProperties);
     }
+
+#if UNITY_EDITOR
+    [SerializeField] private bool updateEveryFrame = false;
+    private void Update()
+    {
+        if (updateEveryFrame)
+        {
+            SetShaderParameters(cameraWasClipping ? clippingProperties : normalProperties);
+        }
+    }
+#endif
 }
