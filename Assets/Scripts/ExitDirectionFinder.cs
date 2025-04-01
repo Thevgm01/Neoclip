@@ -130,11 +130,11 @@ public class ExitDirectionFinder : MonoBehaviour
             {
                 if (pointBackfaceHits[index] < ClippingUtils.MINIMUM_BACKFACES_TO_BE_INSIDE)
                 {
-                    result.Value += points[index] - origin;
+                    result.Value += (points[index] - origin).normalized;
                 }
             }
-
-            result.Value *= 2.0f / points.Length;
+            
+            result.Value *= 10.0f / points.Length;
         }
     }
     
@@ -228,7 +228,7 @@ public class ExitDirectionFinder : MonoBehaviour
         {
             // These numbers are shamelessly hardcoded to facilitate a relatively-evenly-spread arrangement
             // with the points generally clustered closer to the center
-            rawPoints[i] *= Mathf.Pow(1.25f, ((i * 3141592653) % NUM_POINTS) / 200.0f);
+            rawPoints[i] *= Mathf.Pow(1.25f, ((i * 3141592653) % NUM_POINTS) / 100.0f);
         }
     }
     
