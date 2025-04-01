@@ -13,12 +13,13 @@ MonoBehaviour:
   m_Name: ForcesClipping
   m_EditorClassIdentifier: 
   density: 20000
+  customDensity: 0
   gravity:
     enabled: 0
     mult: 0
   exitDirection:
-    enabled: 1
+    enabled: 0
+    mult: 0
     normalize: 0
-    mult: 1
     rotationDelta: 0
   movementMult: 1

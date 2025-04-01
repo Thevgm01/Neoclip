@@ -248,34 +248,34 @@ public class NeoclipCharacterController : MonoBehaviour
                     ? clippingForces // This bone is clipping (and the button is held down)
                     : ejectingForces; // This bone is clipping (but the button isn't held down)
             
-            Vector3 force = Vector3.zero;
-            Vector3 acceleration = Vector3.zero;
+            if (forces.gravity.enabled)
+            {
+                rigidbody.AddForce(Physics.gravity * forces.gravity.mult, forces.gravity.forceMode);
+            }
+
+            if (forces.movement.enabled)
+            {
+                rigidbody.AddForce(movement * forces.movement.mult, forces.movement.forceMode);
+            }
             
-            acceleration += forces.gravity.enabled
-                ? Physics.gravity * forces.gravity.mult
-                : Vector3.zero;
-            acceleration += forces.exitDirection.enabled
-                ? (forces.exitDirection.normalize
-                    ? exitDirection.normalized
-                    : exitDirection) * forces.exitDirection.mult
-                : Vector3.zero;
+            if (forces.exitDirection.enabled)
+            {
+                rigidbody.AddForce(exitDirection * forces.exitDirection.mult, forces.exitDirection.forceMode);
+            }
             
             if (shouldApplyDrag)
             {
                 Vector3 projectedVelocity = Vector3.Project(rigidbody.linearVelocity, velocityNormalized);
                 
-                force += 0.5f * 
-                         (float)forces.density / 1000.0f *
-                         projectedVelocity.sqrMagnitude * 
-                         0.7f *
-                         boneSurfaceAreas[i] * 
-                         -velocityNormalized;
+                rigidbody.AddForce(
+                    0.5f * 
+                    forces.GetDensity() *
+                    projectedVelocity.sqrMagnitude * 
+                    0.7f *
+                    boneSurfaceAreas[i] * 
+                    -velocityNormalized,
+                    ForceMode.Force);
             }
-
-            acceleration += movement * forces.movementMult;
-            
-            rigidbody.AddForce(force, ForceMode.Force);
-            rigidbody.AddForce(acceleration, ForceMode.Acceleration);
             
             if (angularSlowdown > 0.0f)
             {

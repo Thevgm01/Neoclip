@@ -1,26 +1,29 @@
 using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 [CreateAssetMenu(fileName = "Forces", menuName = "Scriptable Objects/Forces")]
 public class Forces : ScriptableObject
 {
     [Serializable]
-    public struct GravityForce
+    public class Force
     {
-        public bool enabled;
-        public float mult;
+        public bool enabled = true;
+        public float mult = 1.0f;
+        public ForceMode forceMode = ForceMode.Acceleration;
     }
     
     [Serializable]
-    public struct ExitDirectionForce {
-        public bool enabled;
-        public bool normalize;
-        public float mult;
-        public float rotationDelta;
+    public class ExitDirectionForce : Force {
+        public bool normalize = false;
+        public float rotationDelta = 0.0f;
     }
     
-    public Constants.Density density;
-    public GravityForce gravity;
+    [SerializeField] private Constants.Density density = Constants.Density.Air;
+    [SerializeField] private float customDensity = 0.0f;
+    public Force gravity;
+    public Force movement;
     public ExitDirectionForce exitDirection;
-    public float movementMult;
+    
+    public float GetDensity() => density == Constants.Density.Custom ? customDensity : (float)density / 1000.0f;
 }

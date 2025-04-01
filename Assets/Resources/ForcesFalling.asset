@@ -13,12 +13,13 @@ MonoBehaviour:
   m_Name: ForcesFalling
   m_EditorClassIdentifier: 
   density: 1204
+  customDensity: 0
   gravity:
     enabled: 1
     mult: 1
   exitDirection:
     enabled: 0
+    mult: 1
     normalize: 0
-    mult: 0
     rotationDelta: 0
   movementMult: 1
