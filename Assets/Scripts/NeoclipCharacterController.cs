@@ -2,6 +2,7 @@ using System;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Serialization;
 
 public class NeoclipCharacterController : MonoBehaviour
 {
@@ -33,12 +34,20 @@ public class NeoclipCharacterController : MonoBehaviour
     [SerializeField] private InputActionReference moveAction;
     [SerializeField] private InputActionReference noclipAction;
     [SerializeField] private InputActionReference bounceAction;
-    [SerializeField] private InputActionReference leftclickAction;
-    [SerializeField] private InputActionReference escapeAction;
+    [SerializeField] private InputActionReference advanceGameStateAction;
+    [SerializeField] private InputActionReference reverseGameStateAction;
     private Vector2 moveInput;
     private bool desiredNoclipState;
-    private bool mouseIsInside = false;
-    
+
+    [Flags]
+    private enum GameState
+    {
+        PAUSED = 0,
+        SIMULATING = 1,
+        FOCUSED = 2
+    }
+    private GameState gameState = GameState.SIMULATING;
+            
     private float[] boneSurfaceAreas;
     private ClippingUtils.ClipState[] boneClipStates;
     private int noclipBufferFrames;
@@ -86,35 +95,78 @@ public class NeoclipCharacterController : MonoBehaviour
             }
         }
     }
-    
-    private void OnLeftclickInput(InputAction.CallbackContext context)
+
+    private void AdvanceGameState()
     {
-        if (!mouseIsInside)
+        if ((gameState & GameState.FOCUSED) == 0)
         {
+            cameraController.BindMouseLook(mouseLookAction, true);
             moveAction.action.performed += OnMoveInput; moveAction.action.canceled += OnMoveInput;
             noclipAction.action.performed += OnNoclipInput; noclipAction.action.canceled += OnNoclipInput;
             bounceAction.action.performed += OnBounceInput; bounceAction.action.canceled += OnBounceInput;
-            cameraController.BindMouseLook(mouseLookAction, true);
-            mouseIsInside = true;
+            gameState |= GameState.FOCUSED;
         }
-    }
-    
-    private void OnEscapeInput(InputAction.CallbackContext context)
-    {
-        if (mouseIsInside)
+        else if ((gameState & GameState.SIMULATING) == 0)
         {
+            ragdollHelper.Unfreeze();
+            gameState |= GameState.SIMULATING;
+        }
+
+        if (gameState == (GameState.FOCUSED | GameState.SIMULATING))
+        {
+            advanceGameStateAction.action.performed -= AdvanceGameState;
+        }
+        else if (gameState == GameState.PAUSED)
+        {
+            reverseGameStateAction.action.performed += ReverseGameState;
+        }
+        
+        Debug.Log(gameState);
+    }
+    private void AdvanceGameState(InputAction.CallbackContext context)
+    {
+        if (context.ReadValueAsButton()) AdvanceGameState();
+    }
+
+    private void ReverseGameState()
+    {
+        if (gameState == (GameState.FOCUSED | GameState.SIMULATING))
+        {
+            advanceGameStateAction.action.performed += AdvanceGameState;
+        }
+        
+        if (gameState == GameState.PAUSED)
+        {
+#if UNITY_EDITOR
+            EditorApplication.isPaused = true;
+#endif
+        }
+        else if ((gameState & GameState.FOCUSED) > 0)
+        {
+            cameraController.BindMouseLook(mouseLookAction, false);
             moveAction.action.performed -= OnMoveInput; moveAction.action.canceled -= OnMoveInput;
             noclipAction.action.performed -= OnNoclipInput; noclipAction.action.canceled -= OnNoclipInput;
             bounceAction.action.performed -= OnBounceInput; bounceAction.action.canceled -= OnBounceInput;
-            cameraController.BindMouseLook(mouseLookAction, false);
-            mouseIsInside = false;
+            gameState ^= GameState.FOCUSED;
         }
-#if UNITY_EDITOR
-        else
+        else if ((gameState & GameState.SIMULATING) > 0)
         {
-            EditorApplication.isPaused = true;
+            ragdollHelper.Freeze();
+            gameState ^= GameState.SIMULATING;
+        }
+        
+#if !UNITY_EDITOR
+        if (gameState == GameState.PAUSED)
+        {
+            reverseGameStateAction.action.performed -= ReverseGameState;
         }
 #endif
+        
+        Debug.Log(gameState);
+    }
+    private void ReverseGameState(InputAction.CallbackContext context)
+    {
+        if (context.ReadValueAsButton()) ReverseGameState();
     }
     
     private void SetNoclipLayers() => ragdollHelper.SetLayers(noclipLayer.value);
@@ -135,18 +187,23 @@ public class NeoclipCharacterController : MonoBehaviour
     
     private void OnEnable()
     {
-        leftclickAction.action.performed += OnLeftclickInput;
-        escapeAction.action.performed += OnEscapeInput;
+        advanceGameStateAction.action.performed += AdvanceGameState;
+        reverseGameStateAction.action.performed += ReverseGameState;
     }
     
     private void OnDisable()
     {
-        leftclickAction.action.performed -= OnLeftclickInput;
-        escapeAction.action.performed -= OnEscapeInput;
+        advanceGameStateAction.action.performed -= AdvanceGameState;
+        reverseGameStateAction.action.performed -= ReverseGameState;
     }
     
     private void FixedUpdate()
     {
+        if ((gameState & GameState.SIMULATING) == 0)
+        {
+            return;
+        }
+        
         Vector3 movement = cameraController.GetCameraRelativeMoveVector(moveInput) * moveAcceleration;
 
         float velocityMagnitude = ragdollHelper.AverageLinearVelocity.magnitude;
@@ -243,7 +300,7 @@ public class NeoclipCharacterController : MonoBehaviour
         for (int i = 0; i < ragdollHelper.NumBones; i++)
         {
             Rigidbody rigidbody = ragdollHelper.GetRigidbody(i);
-            
+               
             Forces forces = (boneClipStates[i] & ClippingUtils.ClipState.IsClipping) == 0
                 ? fallingForces // This bone is in open space
                 : desiredNoclipState

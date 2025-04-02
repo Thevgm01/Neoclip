@@ -13,7 +13,9 @@ public class RagdollHelper : MonoBehaviour
     private Transform[] transforms;
     private Collider[] colliders;
     private ConfigurableJoint[] joints;
-
+    private Vector3[] linearVelocities;
+    private Vector3[] angularVelocities;
+    
     public GameObject[] BameObjects => (GameObject[])gameObjects.Clone();
     public Rigidbody[] Rigidbodies => (Rigidbody[])rigidbodies.Clone();
     public Transform[] Transforms => (Transform[])transforms.Clone();
@@ -51,6 +53,8 @@ public class RagdollHelper : MonoBehaviour
         gameObjects = new GameObject[NumBones];
         transforms = new Transform[NumBones];
         colliders = new Collider[NumBones];
+        linearVelocities = new Vector3[NumBones];
+        angularVelocities = new Vector3[NumBones];
         
         joints = GetComponentsInChildren<ConfigurableJoint>();
         NumJoints = joints.Length;
@@ -123,6 +127,28 @@ public class RagdollHelper : MonoBehaviour
         for (int i = 0; i < NumBones; i++)
         {
             gameObjects[i].layer = layer;
+        }
+    }
+
+    public void Freeze()
+    {
+        for (int i = 0; i < NumBones; i++)
+        {
+            Rigidbody rigidbody = rigidbodies[i];
+            linearVelocities[i] = rigidbody.linearVelocity;
+            angularVelocities[i] = rigidbody.angularVelocity;
+            rigidbody.isKinematic = true;
+        }
+    }
+
+    public void Unfreeze()
+    {
+        for (int i = 0; i < NumBones; i++)
+        {
+            Rigidbody rigidbody = rigidbodies[i];
+            rigidbody.isKinematic = false;
+            rigidbody.linearVelocity = linearVelocities[i];
+            rigidbody.angularVelocity = angularVelocities[i];
         }
     }
 }
