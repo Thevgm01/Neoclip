@@ -72,11 +72,11 @@ public class RagdollBuilder : MonoBehaviour
             {
                 mirrorBoneObject = (UnityEngine.Object)other.gameObject;
                 //EditorGUIUtility.PingObject(other.gameObject);
-                Debug.Log($"RagdollBuilder: Selecting mirror bone at {path}");
+                Debug.Log($"{nameof(RagdollBuilder)}: Selecting mirror bone at {path}");
             }
             else
             {
-                Debug.Log($"RagdollBuilder: Could not find mirror bone at {path}");
+                Debug.Log($"{nameof(RagdollBuilder)}: Could not find mirror bone at {path}");
             }
         }
         
@@ -183,12 +183,12 @@ public class RagdollBuilder : MonoBehaviour
             DestroyImmediate(tempJoint);
             DestroyImmediate(tempRigidbody);
             
-            Debug.Log($"RagdollBuilder: Set the mass of {rigidbodies.Length - 1} rigidbodies. Total mass is {totalMass} kg.");
+            Debug.Log($"{nameof(RagdollBuilder)}: Set the mass of {rigidbodies.Length - 1} rigidbodies. Total mass is {totalMass} kg.");
 
             // -1 because the root rigidbody has no parent, so it won't get a joint
-            Debug.Log($"RagdollBuilder: Created {rigidbodies.Length - 2} ConfigurableJoints.");
+            Debug.Log($"{nameof(RagdollBuilder)}: Created {rigidbodies.Length - 2} ConfigurableJoints.");
             
-            Debug.Log($"RagdollBuilder: Created {dragMeshesCreated} drag meshes.");
+            Debug.Log($"{nameof(RagdollBuilder)}: Created {dragMeshesCreated} drag meshes.");
         }
     }
 }

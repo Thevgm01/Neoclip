@@ -24,7 +24,7 @@ public class ClipspaceShaderPropertySetter : MonoBehaviour
     
     private void SetShaderParameters(ClipspaceShaderProperties properties)
     {
-        //Debug.Log("ClipspaceShaderPropertySetter.SetShaderParameters: Setting parameters.");
+        Debug.Log($"{nameof(ClipspaceShaderPropertySetter)}.{nameof(SetShaderParameters)}: Setting parameters to {properties.name}");
         camera.clearFlags = properties.clearFlags;
         camera.backgroundColor = properties.backgroundColor;
         Shader.SetGlobalInteger(cullModeID, (int)properties.cullMode);

@@ -121,7 +121,7 @@ public class NeoclipCharacterController : MonoBehaviour
             reverseGameStateAction.action.performed += ReverseGameState;
         }
         
-        Debug.Log(gameState);
+        Debug.Log($"{nameof(NeoclipCharacterController)}.{nameof(AdvanceGameState)}: {gameState}");
     }
     private void AdvanceGameState(InputAction.CallbackContext context)
     {
@@ -162,7 +162,7 @@ public class NeoclipCharacterController : MonoBehaviour
         }
 #endif
         
-        Debug.Log(gameState);
+        Debug.Log($"{nameof(NeoclipCharacterController)}.{nameof(ReverseGameState)}: {gameState}");
     }
     private void ReverseGameState(InputAction.CallbackContext context)
     {
@@ -226,7 +226,7 @@ public class NeoclipCharacterController : MonoBehaviour
             float timeDiffTruncated = (int)((Time.realtimeSinceStartupAsDouble - startTime) * 100) / 100.0f;
             if (timeDiffTruncated > 0.0f)
             {
-                Debug.LogWarning($"NeoclipCharacterController.FixedUpdate(): Had to wait {timeDiffTruncated}ms for exitDirectionJob to complete!");
+                Debug.LogWarning($"{nameof(NeoclipCharacterController)}.{nameof(FixedUpdate)}(): Had to wait {timeDiffTruncated}ms for exitDirectionJob to complete!");
             }
         }
         else
@@ -257,7 +257,7 @@ public class NeoclipCharacterController : MonoBehaviour
         bool antiSkate = !desiredNoclipState && anyBoneClipping && !anyBoneRayHit && !allBonesClipping && antiSkateVelocityDot > 0.0f && antiSkateVelocityDot < antiSkateVelocityThreshold;
         if (antiSkate)
         {
-            Debug.Log("NeoclipCharacterController.FixedUpdate: Anti-skating mechanism triggered.");
+            Debug.Log($"{nameof(NeoclipCharacterController)}.{nameof(FixedUpdate)}: Anti-skating mechanism triggered.");
             anyBoneClipping = false;
             anyBoneRayHit = false;
             allBonesClipping = false;

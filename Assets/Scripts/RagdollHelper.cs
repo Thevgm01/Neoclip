@@ -77,7 +77,7 @@ public class RagdollHelper : MonoBehaviour
             }
         }
         
-        Debug.Log($"Ragdoll mass is {TotalMass} kg.");
+        Debug.Log($"{nameof(RagdollHelper)}.{nameof(Awake)} mass is {TotalMass} kg.");
     }
     
     private void Update()

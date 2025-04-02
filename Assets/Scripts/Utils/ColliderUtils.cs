@@ -107,12 +107,12 @@ public static class ColliderUtils
 	{
 		if (primMesh == null)
 		{
-			Debug.Log("Utils.GetCachedPrimitiveMesh: Getting Unity Primitive Mesh: " + primitiveType);
+			Debug.Log($"{nameof(ColliderUtils)}.{nameof(GetCachedPrimitiveMesh)}: Getting Unity Primitive Mesh: {primitiveType}");
 			primMesh = Resources.GetBuiltinResource<Mesh>(GetPrimitiveMeshPath(primitiveType));
 
 			if (primMesh == null)
 			{
-				Debug.LogError("Utils.GetCachedPrimitiveMesh: Couldn't load Unity Primitive Mesh: " + primitiveType);
+				Debug.LogError($"{nameof(ColliderUtils)}.{nameof(GetCachedPrimitiveMesh)}: Couldn't load Unity Primitive Mesh: {primitiveType}");
 			}
 		}
 
