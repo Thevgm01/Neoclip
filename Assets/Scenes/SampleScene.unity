@@ -104583,6 +104583,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   autoselectMirrorBone: 1
+  boneDensity: {fileID: 11400000, guid: 8e1abb25d4d7b8e4894c3a7dbbaa53f4, type: 2}
   initialMassMult: 0.4
   angularDamping: 0.2
   dragMeshMaterial: {fileID: -876546973899608171, guid: d2d49b48baac40f47b4bfe6994f43e0f, type: 3}

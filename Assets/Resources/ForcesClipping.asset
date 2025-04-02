@@ -12,19 +12,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5c440735896975b4e9aa787102d46f0b, type: 3}
   m_Name: ForcesClipping
   m_EditorClassIdentifier: 
-  density: 20000
+  density: {fileID: 11400000, guid: f7fd1c9816fe69240b525dd637cfd232, type: 2}
   customDensity: 0
   gravity:
     enabled: 0
     mult: 0
-    forceMode: 5
   movement:
     enabled: 1
     mult: 1
-    forceMode: 5
   exitDirection:
     enabled: 0
     mult: 0
-    forceMode: 5
     normalize: 0
-    rotationDelta: 0
+    alignmentDelta: 0

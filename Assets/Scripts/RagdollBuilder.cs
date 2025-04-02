@@ -12,6 +12,7 @@ using UnityEngine.EventSystems;
 public class RagdollBuilder : MonoBehaviour
 {
     public bool autoselectMirrorBone = true;
+    public DensitySO boneDensity;
     public float initialMassMult = 1.0f;
     public float angularDamping = 0.05f;
     public Material dragMeshMaterial;
@@ -143,7 +144,7 @@ public class RagdollBuilder : MonoBehaviour
                 Undo.RecordObject(rigidbody, $"Set rigidbody values");
                 // rigidbody.SetDensity() does NOTHING!!!
                 rigidbody.mass = collider.CalculateVolume() * 
-                                 (float)Constants.Density.Meat / 1000.0f *
+                                 boneDensity.value *
                                  initialMassMult;
                 rigidbody.angularDamping = angularDamping;
                 rigidbody.useGravity = false; // We're doing gravity manually

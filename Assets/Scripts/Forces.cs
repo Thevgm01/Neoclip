@@ -36,13 +36,13 @@ public class Forces : ScriptableObject
         }
     }
     
-    [SerializeField] private Constants.Density density = Constants.Density.Air;
+    [SerializeField] private DensitySO density;
     [SerializeField] private float customDensity = 0.0f;
     [SerializeField] private Force gravity;
     [SerializeField] private Force movement;
     public ExitDirectionForce exitDirection;
     
-    public float GetDensity() => density == Constants.Density.Custom ? customDensity : (float)density / 1000.0f;
+    public float GetDensity() => density.value;
     public void ApplyGravity(Rigidbody rigidbody) => gravity.TryAddForce(rigidbody, Physics.gravity);
     public void ApplyMovement(Rigidbody rigidbody, Vector3 input) => movement.TryAddForce(rigidbody, input);
     public void ApplyExitDirection(Rigidbody rigidbody, Vector3 input) => exitDirection.TryAddForce(rigidbody, input);
