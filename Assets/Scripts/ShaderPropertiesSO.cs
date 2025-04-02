@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.Serialization;
 
 [CreateAssetMenu(fileName = "ClipspaceShaderProperties", menuName = "Scriptable Objects/ClipspaceShaderProperties")]
-public class ClipspaceShaderProperties : ScriptableObject
+public class ShaderPropertiesSO : ScriptableObject
 {
     // The enum in UnityEngine.ShaderGraph is marked as internal, so I'm replicating it here
     public enum ZTest { Less, Greater, LEqual, GEqual, Equal, NotEqual, Always }

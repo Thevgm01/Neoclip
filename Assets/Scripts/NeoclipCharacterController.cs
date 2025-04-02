@@ -15,9 +15,9 @@ public class NeoclipCharacterController : MonoBehaviour
     [SerializeField] private Animator animator;
 
     [Space]
-    [SerializeField] private Forces fallingForces;
-    [SerializeField] private Forces clippingForces;
-    [SerializeField] private Forces ejectingForces;
+    [SerializeField] private ForcesSO fallingForces;
+    [SerializeField] private ForcesSO clippingForces;
+    [SerializeField] private ForcesSO ejectingForces;
     [SerializeField] private float secondsToStayClipping = 0.2f;
     [SerializeField] private float angularSlowdown = 0.1f;
     [SerializeField] private float antiSkateVelocityThreshold = 0.2f;
@@ -303,7 +303,7 @@ public class NeoclipCharacterController : MonoBehaviour
         {
             Rigidbody rigidbody = ragdollHelper.GetRigidbody(i);
                
-            Forces forces = (boneClipStates[i] & ClippingUtils.ClipState.IsClipping) == 0
+            ForcesSO forces = (boneClipStates[i] & ClippingUtils.ClipState.IsClipping) == 0
                 ? fallingForces // This bone is in open space
                 : desiredNoclipState
                     ? clippingForces // This bone is clipping (and the button is held down)

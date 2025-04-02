@@ -7,8 +7,8 @@ public class ClipspaceShaderPropertySetter : MonoBehaviour
     [SerializeField] private NeoclipCameraController cameraController;
     [SerializeField] private Camera camera;
     [SerializeField] private bool waitForRagdollToExit;
-    [SerializeField] private ClipspaceShaderProperties normalProperties;
-    [SerializeField] private ClipspaceShaderProperties clippingProperties;
+    [SerializeField] private ShaderPropertiesSO normalProperties;
+    [SerializeField] private ShaderPropertiesSO clippingProperties;
     
     private bool characterClipping = false;
     private bool cameraWasClipping = false;
@@ -22,7 +22,7 @@ public class ClipspaceShaderPropertySetter : MonoBehaviour
     private readonly int alphaToMaskID = Shader.PropertyToID("_NeoclipAlphaToMask");
     private readonly int isClippingID = Shader.PropertyToID("_NeoclipIsClipping");
     
-    private void SetShaderParameters(ClipspaceShaderProperties properties, bool shouldPrint = true)
+    private void SetShaderParameters(ShaderPropertiesSO properties, bool shouldPrint = true)
     {
         if (shouldPrint)
         {

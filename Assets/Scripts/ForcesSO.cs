@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.Serialization;
 
 [CreateAssetMenu(fileName = "Forces", menuName = "Scriptable Objects/Forces")]
-public class Forces : ScriptableObject
+public class ForcesSO : ScriptableObject
 {
     [Serializable]
     public class Force
