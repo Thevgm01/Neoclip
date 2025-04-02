@@ -22,9 +22,13 @@ public class ClipspaceShaderPropertySetter : MonoBehaviour
     private readonly int alphaToMaskID = Shader.PropertyToID("_NeoclipAlphaToMask");
     private readonly int isClippingID = Shader.PropertyToID("_NeoclipIsClipping");
     
-    private void SetShaderParameters(ClipspaceShaderProperties properties)
+    private void SetShaderParameters(ClipspaceShaderProperties properties, bool shouldPrint = true)
     {
-        Debug.Log($"{nameof(ClipspaceShaderPropertySetter)}.{nameof(SetShaderParameters)}: Setting parameters to {properties.name}");
+        if (shouldPrint)
+        {
+            Debug.Log($"{nameof(ClipspaceShaderPropertySetter)}.{nameof(SetShaderParameters)}: Setting parameters to {properties.name}");
+        }
+
         camera.clearFlags = properties.clearFlags;
         camera.backgroundColor = properties.backgroundColor;
         Shader.SetGlobalInteger(cullModeID, (int)properties.cullMode);
@@ -89,7 +93,10 @@ public class ClipspaceShaderPropertySetter : MonoBehaviour
     {
         if (updateEveryFrame)
         {
-            SetShaderParameters(cameraWasClipping ? clippingProperties : normalProperties);
+            SetShaderParameters(
+                cameraWasClipping || characterClipping && waitForRagdollToExit
+                    ? clippingProperties 
+                    : normalProperties, false);
         }
     }
 #endif

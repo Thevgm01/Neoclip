@@ -271,13 +271,15 @@ public class NeoclipCharacterController : MonoBehaviour
         // Fire events
         if (noclipBufferFrames == 0)
         {
-            if (desiredNoclipState) // If we want to noclip and we weren't already noclipping
+            if (desiredNoclipState && !IsClipping) // If we want to noclip and we weren't already noclipping
             {
+                Debug.Log($"{nameof(NeoclipCharacterController)}.{nameof(FixedUpdate)}: {nameof(OnNoclipStarted)}");
                 OnNoclipStarted?.Invoke();
                 IsClipping = true;
             }
-            else // If we want to stop noclipping and the timer has run out
+            else if (!desiredNoclipState && IsClipping) // If we want to stop noclipping and the timer has run out
             {
+                Debug.Log($"{nameof(NeoclipCharacterController)}.{nameof(FixedUpdate)}: {nameof(OnNoclipStopped)}");
                 OnNoclipStopped?.Invoke();
                 IsClipping = false;
             }
