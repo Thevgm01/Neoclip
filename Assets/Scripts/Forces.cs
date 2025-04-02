@@ -12,7 +12,7 @@ public class Forces : ScriptableObject
         public float mult = 1.0f;
         public ForceMode forceMode = ForceMode.Acceleration;
 
-        public void TryAddForce(Rigidbody rigidbody, Vector3 input)
+        public virtual void TryAddForce(Rigidbody rigidbody, Vector3 input)
         {
             if (enabled)
             {
@@ -24,7 +24,18 @@ public class Forces : ScriptableObject
     [Serializable]
     public class ExitDirectionForce : Force {
         public bool normalize = false;
-        public float rotationDelta = 0.0f;
+        public float alignmentDelta = 0.0f;
+        public ForceMode alignmentForceMode = ForceMode.VelocityChange;
+
+        public override void TryAddForce(Rigidbody rigidbody, Vector3 input)
+        {
+            if (enabled)
+            {
+                rigidbody.AddForce((normalize ? input : input.normalized) * mult, forceMode);
+                Vector3 rotated = Vector3.RotateTowards(rigidbody.linearVelocity, input, alignmentDelta, 0.0f);
+                rigidbody.AddForce(rotated - rigidbody.linearVelocity, alignmentForceMode);
+            }
+        }
     }
     
     [SerializeField] private Constants.Density density = Constants.Density.Air;

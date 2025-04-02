@@ -15,7 +15,7 @@ MonoBehaviour:
   density: 20000
   customDensity: 0
   gravity:
-    enabled: 1
+    enabled: 0
     mult: -1
     forceMode: 5
   movement:
@@ -24,7 +24,8 @@ MonoBehaviour:
     forceMode: 5
   exitDirection:
     enabled: 1
-    mult: 10
+    mult: 20
     forceMode: 5
-    normalize: 0
-    rotationDelta: 0
+    normalize: 1
+    rotationDelta: 0.02
+    rotationForceMode: 2
