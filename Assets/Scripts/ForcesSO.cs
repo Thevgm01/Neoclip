@@ -24,12 +24,13 @@ public class ForcesSO : ScriptableObject
     public class ExitDirectionForce : Force {
         public bool normalize = false;
         public float alignmentDelta = 0.0f;
+        public float movementInfluence = 0.0f;
         
         public override void TryAddForce(Rigidbody rigidbody, Vector3 input)
         {
             if (enabled)
             {
-                rigidbody.AddForce((normalize ? input : input.normalized) * mult, ForceMode.Acceleration);
+                rigidbody.AddForce((normalize ? input.normalized : input) * mult, ForceMode.Acceleration);
                 Vector3 rotated = Vector3.RotateTowards(rigidbody.linearVelocity, input, alignmentDelta, 0.0f);
                 rigidbody.AddForce(rotated - rigidbody.linearVelocity, ForceMode.VelocityChange);
             }
@@ -43,7 +44,11 @@ public class ForcesSO : ScriptableObject
     public ExitDirectionForce exitDirection;
     
     public float GetDensity() => density.value;
-    public void ApplyGravity(Rigidbody rigidbody) => gravity.TryAddForce(rigidbody, Physics.gravity);
-    public void ApplyMovement(Rigidbody rigidbody, Vector3 input) => movement.TryAddForce(rigidbody, input);
-    public void ApplyExitDirection(Rigidbody rigidbody, Vector3 input) => exitDirection.TryAddForce(rigidbody, input);
+    
+    public void ApplyAllForces(Rigidbody rigidbody, Vector3 move, Vector3 exit)
+    {
+        gravity.TryAddForce(rigidbody, Physics.gravity);
+        movement.TryAddForce(rigidbody, move);
+        exitDirection.TryAddForce(rigidbody, exit + move * exitDirection.movementInfluence);
+    }
 }
