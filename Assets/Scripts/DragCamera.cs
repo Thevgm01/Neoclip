@@ -45,7 +45,7 @@ public class DragCamera : MonoBehaviour
 
     private void MoveCamera()
     {
-        Quaternion rotation = Quaternion.LookRotation(-ragdollHelper.AverageLinearVelocity.normalized);
+        Quaternion rotation = Quaternion.LookRotation(-ragdollHelper.AverageLinearVelocity.Normalized);
             
         transform.SetPositionAndRotation(
             ragdollHelper.AveragePosition + rotation * new Vector3(0, 0, -dragCamera.orthographicSize), 
@@ -74,7 +74,7 @@ public class DragCamera : MonoBehaviour
     
     public bool TryUpdateSurfaceAreas(float[] surfaceAreas)
     {
-        if (ragdollHelper.AverageLinearVelocity.sqrMagnitude >= minSpeedForDrag * minSpeedForDrag)
+        if (ragdollHelper.AverageLinearVelocity.SqrMagnitude >= minSpeedForDrag * minSpeedForDrag)
         {
             MoveCamera();
             RenderPipeline.SubmitRenderRequest(dragCamera, renderRequest);

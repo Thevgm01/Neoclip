@@ -205,14 +205,11 @@ public class NeoclipCharacterController : MonoBehaviour
         }
         
         Vector3 movement = cameraController.GetCameraRelativeMoveVector(moveInput) * moveAcceleration;
-
-        float velocityMagnitude = ragdollHelper.AverageLinearVelocity.magnitude;
-        Vector3 velocityNormalized = ragdollHelper.AverageLinearVelocity / velocityMagnitude;
         
         // Set the animator's panic value based on the time to impact
         animator.SetFloat(animPanicID, Mathf.Max(
-            panicAtImpactTime.Evaluate(impactTimeEstimator.Estimate()) * panicMultAtSpeed.Evaluate(velocityMagnitude),
-            panicAtAngularVelocity.Evaluate(ragdollHelper.AverageAngularVelocity.magnitude)));
+            panicAtImpactTime.Evaluate(impactTimeEstimator.Estimate()) * panicMultAtSpeed.Evaluate(ragdollHelper.AverageLinearVelocity.Magnitude),
+            panicAtAngularVelocity.Evaluate(ragdollHelper.AverageAngularVelocity.Magnitude)));
         
         // Grab the last frame's drag data
         bool shouldApplyDrag = dragCamera.TryUpdateSurfaceAreas(boneSurfaceAreas);
@@ -313,7 +310,7 @@ public class NeoclipCharacterController : MonoBehaviour
                         
             if (shouldApplyDrag)
             {
-                Vector3 projectedVelocity = Vector3.Project(rigidbody.linearVelocity, velocityNormalized);
+                Vector3 projectedVelocity = Vector3.Project(rigidbody.linearVelocity, ragdollHelper.AverageLinearVelocity.Normalized);
                 
                 rigidbody.AddForce(
                     0.5f * 
@@ -321,7 +318,7 @@ public class NeoclipCharacterController : MonoBehaviour
                     projectedVelocity.sqrMagnitude * 
                     0.7f *
                     boneSurfaceAreas[i] * 
-                    -velocityNormalized,
+                    -ragdollHelper.AverageLinearVelocity.Normalized,
                     ForceMode.Force);
             }
             

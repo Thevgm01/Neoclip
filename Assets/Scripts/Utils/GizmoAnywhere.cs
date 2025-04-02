@@ -102,7 +102,7 @@ public class GizmoAnywhere : MonoBehaviour
         Vector3 ragdollRelativePosition = Vector3.zero;
         if (Application.isPlaying)
         {
-            ragdollRelativePosition = ragdollHelper.AverageLinearVelocity * (Time.time - Time.fixedTime);
+            ragdollRelativePosition = ragdollHelper.AverageLinearVelocity.Value * (Time.time - Time.fixedTime);
         }
 
         int numGizmos = fixedUpdateRequests.Count + requests.Count;

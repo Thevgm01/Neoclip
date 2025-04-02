@@ -6,7 +6,7 @@ public struct SmartVector3
     private float _magnitude;
     private Vector3 _normalized;
     
-    public Vector3 value
+    public Vector3 Value
     {
         get => _vector;
         set
@@ -17,7 +17,7 @@ public struct SmartVector3
         }
     }
 
-    public float magnitude
+    public float Magnitude
     {
         get => _magnitude;
         set
@@ -28,7 +28,7 @@ public struct SmartVector3
         }
     }
 
-    public Vector3 normalized
+    public Vector3 Normalized
     {
         get => _normalized;
         set
@@ -39,17 +39,20 @@ public struct SmartVector3
         }
     }
     
-    public float sqrMagnitude => _magnitude * _magnitude;
+    public float SqrMagnitude => _magnitude * _magnitude;
     
     public SmartVector3(Vector3 vector) : this()
     {
-        this.value = vector;
+        this.Value = vector;
     }
 
     public SmartVector3(SmartVector3 other) : this()
     {
-        this.value = other.value;
-        this.magnitude = other.magnitude;
-        this.normalized = other.normalized;
+        this.Value = other.Value;
+        this.Magnitude = other.Magnitude;
+        this.Normalized = other.Normalized;
     }
+    
+    public static implicit operator Vector3(SmartVector3 smartVector) => smartVector.Value;
+    public static implicit operator SmartVector3(Vector3 vector) => new SmartVector3(vector);
 }

@@ -28,9 +28,9 @@ public class RagdollHelper : MonoBehaviour
     public Collider GetCollider(int index) => colliders[index];
     public ConfigurableJoint GetJoint(int index) => joints[index];
     
-    public Vector3 AveragePosition { get; private set; }
-    public Vector3 AverageLinearVelocity { get; private set; }
-    public Vector3 AverageAngularVelocity { get; private set; }
+    public SmartVector3 AveragePosition { get; private set; }
+    public SmartVector3 AverageLinearVelocity { get; private set; }
+    public SmartVector3 AverageAngularVelocity { get; private set; }
 
     [Serializable]
     private struct PhysicsIgnoreCollisionPair
@@ -82,29 +82,29 @@ public class RagdollHelper : MonoBehaviour
     
     private void Update()
     {
-        AveragePosition = Vector3.zero;
+        Vector3 averagePosition = Vector3.zero;
         for (int i = 0; i < NumBones; i++)
         {
-            AveragePosition += transforms[i].position * rigidbodies[i].mass;
+            averagePosition += transforms[i].position * rigidbodies[i].mass;
         }
-        AveragePosition /= TotalMass;
+        AveragePosition = averagePosition / TotalMass;
     }
     
     private void FixedUpdate()
     {
-        AveragePosition = Vector3.zero;
-        AverageLinearVelocity = Vector3.zero;
-        AverageAngularVelocity = Vector3.zero;
+        Vector3 averagePosition = Vector3.zero;
+        Vector3 averageLinearVelocity = Vector3.zero;
+        Vector3 averageAngularVelocity = Vector3.zero;
         for (int i = 0; i < NumBones; i++)
         {
             Rigidbody rigidbody = rigidbodies[i];
-            AveragePosition += rigidbody.position * rigidbody.mass;
-            AverageLinearVelocity += rigidbody.linearVelocity;
-            AverageAngularVelocity += rigidbody.angularVelocity;
+            averagePosition += rigidbody.position * rigidbody.mass;
+            averageLinearVelocity += rigidbody.linearVelocity;
+            averageAngularVelocity += rigidbody.angularVelocity;
         }
-        AveragePosition /= TotalMass;
-        AverageLinearVelocity /= NumBones;
-        AverageAngularVelocity /= NumBones;
+        AveragePosition = averagePosition / TotalMass;
+        AverageLinearVelocity = averageLinearVelocity / NumBones;
+        AverageAngularVelocity = averageAngularVelocity / NumBones;
         
 #if UNITY_EDITOR
         foreach (JointRotationValues values in jointRotationValues)
