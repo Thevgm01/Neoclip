@@ -10,16 +10,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0f42c930ee8e92f4d8e87e073bb01878, type: 3}
-  m_Name: ShaderPropertiesClipping
+  m_Name: Normal
   m_EditorClassIdentifier: 
-  clearFlags: 2
-  backgroundColor: {r: 0, g: 0, b: 0, a: 1}
-  cullMode: 0
+  clearFlags: 1
+  backgroundColor: {r: 0, g: 0, b: 0, a: 0}
+  cullMode: 2
   blendMode:
-    sourceFactor: 5
-    destinationFactor: 1
+    sourceFactor: 1
+    destinationFactor: 0
   blendOp: 0
-  zTest: 6
-  zWrite: 0
-  alphaToMask: 0
-  isClipping: 1
+  zTest: 2
+  zWrite: 1
+  alphaToMask: 1
+  isClipping: 0
