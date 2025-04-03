@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.Serialization;
 
 [CreateAssetMenu(fileName = "ClipspaceShaderProperties", menuName = "Scriptable Objects/ClipspaceShaderProperties")]
@@ -14,8 +15,13 @@ public class ShaderPropertiesSO : ScriptableObject
         public UnityEngine.Rendering.BlendMode destinationFactor;
     }
     
+    [Header("Camera Settings")]
     public CameraClearFlags clearFlags;
     public Color backgroundColor;
+    public OpaqueSortMode opaqueSortMode;
+    public TransparencySortMode transparencySortMode;
+    
+    [Header("Shader Globals")]
     public UnityEngine.Rendering.CullMode cullMode;
     public BlendMode blendMode;
     public UnityEngine.Rendering.BlendOp blendOp;

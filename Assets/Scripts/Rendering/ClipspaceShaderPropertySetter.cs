@@ -31,6 +31,9 @@ public class ClipspaceShaderPropertySetter : MonoBehaviour
 
         camera.clearFlags = properties.clearFlags;
         camera.backgroundColor = properties.backgroundColor;
+        camera.opaqueSortMode = properties.opaqueSortMode;
+        camera.transparencySortMode = properties.transparencySortMode;
+        
         Shader.SetGlobalInteger(cullModeID, (int)properties.cullMode);
         Shader.SetGlobalInteger(blendSourceFactorID, (int)properties.blendMode.sourceFactor);
         Shader.SetGlobalInteger(blendDestinationFactorID, (int)properties.blendMode.destinationFactor);
