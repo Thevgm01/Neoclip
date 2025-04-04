@@ -74,6 +74,11 @@ Shader "Unlit/STest"
                 
                 if (_NeoclipIsClipping)
                 {
+                    // Alpha clipping hack?
+                    if (col.a < 0.5)
+                    {
+                        return 1.0;
+                    }
                     float cameraDistance = distance(_WorldSpaceCameraPos, i.worldSpacePosition);
                     //return col * 10; // Looks cool with Blend DstColor OneMinusDstColor
                     //return lerp(col, 1.0, min(sqrt(cameraDistance) / 10, 1.0)); // Good with Multiplicative (Blend DstColor Zero)
