@@ -14,7 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   clearFlags: 1
   backgroundColor: {r: 0, g: 0, b: 0, a: 0}
-  cullMode: 2
+  opaqueSortMode: 0
+  transparencySortMode: 0
+  cullMode: 0
   blendMode:
     sourceFactor: 1
     destinationFactor: 0

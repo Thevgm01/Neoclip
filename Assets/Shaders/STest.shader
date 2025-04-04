@@ -54,6 +54,20 @@ Shader "Unlit/STest"
             float4 _MainTex_ST;
             float4 _BaseColor;
             int _NeoclipIsClipping;
+
+            static const int CENTER = 0;
+            static const int UPLEFT = 1;
+            static const int UPRIGHT = 2;
+            static const int DOWNLEFT = 3;
+            static const int DOWNRIGHT = 4;
+            
+            // Edge detection kernel that works by taking the sum of the squares of the differences between diagonally adjacent pixels (Roberts Cross).
+            float RobertsCross(float4 samples[5])
+            {
+                const float4 difference_1 = samples[UPRIGHT] - samples[DOWNLEFT];
+                const float4 difference_2 = samples[UPLEFT] - samples[DOWNRIGHT];
+                return sqrt(dot(difference_1, difference_1) + dot(difference_2, difference_2));
+            }
             
             v2f vert (appdata v)
             {
@@ -65,28 +79,53 @@ Shader "Unlit/STest"
                 return o;
             }
             
-            fixed4 frag (v2f i) : SV_Target
+            fixed4 frag (v2f v) : SV_Target
             {
-                // sample the texture
-                fixed4 col = tex2D(_MainTex, i.uv) * _BaseColor;
-                // apply fog
-                UNITY_APPLY_FOG(i.fogCoord, col);
-                
                 if (_NeoclipIsClipping)
                 {
+                    // Screen-space coordinates which we will use to sample.
+                    float2 texel_size = float2(_ScreenParams.z - 1.0, _ScreenParams.w - 1.0);
+
+                    // Generate 4 diagonally placed samples.
+                    const float half_width_f = floor(2 * 0.5);
+                    const float half_width_c = ceil(2 * 0.5);
+                    
+                    float2 uvs[5];
+                    uvs[CENTER] = v.uv;
+                    uvs[UPLEFT] = v.uv + texel_size * float2(-half_width_f, half_width_c);
+                    uvs[UPRIGHT] = v.uv + texel_size * float2(half_width_c, half_width_c);
+                    uvs[DOWNLEFT] = v.uv + texel_size * float2(-half_width_f, -half_width_f);
+                    uvs[DOWNRIGHT] = v.uv + texel_size * float2(half_width_c, -half_width_f);
+                    
+                    float4 colors[5];
+                    
+                    for (int i = 0; i < 5; i++) {
+                        colors[i] = tex2D(_MainTex, uvs[i]);
+                    }
+                    
                     // Alpha clipping hack?
-                    if (col.a < 0.5)
+                    if (colors[CENTER].a < 0.5)
                     {
                         return 1.0;
                     }
-                    float cameraDistance = distance(_WorldSpaceCameraPos, i.worldSpacePosition);
+                    
+                    // Apply edge detection kernel on the samples to compute edges.
+                    float color_cross = RobertsCross(colors);
+                    float4 col = color_cross;
+                    
+                    float cameraDistance = distance(_WorldSpaceCameraPos, v.worldSpacePosition);
                     //return col * 10; // Looks cool with Blend DstColor OneMinusDstColor
                     //return lerp(col, 1.0, min(sqrt(cameraDistance) / 10, 1.0)); // Good with Multiplicative (Blend DstColor Zero)
-                    return lerp(col, 1.0, 1.0 - exp(cameraDistance / -50)); // Even better
+                    return lerp(col, 1.0, 1.0 - exp(cameraDistance / -100) * 0.8); // Even better
                     //return lerp(col, 0.0, 1.0 - exp(cameraDistance / -50)); // Good with Additive (Blend One One)
                 }
                 else
                 {
+                    // sample the texture
+                    fixed4 col = tex2D(_MainTex, v.uv) * _BaseColor;
+                    // apply fog
+                    UNITY_APPLY_FOG(i.fogCoord, col);
+                    
                     return col;
                 }
             }
