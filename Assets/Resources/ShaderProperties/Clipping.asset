@@ -21,7 +21,7 @@ MonoBehaviour:
     sourceFactor: 2
     destinationFactor: 0
   blendOp: 0
-  zTest: 6
+  zTest: 2
   zWrite: 0
   alphaToMask: 0
   isClipping: 1
