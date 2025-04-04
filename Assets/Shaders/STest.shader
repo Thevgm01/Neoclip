@@ -11,6 +11,14 @@ Shader "Unlit/STest"
     SubShader
     {
         Cull [_NeoclipCullMode]
+        /*
+        Blend SrcAlpha OneMinusSrcAlpha // Traditional transparency
+        Blend One OneMinusSrcAlpha // Premultiplied transparency
+        Blend One One // Additive
+        Blend OneMinusDstColor One // Soft additive
+        Blend DstColor Zero // Multiplicative
+        Blend DstColor SrcColor // 2x multiplicative
+        */
         Blend [_NeoclipBlendSourceFactor] [_NeoclipBlendDestinationFactor]
         BlendOp [_NeoclipBlendOp]
         ZTest [_NeoclipZTest]
@@ -67,9 +75,15 @@ Shader "Unlit/STest"
                 if (_NeoclipIsClipping)
                 {
                     float cameraDistance = distance(_WorldSpaceCameraPos, i.worldSpacePosition);
-                    col.a = min(2.0 / cameraDistance, 0.5);
+                    //return col * 10; // Looks cool with Blend DstColor OneMinusDstColor
+                    //return lerp(col, 1.0, min(sqrt(cameraDistance) / 10, 1.0)); // Good with Multiplicative (Blend DstColor Zero)
+                    return lerp(col, 1.0, 1.0 - exp(cameraDistance / -50)); // Even better
+                    //return lerp(col, 0.0, 1.0 - exp(cameraDistance / -50)); // Good with Additive (Blend One One)
                 }
-                return col;
+                else
+                {
+                    return col;
+                }
             }
             ENDCG
         }

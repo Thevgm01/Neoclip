@@ -13,13 +13,13 @@ MonoBehaviour:
   m_Name: Clipping
   m_EditorClassIdentifier: 
   clearFlags: 2
-  backgroundColor: {r: 0, g: 0, b: 0, a: 1}
+  backgroundColor: {r: 1, g: 1, b: 1, a: 1}
   opaqueSortMode: 2
   transparencySortMode: 0
   cullMode: 0
   blendMode:
-    sourceFactor: 5
-    destinationFactor: 1
+    sourceFactor: 2
+    destinationFactor: 0
   blendOp: 0
   zTest: 6
   zWrite: 0
