@@ -48,9 +48,9 @@ public struct SmartVector3
 
     public SmartVector3(SmartVector3 other) : this()
     {
-        this.Value = other.Value;
-        this.Magnitude = other.Magnitude;
-        this.Normalized = other.Normalized;
+        this._vector = other._vector;
+        this._magnitude = other._magnitude;
+        this._normalized = other._normalized;
     }
     
     public static implicit operator Vector3(SmartVector3 smartVector) => smartVector.Value;
