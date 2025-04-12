@@ -11,11 +11,11 @@ public class ForcesSO : ScriptableObject
         public bool enabled = true;
         public float mult = 1.0f;
         
-        public virtual void TryAddForce(Rigidbody rigidbody, Vector3 input)
+        public virtual void TryAddForce(Rigidbody rigidbody, SmartVector3 input)
         {
             if (enabled)
             {
-                rigidbody.AddForce(input * mult, ForceMode.Acceleration);
+                rigidbody.AddForce(input.Value * mult, ForceMode.Acceleration);
             }
         }
     }
@@ -26,29 +26,34 @@ public class ForcesSO : ScriptableObject
         public float alignmentDelta = 0.0f;
         public float movementInfluence = 0.0f;
         
-        public override void TryAddForce(Rigidbody rigidbody, Vector3 input)
+        public override void TryAddForce(Rigidbody rigidbody, SmartVector3 input)
         {
             if (enabled)
             {
-                rigidbody.AddForce((normalize ? input.normalized : input) * mult, ForceMode.Acceleration);
-                Vector3 rotated = Vector3.RotateTowards(rigidbody.linearVelocity, input, alignmentDelta, 0.0f);
+                rigidbody.AddForce((normalize ? input.Normalized : input.Value) * mult, ForceMode.Acceleration);
+
+                float alignmentDot = Vector3.Dot(rigidbody.linearVelocity.normalized, input.Normalized);
+                Vector3 rotated = Vector3.RotateTowards(
+                    rigidbody.linearVelocity,
+                    input,
+                    alignmentDelta * (0.5f - alignmentDot * 0.5f),
+                    0.0f);
                 rigidbody.AddForce(rotated - rigidbody.linearVelocity, ForceMode.VelocityChange);
             }
         }
     }
     
     [SerializeField] private DensitySO density;
-    [SerializeField] private float customDensity = 0.0f;
     [SerializeField] private Force gravity;
     [SerializeField] private Force movement;
     public ExitDirectionForce exitDirection;
     
     public float GetDensity() => density.value;
     
-    public void ApplyAllForces(Rigidbody rigidbody, Vector3 move, Vector3 exit)
+    public void ApplyAllForces(Rigidbody rigidbody, SmartVector3 move, SmartVector3 exit)
     {
         gravity.TryAddForce(rigidbody, Physics.gravity);
         movement.TryAddForce(rigidbody, move);
-        exitDirection.TryAddForce(rigidbody, exit + move * exitDirection.movementInfluence);
+        exitDirection.TryAddForce(rigidbody, exit.Value + move.Value * exitDirection.movementInfluence);
     }
 }

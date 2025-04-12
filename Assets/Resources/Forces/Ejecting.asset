@@ -18,10 +18,11 @@ MonoBehaviour:
     enabled: 0
     mult: -1
   movement:
-    enabled: 1
+    enabled: 0
     mult: 1
   exitDirection:
     enabled: 1
-    mult: 20
-    normalize: 1
-    alignmentDelta: 0
+    mult: 15
+    normalize: 0
+    alignmentDelta: 0.03
+    movementInfluence: 0.1

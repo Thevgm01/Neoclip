@@ -204,7 +204,7 @@ public class NeoclipCharacterController : MonoBehaviour
             return;
         }
         
-        Vector3 movement = cameraController.GetCameraRelativeMoveVector(moveInput) * moveAcceleration;
+        SmartVector3 movement = cameraController.GetCameraRelativeMoveVector(moveInput) * moveAcceleration;
         
         // Set the animator's panic value based on the time to impact
         animator.SetFloat(animPanicID, Mathf.Max(
@@ -215,7 +215,6 @@ public class NeoclipCharacterController : MonoBehaviour
         bool shouldApplyDrag = dragCamera.TryUpdateSurfaceAreas(boneSurfaceAreas);
         
         // Grab last frame's exit direction data
-        Vector3 exitDirection;
         if (!exitDirectionFinder.MainJob.IsCompleted)
         {
             double startTime = Time.realtimeSinceStartupAsDouble;
@@ -230,8 +229,8 @@ public class NeoclipCharacterController : MonoBehaviour
         {
             exitDirectionFinder.MainJob.Complete();
         }
-        exitDirection = exitDirectionFinder.GetExitDirection();
-        
+        SmartVector3 exitDirection = exitDirectionFinder.GetExitDirection();
+
         // Test all bones to see if they're actively clipping
         bool anyBoneClipping = false;
         bool anyBoneRayHit = false;
