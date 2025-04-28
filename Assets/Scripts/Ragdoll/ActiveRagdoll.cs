@@ -7,66 +7,89 @@ public class ActiveRagdoll : MonoBehaviour
 {
     [SerializeField] private Transform driverSkeleton;
     [SerializeField] private Transform ragdollSkeleton;
-    
-    private HashSet<BonePair> basicBonePairs;
-    private List<JointBonePair> jointBonePairs;
-    
-    private TreeNode<BonePair> BuildBonePairTreeRecursive(Transform driverTransform, Transform ragdollTransform)
-    {
-        TreeNode<BonePair> node = new TreeNode<BonePair>(
-            new BonePair(driverTransform, ragdollTransform));
+    [SerializeField] private Transform customFramerateSkeleton;
 
+    [SerializeField] private GameObject ragdollModel;
+    [SerializeField] private GameObject customFramerateModel;
+
+    [SerializeField] private bool useCustomFramerate = false;
+    [SerializeField] private float customFramerate = 12;
+    private float customFramerateTime = 0.0f;
+    private PositionAndRotationBonePair customFrameRateBaseBonePair;
+    
+    private List<JointBonePair> jointBonePairs;
+    private List<RotationBonePair> extremityBonePairs;
+    private List<PositionAndRotationBonePair> customFramerateBonePairs;
+    
+    private void BuildBonePairTreeRecursive(Transform driverTransform, Transform ragdollTransform, Transform customFramerateTransform)
+    {
         if (ragdollTransform.TryGetComponent(out ConfigurableJoint joint))
         {
-            jointBonePairs.Add(new JointBonePair(node.value, joint));
+            jointBonePairs.Add(new JointBonePair(driverTransform, ragdollTransform, joint));
+            
+            customFramerateBonePairs.Add(new PositionAndRotationBonePair(ragdollTransform, customFramerateTransform));
+        }
+        else
+        {
+            if (ragdollTransform.GetComponentInChildren<Rigidbody>() == null)
+            {
+                extremityBonePairs.Add(new RotationBonePair(driverTransform, ragdollTransform));
+            }
+            customFramerateBonePairs.Add(new PositionAndRotationBonePair(driverTransform, customFramerateTransform));
         }
         
         int childCount = driverTransform.childCount;
-        if (childCount > 0)
+        for (int i = 0; i < childCount; i++)
         {
-            node.children = new TreeNode<BonePair>[childCount];
-
-            for (int i = 0; i < childCount; i++)
-            {
-                node.children[i] = BuildBonePairTreeRecursive(driverTransform.GetChild(i), ragdollTransform.GetChild(i));
-                node.children[i].parent = node;
-            }
+            BuildBonePairTreeRecursive(driverTransform.GetChild(i), ragdollTransform.GetChild(i), customFramerateTransform.GetChild(i));
         }
-
-        return node;
     }
     
     private void Awake()
     {
-        basicBonePairs = new HashSet<BonePair>();
         jointBonePairs = new List<JointBonePair>();
-        
-        TreeNode<BonePair> bonePairTree = BuildBonePairTreeRecursive(driverSkeleton, ragdollSkeleton);
+        extremityBonePairs = new List<RotationBonePair>();
+        customFramerateBonePairs = new List<PositionAndRotationBonePair>();
 
-        foreach (TreeNode<BonePair> leafNode in bonePairTree.Leaves())
+        BuildBonePairTreeRecursive(driverSkeleton, ragdollSkeleton, customFramerateSkeleton);
+
+        customFramerateBonePairs.RemoveAt(0);
+        customFrameRateBaseBonePair = new PositionAndRotationBonePair(ragdollSkeleton, customFramerateSkeleton);
+    }
+    
+    private void LateUpdate()
+    {
+        ragdollModel.SetActive(!useCustomFramerate);
+        customFramerateModel.SetActive(useCustomFramerate);
+        
+        if (useCustomFramerate)
         {
-            TreeNode<BonePair> node = leafNode;
-            while (node != null && node.value.RagdollBone.GetComponent<Rigidbody>() == null)
+            customFrameRateBaseBonePair.WriteValues();
+            customFramerateTime -= Time.deltaTime;
+            
+            if (customFramerateTime <= 0)
             {
-                basicBonePairs.Add(node.value);
-                node = node.parent;
+                foreach (PositionAndRotationBonePair customFramerateBonePair in customFramerateBonePairs)
+                {
+                    customFramerateBonePair.WriteValues();
+                }
+                customFramerateTime = 1.0f / customFramerate;
+            }
+        }
+        else
+        {
+            foreach (RotationBonePair extremityBonePair in extremityBonePairs)
+            {
+                extremityBonePair.WriteValues();
             }
         }
     }
-
-    private void LateUpdate()
-    {
-        foreach (BonePair basicBonePair in basicBonePairs)
-        {
-            basicBonePair.SetRotation();
-        }
-    }
-
+    
     private void FixedUpdate()
     {
         foreach (JointBonePair jointBonePair in jointBonePairs)
         {
-            jointBonePair.SetRotation();
+            jointBonePair.WriteValues();
         }
     }
 }
