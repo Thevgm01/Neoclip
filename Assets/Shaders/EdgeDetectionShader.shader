@@ -11,7 +11,7 @@ Shader "Custom/Edge Detection"
         Tags
         {
             "RenderPipeline" = "UniversalPipeline"
-            "RenderType"="Opaque"
+            "RenderType" = "Opaque"
         }
 
         ZWrite Off
@@ -31,6 +31,7 @@ Shader "Custom/Edge Detection"
 
             float _OutlineThickness;
             float4 _OutlineColor;
+            bool _NeoclipIsClipping;
 
             // These NEED to be static??
             static const int CENTER = 0;
@@ -180,9 +181,11 @@ Shader "Custom/Edge Detection"
                     
                     return half4(one * (a > 0.1 ? 1.0 : 0.0), 1.0);
                 }
-                else
+                else if (_NeoclipIsClipping) // Doesn't do anything right now
                 {
-                    
+                    return 0;
+                }
+                else {
                     float3 weird_normal_diff = max(normal_samples[UPLEFT] - normal_samples[DOWNRIGHT], normal_samples[UPRIGHT] - normal_samples[DOWNLEFT]);
                     //float3 a = depth_cross * 50 * weird_normal_diff;
 
@@ -216,7 +219,6 @@ Shader "Custom/Edge Detection"
                     
                     return half4(max_vec, 1.0);
                 }
-                
                 /*
                 // Combine the edges from depth/normals/luminance using the max operator.
                 float edge = max(edge_depth, max(edge_normal, edge_luminance));

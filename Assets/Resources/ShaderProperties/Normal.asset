@@ -25,3 +25,5 @@ MonoBehaviour:
   zWrite: 1
   alphaToMask: 1
   isClipping: 0
+  cityShader: {fileID: -6465566751694194690, guid: 318ae9302029a3d4cb829251b365b63c, type: 3}
+  enableEdgeDetectionRendererFeature: 1

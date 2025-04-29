@@ -29,4 +29,8 @@ public class ShaderPropertiesSO : ScriptableObject
     public bool zWrite;
     public bool alphaToMask;
     public bool isClipping;
+
+    [Header("Shader")]
+    public Shader cityShader;
+    public bool enableEdgeDetectionRendererFeature;
 }

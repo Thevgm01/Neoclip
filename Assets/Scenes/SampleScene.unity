@@ -63000,6 +63000,11 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 4304552, guid: c925872ce3bfa384589bf34b953d5a65, type: 3}
+--- !u!1 &944121156 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 105464, guid: c925872ce3bfa384589bf34b953d5a65, type: 3}
+  m_PrefabInstance: {fileID: 157560613}
+  m_PrefabAsset: {fileID: 0}
 --- !u!64 &944295426
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -103269,7 +103274,9 @@ MonoBehaviour:
   waitForRagdollToExit: 0
   normalProperties: {fileID: 11400000, guid: 47fddfc9d3ca8f54485ad0480c9b0cef, type: 2}
   clippingProperties: {fileID: 11400000, guid: 1a49bf53ea1fe78409b914eb70639851, type: 2}
-  updateEveryFrame: 1
+  city: {fileID: 944121156}
+  rendererData: {fileID: 11400000, guid: f288ae1f4751b564a96ac7587541f7a2, type: 2}
+  updateEveryFrame: 0
 --- !u!1 &2108321958 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 104612, guid: c925872ce3bfa384589bf34b953d5a65, type: 3}
