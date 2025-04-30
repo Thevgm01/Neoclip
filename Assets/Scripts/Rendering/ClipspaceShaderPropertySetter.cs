@@ -14,6 +14,8 @@ public class ClipspaceShaderPropertySetter : MonoBehaviour
     [SerializeField] private ShaderPropertiesSO clippingProperties;
     [SerializeField] private GameObject city;
     [SerializeField] private ScriptableRendererData rendererData;
+    [SerializeField] private Color defaultPlayerColor;
+    [SerializeField] private Color clippingPlayerColor;
     
     private bool characterClipping = false;
     private bool cameraWasClipping = false;
@@ -29,6 +31,7 @@ public class ClipspaceShaderPropertySetter : MonoBehaviour
     private readonly int zWriteID = Shader.PropertyToID("_NeoclipZWrite");
     private readonly int alphaToMaskID = Shader.PropertyToID("_NeoclipAlphaToMask");
     private readonly int isClippingID = Shader.PropertyToID("_NeoclipIsClipping");
+    private readonly int playerColorID = Shader.PropertyToID("_NeoclipPlayerColor");
     
     private void SetShaderParameters(ShaderPropertiesSO properties, bool shouldPrint = true)
     {
@@ -59,13 +62,23 @@ public class ClipspaceShaderPropertySetter : MonoBehaviour
         
         edgeDetectionRendererFeature.SetActive(properties.enableEdgeDetectionRendererFeature);
     }
-    
-    private void CharacterStartedNoclipping() => characterClipping = true;
+
+    private void SetCharacterColor(Color color)
+    {
+        Shader.SetGlobalColor(playerColorID, color);
+    }
+
+    private void CharacterStartedNoclipping()
+    {
+        characterClipping = true;
+        SetCharacterColor(clippingPlayerColor);
+    }
 
     private void CharacterStoppedNoclipping()
     {
         characterClipping = false;
-
+        SetCharacterColor(defaultPlayerColor);
+        
         if (!cameraWasClipping && waitForRagdollToExit)
         {
             SetShaderParameters(normalProperties);
@@ -95,6 +108,7 @@ public class ClipspaceShaderPropertySetter : MonoBehaviour
         cameraController.OnMove += CameraMoved;
         
         SetShaderParameters(normalProperties);
+        SetCharacterColor(characterClipping ? clippingPlayerColor : defaultPlayerColor);
     }
 
     private void OnDisable()
@@ -104,6 +118,7 @@ public class ClipspaceShaderPropertySetter : MonoBehaviour
         cameraController.OnMove -= CameraMoved;
         
         SetShaderParameters(normalProperties);
+        SetCharacterColor(defaultPlayerColor);
     }
 
     private void Awake()

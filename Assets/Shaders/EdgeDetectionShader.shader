@@ -32,6 +32,7 @@ Shader "Custom/Edge Detection"
             float _OutlineThickness;
             float4 _OutlineColor;
             bool _NeoclipIsClipping;
+            float4 _NeoclipPlayerColor;
 
             // These NEED to be static??
             static const int CENTER = 0;
@@ -169,17 +170,17 @@ Shader "Custom/Edge Detection"
 
                 float3 one = float3(1.0, 1.0, 1.0);
                 
-                if (linear_depth_samples[CENTER] >= 0.999)
-                {
-                    return half4(one * color_cross * 10 * scanlinesEffect, 1.0);
-                }
-                else if (is_character)
+                if (is_character)
                 {
                     //return half4(0.0, 0.0, 0.0, 1.0);
                     
                     float a = max(depth_cross * 600, color_cross);
                     
-                    return half4(one * (a > 0.1 ? 1.0 : 0.0), 1.0);
+                    return a > 0.1 ? _NeoclipPlayerColor : half4(one * 0.0, 1.0);
+                }
+                else if (linear_depth_samples[CENTER] >= 0.999)
+                {
+                    return half4(one * color_cross * 10 * scanlinesEffect, 1.0);
                 }
                 else if (_NeoclipIsClipping) // Doesn't do anything right now
                 {

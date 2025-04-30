@@ -103276,6 +103276,8 @@ MonoBehaviour:
   clippingProperties: {fileID: 11400000, guid: 1a49bf53ea1fe78409b914eb70639851, type: 2}
   city: {fileID: 944121156}
   rendererData: {fileID: 11400000, guid: f288ae1f4751b564a96ac7587541f7a2, type: 2}
+  defaultPlayerColor: {r: 1, g: 1, b: 1, a: 1}
+  clippingPlayerColor: {r: 1, g: 0, b: 0, a: 1}
   updateEveryFrame: 0
 --- !u!1 &2108321958 stripped
 GameObject:
