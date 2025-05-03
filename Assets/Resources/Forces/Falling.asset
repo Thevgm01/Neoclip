@@ -13,15 +13,19 @@ MonoBehaviour:
   m_Name: Falling
   m_EditorClassIdentifier: 
   density: {fileID: 11400000, guid: 758187b77faf4934a840e71f5591935c, type: 2}
-  customDensity: 0
   gravity:
     enabled: 1
+    normalized: 0
     mult: 1
-  movement:
-    enabled: 1
-    mult: 1
-  exitDirection:
-    enabled: 0
-    mult: 1
-    normalize: 0
     alignmentDelta: 0
+  movementInput:
+    enabled: 1
+    normalized: 0
+    mult: 1
+    alignmentDelta: 0
+  eject:
+    enabled: 0
+    normalized: 0
+    mult: 1
+    alignmentDelta: 0
+  ejectMovementInputInfluence: 0

@@ -13,15 +13,18 @@ MonoBehaviour:
   m_Name: Clipping
   m_EditorClassIdentifier: 
   density: {fileID: 11400000, guid: f7fd1c9816fe69240b525dd637cfd232, type: 2}
-  customDensity: 0
   gravity:
     enabled: 0
-    mult: 0
-  movement:
-    enabled: 1
+    normalized: 0
     mult: 1
-  exitDirection:
+  movementInput:
+    enabled: 1
+    normalized: 0
+    mult: 1
+  eject:
     enabled: 0
-    mult: 0
+    normalized: 0
+    mult: 1
     normalize: 0
     alignmentDelta: 0
+    movementInputInfluence: 0

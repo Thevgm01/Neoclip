@@ -13,16 +13,19 @@ MonoBehaviour:
   m_Name: Ejecting
   m_EditorClassIdentifier: 
   density: {fileID: 11400000, guid: f7fd1c9816fe69240b525dd637cfd232, type: 2}
-  customDensity: 0
   gravity:
     enabled: 0
-    mult: -1
-  movement:
-    enabled: 0
+    normalized: 0
     mult: 1
-  exitDirection:
+    alignmentDelta: 0
+  movementInput:
+    enabled: 0
+    normalized: 0
+    mult: 1
+    alignmentDelta: 0
+  eject:
     enabled: 1
+    normalized: 0
     mult: 15
-    normalize: 0
     alignmentDelta: 0.03
-    movementInfluence: 0.1
+  ejectMovementInputInfluence: 0.1
