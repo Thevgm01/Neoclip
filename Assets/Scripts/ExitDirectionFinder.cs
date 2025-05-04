@@ -185,10 +185,10 @@ public class ExitDirectionFinder : MonoBehaviour
             {
                 for (int i = 0; i < NUM_POINTS; i++)
                 {
-                    GizmoAnywhere.SubmitRequest(new GizmoAnywhere.GizmoDrawRequest
+                    GizmoAnywhere.SubmitRequest(new GizmoAnywhere.Request
                     {
-                        owner = this.transform, criteria = GizmoAnywhere.DrawCriteria.SELECTED_EXCLUSIVE, shape = GizmoAnywhere.Shape.SPHERE,
-                        position = points[i], radius = 0.05f, ragdollRelative = GizmoAnywhere.RagdollRelative.TRUE,
+                        owner = this.transform, selected = GizmoAnywhere.Selected.OWNER, shape = GizmoAnywhere.Shape.SPHERE,
+                        position = points[i], radius = 0.05f, ragdollRelative = GizmoAnywhere.RagdollRelative.YES,
                         color = overlapHits[i].instanceID != 0
                             ? Color.magenta
                             : new Color((float)pointBackfaceHits[i] / ClippingUtils.NUM_CASTS, 0.0f, 0.0f, 1.0f)
@@ -199,11 +199,11 @@ public class ExitDirectionFinder : MonoBehaviour
             // Exit direction
             for (int i = 0; i < 10; i++)
             {
-                GizmoAnywhere.SubmitRequest(new GizmoAnywhere.GizmoDrawRequest
+                GizmoAnywhere.SubmitRequest(new GizmoAnywhere.Request
                 {
-                    owner = this.transform, criteria = GizmoAnywhere.DrawCriteria.SELECTED_EXCLUSIVE, shape = GizmoAnywhere.Shape.SPHERE,
+                    owner = this.transform, selected = GizmoAnywhere.Selected.OWNER, shape = GizmoAnywhere.Shape.SPHERE,
                     position = transform.position + Vector3.Lerp(Vector3.zero, exitDirection.Value, i / 10.0f),
-                    radius = Mathf.Sqrt((i + 1) / 10.0f) * 0.2f, ragdollRelative = GizmoAnywhere.RagdollRelative.TRUE,
+                    radius = Mathf.Sqrt((i + 1) / 10.0f) * 0.2f, ragdollRelative = GizmoAnywhere.RagdollRelative.YES,
                     color = Color.green
                 });
             }

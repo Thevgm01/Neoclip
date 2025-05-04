@@ -1,5 +1,3 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
@@ -7,17 +5,17 @@ using UnityEngine.Serialization;
 
 public class GizmoAnywhere : MonoBehaviour
 {
-    public enum DrawCriteria
+    public enum Selected
     {
-        NULL,
+        REPEAT,
         ALWAYS,
-        SELECTED_ANY,
-        SELECTED_EXCLUSIVE
+        OWNER,
+        PARENT_OF_OWNER
     }
     
     public enum Shape
     {
-        NULL,
+        REPEAT,
         CUBE,
         WIRE_CUBE,
         SPHERE,
@@ -26,15 +24,16 @@ public class GizmoAnywhere : MonoBehaviour
 
     public enum RagdollRelative
     {
-        NULL,
-        FALSE,
-        TRUE
+        REPEAT,
+        NO,
+        YES
     }
     
-    public struct GizmoDrawRequest
+    public struct Request
     {
+        public bool isDummy;
         public Transform owner;
-        public DrawCriteria criteria;
+        public Selected selected;
         public Shape shape;
         public RagdollRelative ragdollRelative;
         public Color color;
@@ -45,10 +44,11 @@ public class GizmoAnywhere : MonoBehaviour
             get => size.x;
             set => size.x = value;
         }
-        public bool isDummy;
     }
 #if UNITY_EDITOR
-    [SerializeField] private RagdollHelper ragdollHelper;
+    [SerializeField] private RagdollHelper targetForRagdollRelative;
+    
+    private static Stack<Request> requests = new ();
     
     private static List<GizmoDrawRequest> fixedUpdateRequests = new ();
     private static Stack<GizmoDrawRequest> requests = new ();
@@ -56,16 +56,17 @@ public class GizmoAnywhere : MonoBehaviour
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void Init()
     {
-        fixedUpdateRequests.Clear();
         requests.Clear();
+        fixedUpdateRequests.Clear();
     }
 #endif
     
     public static void SubmitRequest(GizmoDrawRequest request)
+    public static void SubmitRequest(Request request)
     {
 #if UNITY_EDITOR
-        if (request.criteria == DrawCriteria.SELECTED_EXCLUSIVE && Selection.activeTransform != request.owner ||
-            request.criteria == DrawCriteria.SELECTED_ANY && !GenericUtils.IsChildOfAny(request.owner, Selection.transforms))
+        if (request.selected == Selected.OWNER && Selection.activeTransform != request.owner ||
+            request.selected == Selected.PARENT_OF_OWNER && !GenericUtils.IsChildOfAny(request.owner, Selection.transforms))
             return;
         
         if (Time.inFixedTimeStep) fixedUpdateRequests.Add(request);
@@ -74,23 +75,24 @@ public class GizmoAnywhere : MonoBehaviour
     }
     
     public static void RepeatRequest(GizmoDrawRequest request)
+    public static void RepeatRequest(Request request)
     {
 #if UNITY_EDITOR
         if (Time.inFixedTimeStep && fixedUpdateRequests.Count == 0 || !Time.inFixedTimeStep && requests.Count == 0)
             return;
         
-        GizmoDrawRequest lastRequest = Time.inFixedTimeStep 
+        Request previousRequest = Time.inFixedTimeStep 
             ? fixedUpdateRequests[^1] 
             : requests.Peek();
         
-        if (request.owner == null) request.owner = lastRequest.owner;
-        if (request.criteria == default) request.criteria = lastRequest.criteria;
-        if (request.shape == default) request.shape = lastRequest.shape;
-        if (request.ragdollRelative == default) request.ragdollRelative = lastRequest.ragdollRelative;
-        if (request.color == default) request.color = lastRequest.color;
-        if (request.position == default) request.position = lastRequest.position;
-        if (request.size == default) request.size = lastRequest.size;
         // if (request.isDummy == false) request.isDummy = lastRequest.isDummy
+        if (request.owner == null) request.owner = previousRequest.owner;
+        if (request.selected == default) request.selected = previousRequest.selected;
+        if (request.shape == default) request.shape = previousRequest.shape;
+        if (request.ragdollRelative == default) request.ragdollRelative = previousRequest.ragdollRelative;
+        if (request.color == default) request.color = previousRequest.color;
+        if (request.position == default) request.position = previousRequest.position;
+        if (request.size == default) request.size = previousRequest.size;
         
         SubmitRequest(request);
 #endif
@@ -102,13 +104,17 @@ public class GizmoAnywhere : MonoBehaviour
         Vector3 ragdollRelativePosition = Vector3.zero;
         if (Application.isPlaying)
         {
-            ragdollRelativePosition = ragdollHelper.AverageLinearVelocity.Value * (Time.time - Time.fixedTime);
+            // Predict where the ragdoll would be based on its velocity and the last time it was updated
+            float timeSinceFixedUpdate = Time.time - Time.fixedTime;
+            ragdollRelativePosition = timeSinceFixedUpdate * targetForRagdollRelative.AverageLinearVelocity.Value;
         }
 
         int numGizmos = fixedUpdateRequests.Count + requests.Count;
         for (int i = 0; i < numGizmos; i++)
         {
-            GizmoDrawRequest request = i < fixedUpdateRequests.Count
+            bool isFixedUpdateRequest = i < fixedUpdateRequests.Count;
+            
+            Request request = isFixedUpdateRequest
                 ? fixedUpdateRequests[i]
                 : requests.Pop();
 
@@ -117,14 +123,14 @@ public class GizmoAnywhere : MonoBehaviour
                 continue;
             }
             
-            if (request.color != default)
+            Gizmos.color = request.color;
+            
+            Vector3 position = request.position;
+            
+            if (isFixedUpdateRequest && request.ragdollRelative == RagdollRelative.YES)
             {
-                Gizmos.color = request.color;
+                position += ragdollRelativePosition;
             }
-
-            Vector3 position = i < fixedUpdateRequests.Count && request.ragdollRelative == RagdollRelative.TRUE
-                ? request.position + ragdollRelativePosition
-                : request.position;
             
             switch (request.shape)
             {

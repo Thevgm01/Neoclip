@@ -25,10 +25,10 @@ public class ImpactTimeEstimator : MonoBehaviour
         float stepDeltaTime = timeToLookAhead / steps;
         float timeToHit = -1.0f;
         
-        GizmoAnywhere.SubmitRequest(new GizmoAnywhere.GizmoDrawRequest
+        GizmoAnywhere.SubmitRequest(new GizmoAnywhere.Request
         {
-            owner = transform, criteria = GizmoAnywhere.DrawCriteria.SELECTED_ANY, shape = GizmoAnywhere.Shape.WIRE_SPHERE,
-            position = position, color = Color.cyan, radius = sphereCastRadius, ragdollRelative = GizmoAnywhere.RagdollRelative.TRUE,
+            owner = transform, selected = GizmoAnywhere.Selected.PARENT_OF_OWNER, shape = GizmoAnywhere.Shape.WIRE_SPHERE,
+            position = position, color = Color.cyan, radius = sphereCastRadius, ragdollRelative = GizmoAnywhere.RagdollRelative.YES,
         });
         
         for (int i = 0; i < steps; i++)
@@ -41,7 +41,7 @@ public class ImpactTimeEstimator : MonoBehaviour
                 if (Physics.SphereCast(position, sphereCastRadius, velocityNormalized,
                         out RaycastHit hit, velocityMagnitude * stepDeltaTime, sphereCastLayers.value))
                 {
-                    GizmoAnywhere.RepeatRequest(new GizmoAnywhere.GizmoDrawRequest
+                    GizmoAnywhere.RepeatRequest(new GizmoAnywhere.Request
                         { position = position + velocityNormalized * hit.distance, color = Color.red });
                     timeToHit = i * stepDeltaTime + hit.distance / velocityMagnitude;
                     break;
@@ -54,11 +54,11 @@ public class ImpactTimeEstimator : MonoBehaviour
             if (!ClippingUtils.CheckOrCastRays(position, sphereCastRadius))
             {
                 velocity += Physics.gravity * stepDeltaTime;
-                GizmoAnywhere.RepeatRequest(new GizmoAnywhere.GizmoDrawRequest { position = position, color = Color.cyan });
+                GizmoAnywhere.RepeatRequest(new GizmoAnywhere.Request { position = position, color = Color.cyan });
             }
             else
             {
-                GizmoAnywhere.RepeatRequest(new GizmoAnywhere.GizmoDrawRequest { position = position, color = Color.blue });
+                GizmoAnywhere.RepeatRequest(new GizmoAnywhere.Request { position = position, color = Color.blue });
 
             }
         }
