@@ -3,18 +3,19 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
+using UnityEngine.Serialization;
 
 public class ClipspaceShaderPropertySetter : MonoBehaviour
 {
     [SerializeField] private NeoclipCharacterController characterController;
     [SerializeField] private NeoclipCameraController cameraController;
-    [SerializeField] private Camera camera;
+    [SerializeField] private Camera clippingCamera;
     [Tooltip("Whether to wait for the ragdoll's noclip buffer timer to expire before setting the properties back to normal.")]
     [SerializeField] private bool waitForRagdollToExit;
     [SerializeField] private ShaderPropertiesSO normalProperties;
     [SerializeField] private ShaderPropertiesSO clippingProperties;
     [SerializeField] private GameObject city;
-    [Tooltip("The renderer with the EdgDetectionFeature that can be turned off by the shader properties")]
+    [Tooltip("The renderer with the EdgeDetectionFeature that can be turned off by the shader properties")]
     [SerializeField] private ScriptableRendererData rendererData;
     [Space]
     [Tooltip("When the player is not noclipping, set their color to this. Independent of whether the camera is inside something.")]
@@ -45,10 +46,10 @@ public class ClipspaceShaderPropertySetter : MonoBehaviour
             Debug.Log($"{nameof(ClipspaceShaderPropertySetter)}.{nameof(SetShaderParameters)}: Setting parameters to {properties.name}");
         }
 
-        camera.clearFlags = properties.clearFlags;
-        camera.backgroundColor = properties.backgroundColor;
-        camera.opaqueSortMode = properties.opaqueSortMode;
-        camera.transparencySortMode = properties.transparencySortMode;
+        clippingCamera.clearFlags = properties.clearFlags;
+        clippingCamera.backgroundColor = properties.backgroundColor;
+        clippingCamera.opaqueSortMode = properties.opaqueSortMode;
+        clippingCamera.transparencySortMode = properties.transparencySortMode;
         
         Shader.SetGlobalInteger(cullModeID, (int)properties.cullMode);
         Shader.SetGlobalInteger(blendSourceFactorID, (int)properties.blendMode.sourceFactor);

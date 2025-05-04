@@ -21,8 +21,7 @@ public class NeoclipCharacterController : MonoBehaviour
     [SerializeField] private float secondsToStayClipping = 0.2f;
     [SerializeField] private float angularSlowdown = 0.1f;
     [SerializeField] private float antiSkateVelocityThreshold = 0.2f;
-    [SerializeField] private float maxMoveSpeed = 5.0f;
-    [SerializeField] private float moveAcceleration = 1.0f;
+    [SerializeField] private float moveInputStrength = 5.0f;
     [SerializeField] private LayerNumber defaultLayer;
     [SerializeField] private LayerNumber noclipLayer;
     [SerializeField] private AnimationCurve panicAtImpactTime;
@@ -204,7 +203,7 @@ public class NeoclipCharacterController : MonoBehaviour
             return;
         }
         
-        SmartVector3 movement = cameraController.GetCameraRelativeMoveVector(moveInput) * moveAcceleration;
+        SmartVector3 movement = cameraController.GetCameraRelativeMoveVector(moveInput) * moveInputStrength;
         
         // Set the animator's panic value based on the time to impact or angular velocity
         float timeToImpact = impactTimeEstimator.Estimate(ragdollHelper.AveragePosition, ragdollHelper.AverageLinearVelocity);
