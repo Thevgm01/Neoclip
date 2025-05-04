@@ -10,8 +10,10 @@ public class ExitDirectionFinder : MonoBehaviour
 {
     private const int NUM_POINTS = 2048;
     
+    // Contains the untransformed point positions
     private static Vector3[] rawPoints;
     
+    [Header("Debug")]
     [SerializeField] private bool showBalls = true;
     [SerializeField] private bool printJobTime = true;
     
@@ -25,6 +27,7 @@ public class ExitDirectionFinder : MonoBehaviour
     private bool shouldDrawGizmos;
     #endif
     
+    // Create all of the testing commands, including both sphereOverlaps and raycasts
     [BurstCompile]
     private struct CreateCommands : IJobFor
     {
@@ -104,6 +107,7 @@ public class ExitDirectionFinder : MonoBehaviour
         }
     }
     
+    // Note that this one is just an IJob, so it doesn't run in parallel (or rather it can't, since it modifies a single result)
     [BurstCompile]
     private struct CalculateAverageDirection : IJob
     {
@@ -140,6 +144,7 @@ public class ExitDirectionFinder : MonoBehaviour
     
     public void ScheduleJobs()
     {
+        // Allocate job arrays
         NativeArray<Vector3> points = new(NUM_POINTS, Allocator.TempJob);
         
         NativeArray<OverlapSphereCommand> overlapCommands = new(NUM_POINTS, Allocator.TempJob);
@@ -150,6 +155,7 @@ public class ExitDirectionFinder : MonoBehaviour
         
         NativeArray<byte> pointBackfaceHits = new (NUM_POINTS, Allocator.TempJob);
         
+        // Set up points and raycast parameters
         transform.TransformPoints(rawPoints, points);
 
         QueryParameters queryParameters = new QueryParameters
@@ -160,6 +166,7 @@ public class ExitDirectionFinder : MonoBehaviour
             hitBackfaces = true
         };
         
+        // Schedule all jobs
         JobHandle createCommands = CreateCommands.ScheduleBatch(overlapCommands, rayCommands, points, queryParameters, 1);
         
         JobHandle overlapSpheres = OverlapSphereCommand.ScheduleBatch(overlapCommands, overlapHits, 1, 1, createCommands);
@@ -171,6 +178,8 @@ public class ExitDirectionFinder : MonoBehaviour
         MainJob = CalculateAverageDirection.Schedule(exitDirection, points, pointBackfaceHits, transform.position, countBackfaceHits);
         
 #if UNITY_EDITOR
+        // If we're drawing gizmos, we need to complete the job immediately so we can print the job time and access the
+        // positions of the test points.
         if (shouldDrawGizmos)
         {
             double time = Time.realtimeSinceStartupAsDouble;
@@ -212,6 +221,7 @@ public class ExitDirectionFinder : MonoBehaviour
         }
 #endif
 
+        // Clean up NativeArrays
         overlapCommands.Dispose(overlapSpheres);
         overlapHits.Dispose(countBackfaceHits);
         rayCommands.Dispose(raycasts);
@@ -220,7 +230,7 @@ public class ExitDirectionFinder : MonoBehaviour
         pointBackfaceHits.Dispose(MainJob);
     }
     
-    [RuntimeInitializeOnLoadMethod]
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void SetRawPoints()
     {
         rawPoints = SpherePointGenerator.GenerateGoldenSpiralShell(NUM_POINTS);

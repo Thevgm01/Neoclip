@@ -11,6 +11,7 @@ public class DragCamera : MonoBehaviour
     
     private Camera dragCamera;
 
+    // Need to render outside the main rendering pipeline
     private RenderPipeline.StandardRequest renderRequest;
     
     private int computeKernel;
@@ -43,6 +44,7 @@ public class DragCamera : MonoBehaviour
         pixelHits = new int[ragdollHelper.NumBones];
     }
 
+    // Position the camera in front of the ragdoll's direction of movement, facing backward towards the ragdoll
     private void MoveCamera()
     {
         Quaternion rotation = Quaternion.LookRotation(-ragdollHelper.AverageLinearVelocity.Normalized);

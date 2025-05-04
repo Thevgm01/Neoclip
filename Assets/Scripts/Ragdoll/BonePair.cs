@@ -36,15 +36,15 @@ public abstract class BonePair
     public abstract void WriteValues();
 }
 
-public class RotationBonePair : BonePair
+public class BonePairRotationOnly : BonePair
 {
-    public RotationBonePair(Transform sourceBone, Transform targetBone) : base(sourceBone, targetBone) { }
+    public BonePairRotationOnly(Transform sourceBone, Transform targetBone) : base(sourceBone, targetBone) { }
     public override void WriteValues() => targetBone.localRotation = sourceBone.localRotation;
 }
 
-public class PositionAndRotationBonePair : BonePair
+public class BonePairPositionAndRotation : BonePair
 {
-    public PositionAndRotationBonePair(Transform sourceBone, Transform targetBone) : base(sourceBone, targetBone) { }
+    public BonePairPositionAndRotation(Transform sourceBone, Transform targetBone) : base(sourceBone, targetBone) { }
     
     public override void WriteValues()
     {
@@ -53,14 +53,14 @@ public class PositionAndRotationBonePair : BonePair
     }
 }
 
-public class JointBonePair : BonePair
+public class BonePairJoint : BonePair
 {
     private readonly ConfigurableJoint joint;
 
     private readonly Quaternion worldToStartSpace;
     private readonly Quaternion jointToWorldSpace;
         
-    public JointBonePair(Transform sourceBone, Transform targetBone, ConfigurableJoint joint) : base(sourceBone, targetBone)
+    public BonePairJoint(Transform sourceBone, ConfigurableJoint joint) : base(sourceBone, joint.transform)
     {
         this.joint = joint;
 

@@ -15,46 +15,54 @@ public class ActiveRagdoll : MonoBehaviour
     [SerializeField] private bool useCustomFramerate = false;
     [SerializeField] private float customFramerate = 12;
     private float customFramerateTime = 0.0f;
-    private PositionAndRotationBonePair customFrameRateBaseBonePair;
+    private BonePairPositionAndRotation customFramerateBase;
     
-    private List<JointBonePair> jointBonePairs;
-    private List<RotationBonePair> extremityBonePairs;
-    private List<PositionAndRotationBonePair> customFramerateBonePairs;
+    private List<BonePairJoint> jointBonePairs;
+    private List<BonePairRotationOnly> extremityBonePairs;
+    private List<BonePairPositionAndRotation> customFramerateBonePairs;
     
-    private void BuildBonePairTreeRecursive(Transform driverTransform, Transform ragdollTransform, Transform customFramerateTransform)
+    private void MakeBonePairsRecursive(Transform driverTransform, Transform ragdollTransform, Transform customFramerateTransform)
     {
         if (ragdollTransform.TryGetComponent(out ConfigurableJoint joint))
         {
-            jointBonePairs.Add(new JointBonePair(driverTransform, ragdollTransform, joint));
-            
-            customFramerateBonePairs.Add(new PositionAndRotationBonePair(ragdollTransform, customFramerateTransform));
+            // If the ragdoll has a joint, add it as a joint pair
+            jointBonePairs.Add(new BonePairJoint(driverTransform, joint));
+            // The customframerate skeleton needs to use the ragdoll's values in this case, not the driver skeleton's
+            customFramerateBonePairs.Add(new BonePairPositionAndRotation(ragdollTransform, customFramerateTransform));
         }
         else
         {
+            // If there are no rigidbodies in the ragdoll bone's children, it must be an extremity
+            // So set the ragdoll bone's values directly
             if (ragdollTransform.GetComponentInChildren<Rigidbody>() == null)
             {
-                extremityBonePairs.Add(new RotationBonePair(driverTransform, ragdollTransform));
+                extremityBonePairs.Add(new BonePairRotationOnly(driverTransform, ragdollTransform));
             }
-            customFramerateBonePairs.Add(new PositionAndRotationBonePair(driverTransform, customFramerateTransform));
+            // The customframerate skeleton also needs to reference these bones
+            customFramerateBonePairs.Add(new BonePairPositionAndRotation(driverTransform, customFramerateTransform));
         }
         
+        // Do a recursion
         int childCount = driverTransform.childCount;
         for (int i = 0; i < childCount; i++)
         {
-            BuildBonePairTreeRecursive(driverTransform.GetChild(i), ragdollTransform.GetChild(i), customFramerateTransform.GetChild(i));
+            MakeBonePairsRecursive(driverTransform.GetChild(i), ragdollTransform.GetChild(i), customFramerateTransform.GetChild(i));
         }
     }
     
     private void Awake()
     {
-        jointBonePairs = new List<JointBonePair>();
-        extremityBonePairs = new List<RotationBonePair>();
-        customFramerateBonePairs = new List<PositionAndRotationBonePair>();
+        jointBonePairs = new List<BonePairJoint>();
+        extremityBonePairs = new List<BonePairRotationOnly>();
+        customFramerateBonePairs = new List<BonePairPositionAndRotation>();
 
-        BuildBonePairTreeRecursive(driverSkeleton, ragdollSkeleton, customFramerateSkeleton);
+        MakeBonePairsRecursive(driverSkeleton, ragdollSkeleton, customFramerateSkeleton);
 
+        // The first bone pair for customframerate will be the hips of the DRIVER skeleton, because the ragdoll's hip bone
+        // doesn't have a joint. We're moving the hips separately anyway, so simply delete it.
         customFramerateBonePairs.RemoveAt(0);
-        customFrameRateBaseBonePair = new PositionAndRotationBonePair(ragdollSkeleton, customFramerateSkeleton);
+        // Since the customframerate skeleton updates its base postion and rotation smoothly, keep track of that separately
+        customFramerateBase = new BonePairPositionAndRotation(ragdollSkeleton, customFramerateSkeleton);
     }
     
     private void LateUpdate()
@@ -64,12 +72,12 @@ public class ActiveRagdoll : MonoBehaviour
         
         if (useCustomFramerate)
         {
-            customFrameRateBaseBonePair.WriteValues();
+            customFramerateBase.WriteValues();
             customFramerateTime -= Time.deltaTime;
             
             if (customFramerateTime <= 0)
             {
-                foreach (PositionAndRotationBonePair customFramerateBonePair in customFramerateBonePairs)
+                foreach (BonePairPositionAndRotation customFramerateBonePair in customFramerateBonePairs)
                 {
                     customFramerateBonePair.WriteValues();
                 }
@@ -78,7 +86,7 @@ public class ActiveRagdoll : MonoBehaviour
         }
         else
         {
-            foreach (RotationBonePair extremityBonePair in extremityBonePairs)
+            foreach (BonePairRotationOnly extremityBonePair in extremityBonePairs)
             {
                 extremityBonePair.WriteValues();
             }
@@ -87,7 +95,7 @@ public class ActiveRagdoll : MonoBehaviour
     
     private void FixedUpdate()
     {
-        foreach (JointBonePair jointBonePair in jointBonePairs)
+        foreach (BonePairJoint jointBonePair in jointBonePairs)
         {
             jointBonePair.WriteValues();
         }

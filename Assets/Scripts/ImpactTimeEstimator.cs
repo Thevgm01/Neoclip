@@ -11,17 +11,8 @@ public class ImpactTimeEstimator : MonoBehaviour
     [SerializeField] private float timeToLookAhead = 5.0f;
     [SerializeField] private int steps = 10;
     
-    private int panicID;
-    
-    private void Awake()
+    public float Estimate(Vector3 position, Vector3 velocity)
     {
-        panicID = Animator.StringToHash("Panic");
-    }
-    
-    public float Estimate()
-    {
-        Vector3 position = ragdollHelper.AveragePosition;
-        Vector3 velocity = ragdollHelper.AverageLinearVelocity;
         float stepDeltaTime = timeToLookAhead / steps;
         float timeToHit = -1.0f;
         
@@ -67,6 +58,7 @@ public class ImpactTimeEstimator : MonoBehaviour
     }
     
 #if UNITY_EDITOR
+    // Draw the sphereCastRadius if the game isn't running (thus Estimate isn't doing it)
     private void OnDrawGizmosSelected()
     {
         if (!Application.isPlaying)

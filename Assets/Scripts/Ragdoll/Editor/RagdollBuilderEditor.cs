@@ -35,7 +35,6 @@ public class RagdollBuilderEditor : Editor
             }
         }
         
-
         DrawDefaultInspector();
         
         if (GUILayout.Button("Build Ragdoll"))

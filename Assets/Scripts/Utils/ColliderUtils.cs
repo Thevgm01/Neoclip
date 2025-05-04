@@ -1,10 +1,12 @@
 using System;
 using UnityEngine;
 
+public enum ColliderType { Box, Capsule, Sphere }
+
 public static class ColliderUtils
 {
-	public enum ColliderType { Box, Capsule, Sphere }
-	
+	/// <param name="capsuleCollider"></param>
+	/// <returns>Vector3.right for X, Vector3.up for Y, Vector3.forward for Z</returns>
 	public static Vector3 GetAxis(this CapsuleCollider capsuleCollider)
 	{
 		switch (capsuleCollider.direction)
@@ -46,14 +48,10 @@ public static class ColliderUtils
 	{
 		switch (collider)
 		{
-			case BoxCollider:
-				return ColliderType.Box;
-			case CapsuleCollider:
-				return ColliderType.Capsule;
-			case SphereCollider:
-				return ColliderType.Sphere;
-			default:
-				throw new ArgumentOutOfRangeException(nameof(collider), collider, null);
+			case BoxCollider: return ColliderType.Box;
+			case CapsuleCollider: return ColliderType.Capsule;
+			case SphereCollider: return ColliderType.Sphere;
+			default: throw new ArgumentOutOfRangeException(nameof(collider), collider, null);
 		}
 	}
 	
@@ -61,18 +59,17 @@ public static class ColliderUtils
 	{
 		switch (collider)
 		{
-			case SphereCollider:
-				return PrimitiveType.Sphere;
-			case CapsuleCollider:
-				return PrimitiveType.Capsule;
-			case BoxCollider:
-				return PrimitiveType.Cube;
-			default:
-				throw new ArgumentOutOfRangeException(nameof(collider), collider, null);
+			case SphereCollider: return PrimitiveType.Sphere;
+			case CapsuleCollider: return PrimitiveType.Capsule;
+			case BoxCollider: return PrimitiveType.Cube;
+			default: throw new ArgumentOutOfRangeException(nameof(collider), collider, null);
 		}
 	}
 	
-    //https://discussions.unity.com/t/getting-a-primitive-mesh-without-creating-a-new-gameobject/78809/6
+	// The next few variables and functions are for converting a Collider into a PrimitiveMesh
+	// https://discussions.unity.com/t/getting-a-primitive-mesh-without-creating-a-new-gameobject/78809/6
+
+	// Cache the default meshes as we need them
     private static Mesh _unityCapsuleMesh = null;
     private static Mesh _unityCubeMesh = null;
     private static Mesh _unityCylinderMesh = null;
@@ -80,7 +77,6 @@ public static class ColliderUtils
     private static Mesh _unitySphereMesh = null;
     private static Mesh _unityQuadMesh = null;
 
-    //https://discussions.unity.com/t/getting-a-primitive-mesh-without-creating-a-new-gameobject/78809/6
     private static string GetPrimitiveMeshPath(PrimitiveType primitiveType)
     {
 	    switch (primitiveType)
@@ -102,7 +98,6 @@ public static class ColliderUtils
 	    }
     }
     
-    //https://discussions.unity.com/t/getting-a-primitive-mesh-without-creating-a-new-gameobject/78809/6
 	private static Mesh GetCachedPrimitiveMesh(ref Mesh primMesh, PrimitiveType primitiveType)
 	{
 		if (primMesh == null)
@@ -119,7 +114,6 @@ public static class ColliderUtils
 		return primMesh;
 	}
 
-	//https://discussions.unity.com/t/getting-a-primitive-mesh-without-creating-a-new-gameobject/78809/6
 	public static Mesh GetUnityPrimitiveMesh(PrimitiveType primitiveType)
 	{
 		switch (primitiveType)
@@ -141,12 +135,14 @@ public static class ColliderUtils
 		}
 	}
 
+	// The pièce de résistance...
     public static Mesh ToMeshWithVertexColor(this Collider collider, Color32 vertexColor)
     {
         Mesh oldMesh = GetUnityPrimitiveMesh(collider.ToPrimitiveType());
         Mesh newMesh = new Mesh();
         Vector3[] vertices = new Vector3[oldMesh.vertices.Length];
-        Color32[] colors32 = new Color32[vertices.Length]; // oldMesh.colors32.Length is 0!!!
+        //Color32[] colors32 = new Color32[oldMesh.colors32.Length]; oldMesh.colors32.Length is 0!!!
+        Color32[] colors32 = new Color32[vertices.Length];
         
         switch (collider)
         {
@@ -247,7 +243,7 @@ public static class ColliderUtils
 	    return newCollider;
     }
 
-    public static BoxcastCommand ToCommand(this BoxCollider boxCollider, Vector3 direction, QueryParameters parameters, float distance = float.MaxValue)
+    public static BoxcastCommand ToCastCommand(this BoxCollider boxCollider, Vector3 direction, QueryParameters parameters, float distance = float.MaxValue)
     {
 	    return new BoxcastCommand(
 		    boxCollider.transform.TransformPoint(boxCollider.center),
@@ -259,7 +255,7 @@ public static class ColliderUtils
 	    );
     }
 
-    public static CapsulecastCommand ToCommand(this CapsuleCollider capsuleCollider, Vector3 direction, QueryParameters parameters, float distance = float.MaxValue)
+    public static CapsulecastCommand ToCastCommand(this CapsuleCollider capsuleCollider, Vector3 direction, QueryParameters parameters, float distance = float.MaxValue)
     {
 	    Vector3 axis = capsuleCollider.transform.TransformDirection(capsuleCollider.GetAxis()) * capsuleCollider.height / 2.0f;
 	    return new CapsulecastCommand(
@@ -272,7 +268,7 @@ public static class ColliderUtils
 	    );
     }
     
-    public static SpherecastCommand ToCommand(this SphereCollider sphereCollider, Vector3 direction, QueryParameters parameters, float distance = float.MaxValue)
+    public static SpherecastCommand ToCastCommand(this SphereCollider sphereCollider, Vector3 direction, QueryParameters parameters, float distance = float.MaxValue)
     {
 	    return new SpherecastCommand(
 		    sphereCollider.transform.TransformPoint(sphereCollider.center),
@@ -293,11 +289,15 @@ public static class ColliderUtils
 	            hash.Append(boxCollider.center.x);
 	            hash.Append(boxCollider.center.y);
 	            hash.Append(boxCollider.center.z);
+	            hash.Append(boxCollider.size.x);
+	            hash.Append(boxCollider.size.y);
+	            hash.Append(boxCollider.size.z);
 	            break;
             case CapsuleCollider capsuleCollider:
 	            hash.Append(capsuleCollider.center.x);
 	            hash.Append(capsuleCollider.center.y);
 	            hash.Append(capsuleCollider.center.z);
+	            hash.Append(capsuleCollider.direction);
 	            hash.Append(capsuleCollider.radius);
 	            hash.Append(capsuleCollider.height);
 	            break;

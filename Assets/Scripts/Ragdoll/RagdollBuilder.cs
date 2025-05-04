@@ -24,15 +24,15 @@ public class RagdollBuilder : MonoBehaviour
     
     private void OnEnable()
     {
-        Selection.selectionChanged += SelectOtherBone;
+        Selection.selectionChanged += SelectMirrorBone;
     }
 
     private void OnDisable()
     {
-        Selection.selectionChanged -= SelectOtherBone;
+        Selection.selectionChanged -= SelectMirrorBone;
     }
 
-    private void SelectOtherBone()
+    private void SelectMirrorBone()
     {
         if (autoselectMirrorBone &&
             Selection.count == 1 &&
@@ -94,12 +94,12 @@ public class RagdollBuilder : MonoBehaviour
     
     public void BuildRagdoll()
     {
+        // Look at all bones with rigidbodies attached
         Rigidbody[] rigidbodies = GetComponentsInChildren<Rigidbody>();
         
         if (rigidbodies.Length > 0)
         {
-            Rigidbody tempRigidbody = gameObject.AddComponent<Rigidbody>();
-            ConfigurableJoint tempJoint = gameObject.AddComponent<ConfigurableJoint>();
+            ConfigurableJoint tempJoint = this.gameObject.AddComponent<ConfigurableJoint>();
             tempJoint.xMotion = ConfigurableJointMotion.Locked;
             tempJoint.yMotion = ConfigurableJointMotion.Locked;
             tempJoint.zMotion = ConfigurableJointMotion.Locked;
@@ -115,15 +115,16 @@ public class RagdollBuilder : MonoBehaviour
                 gameObject.layer = defaultLayer.value;
                 
                 //UndoUtils.TryDestroyObjectsImmediate(gameObject.GetComponents<Joint>());
+                // Destroy existing drag mesh if present
                 UndoUtils.TryDestroyObjectImmediate(gameObject.GetComponent<MeshFilter>());
                 UndoUtils.TryDestroyObjectImmediate(gameObject.GetComponent<MeshRenderer>());
                 
-                // Modify the primary collider, add a second trigger collider if necessary
+                // Modify the primary collider
                 Collider collider;
                 Collider[] colliders = rigidbody.GetComponents<Collider>();
                 if (colliders.Length == 0)
                 {
-                    Debug.LogError($"RagdollBuilder: No collider for rigidbody on {gameObject.name}");
+                    Debug.LogError($"{nameof(RagdollBuilder)}: No Collider for Rigidbody on {gameObject.name}");
                     return;
                 }
                 else
@@ -140,7 +141,7 @@ public class RagdollBuilder : MonoBehaviour
                     }
                 }
                 
-                // Set the mass
+                // Set the rigidbody's values
                 Undo.RecordObject(rigidbody, $"Set rigidbody values");
                 // rigidbody.SetDensity() does NOTHING!!!
                 rigidbody.mass = collider.CalculateVolume() * 
@@ -154,17 +155,16 @@ public class RagdollBuilder : MonoBehaviour
                 // Keep track of the total mass
                 totalMass += rigidbody.mass;
                 
-                // Add a ConfigurableJoint
-                Rigidbody parentRigidbody = rigidbody.transform.parent.GetComponentInParent<Rigidbody>();
-                if (parentRigidbody && parentRigidbody != tempRigidbody)
+                // Add a ConfigurableJoint, if this isn't the hip bone
+                if (rigidbody.transform.parent != this.transform)
                 {
                     ConfigurableJoint joint = UndoUtils.GetOrAddComponent<ConfigurableJoint>(gameObject);
-                    
                     GenericUtils.CopyConfigurableJointValues(tempJoint, joint);
-                    joint.connectedBody = parentRigidbody;
+                    joint.connectedBody = rigidbody.transform.parent.GetComponentInParent<Rigidbody>();
                 }
                 
                 // Create and add the DragMesh
+                // Change the vertex color based on the index of this rigidbody
                 Mesh dragMesh = collider.ToMeshWithVertexColor(new Color32((byte)(dragMeshesCreated * 8), 0, 0, 255));
                 if (dragMesh)
                 {
@@ -181,12 +181,11 @@ public class RagdollBuilder : MonoBehaviour
             }
             
             DestroyImmediate(tempJoint);
-            DestroyImmediate(tempRigidbody);
             
-            Debug.Log($"{nameof(RagdollBuilder)}: Set the mass of {rigidbodies.Length - 1} rigidbodies. Total mass is {totalMass} kg.");
+            Debug.Log($"{nameof(RagdollBuilder)}: Set the mass of {rigidbodies.Length} rigidbodies. Total mass is {totalMass} kg.");
 
             // -1 because the root rigidbody has no parent, so it won't get a joint
-            Debug.Log($"{nameof(RagdollBuilder)}: Created {rigidbodies.Length - 2} ConfigurableJoints.");
+            Debug.Log($"{nameof(RagdollBuilder)}: Created {rigidbodies.Length - 1} ConfigurableJoints.");
             
             Debug.Log($"{nameof(RagdollBuilder)}: Created {dragMeshesCreated} drag meshes.");
         }

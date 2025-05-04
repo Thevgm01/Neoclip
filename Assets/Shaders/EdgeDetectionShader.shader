@@ -29,6 +29,9 @@ Shader "Custom/Edge Detection"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareNormalsTexture.hlsl" // needed to sample scene normals
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareOpaqueTexture.hlsl" // needed to sample scene color/luminance
 
+            // https://roystan.net/articles/outline-shader/
+            // https://ameye.dev/notes/edge-detection-outlines/
+            
             float _OutlineThickness;
             float4 _OutlineColor;
             bool _NeoclipIsClipping;
@@ -41,7 +44,7 @@ Shader "Custom/Edge Detection"
             static const int DOWNLEFT = 3;
             static const int DOWNRIGHT = 4;
 
-            static const float PHI = 1.61803398874989484820459;  // Φ = Golden Ratio
+            static const float PHI = 1.61803398874989484820459; // Φ = Golden Ratio
             
             #pragma vertex Vert // vertex shader is provided by the Blit.hlsl include
             #pragma fragment frag
@@ -60,7 +63,7 @@ Shader "Custom/Edge Detection"
             float SampleSphericalDepth(float2 uv)
             {
                 // https://docs.unity3d.com/Packages/com.unity.render-pipelines.universal@11.0/manual/writing-shaders-urp-reconstruct-world-position.html
-                return min(distance(_WorldSpaceCameraPos, SampleWorldPos(uv)) * _ZBufferParams.w, 0.999999);
+                return min(distance(_WorldSpaceCameraPos, SampleWorldPos(uv)) * _ZBufferParams.w, 1);
             }
             
             // Helper function to sample scene normals remapped from [-1, 1] range to [0, 1].

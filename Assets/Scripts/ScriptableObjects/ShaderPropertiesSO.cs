@@ -21,16 +21,16 @@ public class ShaderPropertiesSO : ScriptableObject
     public OpaqueSortMode opaqueSortMode;
     public TransparencySortMode transparencySortMode;
     
-    [Header("Shader Globals")]
-    public UnityEngine.Rendering.CullMode cullMode;
+    [Header("Shader Globals"), Tooltip("Each of these are used in a Shader.SetGlobalInteger() call when this ScriptableObject is activated by ClipspaceShaderPropertySetter.")]
+    public CullMode cullMode;
     public BlendMode blendMode;
-    public UnityEngine.Rendering.BlendOp blendOp;
+    public BlendOp blendOp;
     public ZTest zTest;
     public bool zWrite;
     public bool alphaToMask;
     public bool isClipping;
 
-    [Header("Shader")]
+    [Header("Shader Settings")]
     public Shader cityShader;
     public bool enableEdgeDetectionRendererFeature;
 }

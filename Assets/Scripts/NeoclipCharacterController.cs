@@ -169,8 +169,8 @@ public class NeoclipCharacterController : MonoBehaviour
         if (context.ReadValueAsButton()) ReverseGameState();
     }
     
-    private void SetNoclipLayers() => ragdollHelper.SetLayers(noclipLayer.value);
-    private void SetDefaultLayers() => ragdollHelper.SetLayers(defaultLayer.value);
+    private void SetNoclipLayers() => ragdollHelper.SetLayer(noclipLayer.value);
+    private void SetDefaultLayers() => ragdollHelper.SetLayer(defaultLayer.value);
     
     private void Awake()
     {
@@ -206,9 +206,10 @@ public class NeoclipCharacterController : MonoBehaviour
         
         SmartVector3 movement = cameraController.GetCameraRelativeMoveVector(moveInput) * moveAcceleration;
         
-        // Set the animator's panic value based on the time to impact
+        // Set the animator's panic value based on the time to impact or angular velocity
+        float timeToImpact = impactTimeEstimator.Estimate(ragdollHelper.AveragePosition, ragdollHelper.AverageLinearVelocity);
         animator.SetFloat(animPanicID, Mathf.Max(
-            panicAtImpactTime.Evaluate(impactTimeEstimator.Estimate()) * panicMultAtSpeed.Evaluate(ragdollHelper.AverageLinearVelocity.Magnitude),
+            panicAtImpactTime.Evaluate(timeToImpact) * panicMultAtSpeed.Evaluate(ragdollHelper.AverageLinearVelocity.Magnitude),
             panicAtAngularVelocity.Evaluate(ragdollHelper.AverageAngularVelocity.Magnitude)));
         
         // Grab the last frame's drag data
@@ -240,17 +241,21 @@ public class NeoclipCharacterController : MonoBehaviour
             for (int i = 0; i < ragdollHelper.NumBones; i++)
             {
                 boneClipStates[i] = ClippingUtils.CheckColliderOrCastRaysDetailed(ragdollHelper.GetCollider(i));
-                anyBoneClipping = anyBoneClipping || (boneClipStates[i] & ClippingUtils.ClipState.IsClipping) > 0;
-                anyBoneRayHit = anyBoneRayHit || (boneClipStates[i] & ClippingUtils.ClipState.RayBackfaceMask) > 0;
-                allBonesClipping = allBonesClipping && (boneClipStates[i] & ClippingUtils.ClipState.IsClipping) > 0;
+                bool thisBoneClipping = (boneClipStates[i] & ClippingUtils.ClipState.IsClipping) != 0;
+                anyBoneClipping = anyBoneClipping || thisBoneClipping;
+                anyBoneRayHit = anyBoneRayHit || boneClipStates[i].GetNumberOfBackfaceFits() > 0;
+                allBonesClipping = allBonesClipping && thisBoneClipping;
             }
         }
-        
-        //Debug.Log(boneClipStates[0]);
-        
+
         // Determine if we're "skating" along the ground, which we don't want
+        // Conditions to trigger:
+        //      We're being ejected from clipspace (the button isn't held down)
+        //      At least one bone is in direct contact with a surface, but not ALL bones
+        //      None of the 6 cardinal-direction rays hit a backface (aka the CENTER of the bone is NOT clipping)
+        //      The ragdoll is moving against gravity within a certain threshold (it's trying to get pushed out of the ground)
         float antiSkateVelocityDot = Vector3.Dot(ragdollHelper.AverageLinearVelocity, -Physics.gravity.normalized);
-        bool antiSkate = !desiredNoclipState && anyBoneClipping && !anyBoneRayHit && !allBonesClipping && antiSkateVelocityDot > 0.0f && antiSkateVelocityDot < antiSkateVelocityThreshold;
+        bool antiSkate = !desiredNoclipState && anyBoneClipping && !allBonesClipping && !anyBoneRayHit && antiSkateVelocityDot > 0.0f && antiSkateVelocityDot < antiSkateVelocityThreshold;
         if (antiSkate)
         {
             Debug.Log($"{nameof(NeoclipCharacterController)}.{nameof(FixedUpdate)}: Anti-skating mechanism triggered.");
@@ -282,9 +287,9 @@ public class NeoclipCharacterController : MonoBehaviour
         }
         
         // Calculate the exit direction for next frame if necessary
-        if (anyBoneClipping && desiredNoclipState && clippingForces.exitDirection.enabled ||
-            anyBoneClipping && !desiredNoclipState && ejectingForces.exitDirection.enabled ||
-            !anyBoneClipping && fallingForces.exitDirection.enabled)
+        if (anyBoneClipping && desiredNoclipState && clippingForces.NeedsExitDirection() ||
+            anyBoneClipping && !desiredNoclipState && ejectingForces.NeedsExitDirection() ||
+            !anyBoneClipping && fallingForces.NeedsExitDirection())
         {
             exitDirectionFinder.transform.position = ragdollHelper.AveragePosition;
             exitDirectionFinder.ScheduleJobs();
@@ -294,7 +299,7 @@ public class NeoclipCharacterController : MonoBehaviour
             exitDirectionFinder.ResetExitDirection();
         }
         
-        // Iterate through all bones
+        // Iterate through all bones to apply forces
         for (int i = 0; i < ragdollHelper.NumBones; i++)
         {
             Rigidbody rigidbody = ragdollHelper.GetRigidbody(i);
@@ -309,13 +314,15 @@ public class NeoclipCharacterController : MonoBehaviour
                         
             if (shouldApplyDrag)
             {
+                // Only apply drag to the component of the velocity that's in the direction of drag
                 Vector3 projectedVelocity = Vector3.Project(rigidbody.linearVelocity, ragdollHelper.AverageLinearVelocity.Normalized);
                 
+                // Drag equation
                 rigidbody.AddForce(
                     0.5f * 
                     forces.GetDensity() *
                     projectedVelocity.sqrMagnitude * 
-                    0.7f *
+                    0.7f * // This is the drag coefficient, it's arbitrarily set to 0.7 for now, but it can be adjusted for faster/slower max speed
                     boneSurfaceAreas[i] * 
                     -ragdollHelper.AverageLinearVelocity.Normalized,
                     ForceMode.Force);
@@ -332,6 +339,7 @@ public class NeoclipCharacterController : MonoBehaviour
         {
             noclipBufferFrames = Mathf.CeilToInt(secondsToStayClipping / Time.fixedDeltaTime);
         }
+        // Otherwise decrement the timer
         else if (noclipBufferFrames > 0)
         {
             noclipBufferFrames--;

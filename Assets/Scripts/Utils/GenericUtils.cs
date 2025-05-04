@@ -1,11 +1,19 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
+using Object = UnityEngine.Object;
 using Random = System.Random;
 
 public static class GenericUtils
 {
     public static int FixedUpdateCount => Mathf.CeilToInt(Time.fixedTime / Time.fixedDeltaTime);
     
+    /// <summary>
+    /// Calculate t for lerps based on an exponential decay function, able to be run every frame.
+    /// </summary>
+    /// <seealso href="https://www.rorydriscoll.com/2016/03/07/frame-rate-independent-damping-using-lerp/"/>
+    /// <param name="speed"></param>
+    /// <returns></returns>
     public static float ExpT(float speed) => 1.0f - Mathf.Exp(-speed * Time.deltaTime);
 
     public static int ToLayerNumber(this LayerMask mask) => Mathf.RoundToInt(Mathf.Log(mask.value, 2.0f));
@@ -15,9 +23,14 @@ public static class GenericUtils
 	    float cos = Mathf.Cos(radians), sin = Mathf.Sin(radians);
 	    return new Vector2(v.x * cos - v.y * sin, v.x * sin + v.y * cos);
     }
-
-    // https://discussions.unity.com/t/randomize-array-in-c/443241/6
-    // https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle
+    
+    /// <summary>
+    /// Shuffle the array using the Fisher–Yates algorithm and UnityEngine.Random.
+    /// </summary>
+    /// <seealso href="https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle"/>
+    /// <seealso href="https://discussions.unity.com/t/randomize-array-in-c/443241/6"/>
+    /// <param name="array"></param>
+    /// <typeparam name="T"></typeparam>
     public static void Shuffle<T>(this T[] array)
     {
 	    for (int t = 0; t < array.Length; t++ )
@@ -28,7 +41,31 @@ public static class GenericUtils
 		    array[r] = tmp;
 	    }
     }
+    
+    /// <summary>
+    /// Shuffle the list using the Fisher–Yates algorithm and UnityEngine.Random.
+    /// </summary>
+    /// <seealso href="https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle"/>
+    /// <seealso href="https://discussions.unity.com/t/randomize-array-in-c/443241/6"/>
+    /// <param name="array"></param>
+    /// <typeparam name="T"></typeparam>
+    public static void Shuffle<T>(this List<T> list)
+    {
+	    for (int t = 0; t < list.Count; t++ )
+	    {
+		    T tmp = list[t];
+		    int r = UnityEngine.Random.Range(t, list.Count);
+		    list[t] = list[r];
+		    list[r] = tmp;
+	    }
+    }
 	
+    /// <summary>
+    /// Starting with the child transform, recursively goes up the hierarchy until it finds the specified parent transform.
+    /// </summary>
+    /// <param name="child"></param>
+    /// <param name="parent"></param>
+    /// <returns></returns>
     public static bool IsChildOf(Transform child, Transform parent)
     {
 	    Transform temp = child;
@@ -39,6 +76,12 @@ public static class GenericUtils
 	    return temp == parent;
     }
 
+    /// <summary>
+    /// As <see cref="IsChildOf"/>, but can match any parent transform of an array.
+    /// </summary>
+    /// <param name="child"></param>
+    /// <param name="parents"></param>
+    /// <returns></returns>
     public static bool IsChildOfAny(Transform child, Transform[] parents)
     {
 	    Transform temp = child;
@@ -55,7 +98,23 @@ public static class GenericUtils
 	    }
 	    return false;
     }
-
+    
+    public static void TryDestroyObject(Object obj)
+    {
+	    if (obj != null)
+	    {
+		    Object.Destroy(obj);
+	    }
+    }
+    
+    public static void TryDestroyObjects(Object[] objs)
+    {
+	    foreach (Object obj in objs)
+	    {
+		    TryDestroyObject(obj);
+	    }
+    }
+    
     public static T GetOrAddComponent<T>(this GameObject gameObject) where T : Component
     {
 	    if (gameObject.TryGetComponent(out T component))

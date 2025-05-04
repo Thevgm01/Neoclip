@@ -16,7 +16,7 @@ public class RagdollHelper : MonoBehaviour
     private Vector3[] linearVelocities;
     private Vector3[] angularVelocities;
     
-    public GameObject[] BameObjects => (GameObject[])gameObjects.Clone();
+    public GameObject[] GameObjects => (GameObject[])gameObjects.Clone();
     public Rigidbody[] Rigidbodies => (Rigidbody[])rigidbodies.Clone();
     public Transform[] Transforms => (Transform[])transforms.Clone();
     public Collider[] Colliders => (Collider[])colliders.Clone();
@@ -122,7 +122,7 @@ public class RagdollHelper : MonoBehaviour
 #endif
     }
 
-    public void SetLayers(int layer)
+    public void SetLayer(int layer)
     {
         for (int i = 0; i < NumBones; i++)
         {

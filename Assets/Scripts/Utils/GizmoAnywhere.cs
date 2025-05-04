@@ -3,6 +3,14 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.Serialization;
 
+/// <summary>
+/// Editor-only class that adds additional Gizmo drawing functionality, including:
+/// <list type="bullet">
+/// <item><description>Drawing Gizmos in <c>FixedUpdate()</c></description></item>
+/// <item><description>Making Gizmos move smoothly with the main ragdoll.</description></item>
+/// <item><description>The ability to repeat requests, keeping most of the information the same but changing some parameters.</description></item>
+/// </list>
+/// </summary>
 public class GizmoAnywhere : MonoBehaviour
 {
     public enum Selected
@@ -31,14 +39,41 @@ public class GizmoAnywhere : MonoBehaviour
     
     public struct Request
     {
+        /// <summary>
+        /// If true, record this request, but don't actually draw it. used for <c>RepeatRequest()</c>.
+        /// </summary>
         public bool isDummy;
+        /// <summary>
+        /// The Transform that owns this request, to be used with <c>selected</c>.
+        /// </summary>
         public Transform owner;
+        /// <summary>
+        /// The conditions for drawing this request, based on the objects selected in the hierarchy and the <c>owner</c>.
+        /// </summary>
         public Selected selected;
+        /// <summary>
+        /// Which primitive Gizmo shape to draw.
+        /// </summary>
         public Shape shape;
+        /// <summary>
+        /// If true and this request is submitted during <c>FixedUpdate()</c>, the request's position will move relative to the interpolated position of the ragdoll.
+        /// </summary>
         public RagdollRelative ragdollRelative;
+        /// <summary>
+        /// The color of the Gizmo.
+        /// </summary>
         public Color color;
+        /// <summary>
+        /// The position of the Gizmo.
+        /// </summary>
         public Vector3 position;
+        /// <summary>
+        /// The size of the Gizmo. For spheres use <c>radius</c> instead.
+        /// </summary>
         public Vector3 size;
+        /// <summary>
+        /// The radius of the Gizmo. For cubes use <c>size</c> instead.
+        /// </summary>
         public float radius
         {
             get => size.x;
@@ -48,10 +83,13 @@ public class GizmoAnywhere : MonoBehaviour
 #if UNITY_EDITOR
     [SerializeField] private RagdollHelper targetForRagdollRelative;
     
+    // Keep track of requests submitted this frame.
     private static Stack<Request> requests = new ();
     
-    private static List<GizmoDrawRequest> fixedUpdateRequests = new ();
-    private static Stack<GizmoDrawRequest> requests = new ();
+    // FixedUpdate() usually runs less frequently than Update(). If we used a Stack like with the standard requests it
+    // would flicker because new requests aren't being submitted quickly enough. Instead keep them as a list so they can
+    // be drawn multiple times until we hit FixedUpdate() again.
+    private static List<Request> fixedUpdateRequests = new ();
     
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void Init()
@@ -61,7 +99,10 @@ public class GizmoAnywhere : MonoBehaviour
     }
 #endif
     
-    public static void SubmitRequest(GizmoDrawRequest request)
+    /// <summary>
+    /// Draw a gizmo during the next OnDrawGizmos() call. Can be run from any context, even FixedUpdate().
+    /// </summary>
+    /// <param name="request"></param>
     public static void SubmitRequest(Request request)
     {
 #if UNITY_EDITOR
@@ -74,10 +115,15 @@ public class GizmoAnywhere : MonoBehaviour
 #endif
     }
     
-    public static void RepeatRequest(GizmoDrawRequest request)
+    /// <summary>
+    /// Submit a new request using the properties of the previous request as a base, if new properties are not explicitly assigned.
+    /// </summary>
+    /// <seealso cref="SubmitRequest"/>
+    /// <param name="request"></param>
     public static void RepeatRequest(Request request)
     {
 #if UNITY_EDITOR
+        // Can't repeat what ain't there!
         if (Time.inFixedTimeStep && fixedUpdateRequests.Count == 0 || !Time.inFixedTimeStep && requests.Count == 0)
             return;
         

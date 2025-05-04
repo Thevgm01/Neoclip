@@ -51,7 +51,8 @@ public static class ClippingUtils
     // Should automatically account for the ray not hitting anything, because the normal will be (0, 0, 0) and the dot product will thus be 0
     public static bool HitBackface(this RaycastHit hit, Vector3 direction) => Vector3.Dot(hit.normal, direction) > DOT_THRESHOLD;
     public static bool HitVoid(this RaycastHit hit) => hit.colliderInstanceID == VoidColliderInstanceID;
-
+    public static int GetNumberOfBackfaceFits(this ClipState clipState) => (int)(clipState & ClipState.RayBackfaceMask);
+    
     public static ClipState CastRaysDetailed(Vector3 origin)
     {
         ClipState result = new ClipState();
